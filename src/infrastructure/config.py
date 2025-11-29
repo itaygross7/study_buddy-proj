@@ -2,8 +2,13 @@ import os
 from dotenv import load_dotenv
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import Field
+import secrets
 
 load_dotenv()
+
+def _generate_default_secret_key():
+    """Generate a secure default secret key for development only."""
+    return secrets.token_hex(32)
 
 class Settings(BaseSettings):
     """
@@ -18,7 +23,7 @@ class Settings(BaseSettings):
     
     # Flask
     FLASK_ENV: str = Field(default='development')
-    SECRET_KEY: str = Field(default='dev-secret-key-change-in-production')
+    SECRET_KEY: str = Field(default_factory=_generate_default_secret_key)
 
     # Infrastructure
     MONGO_URI: str = Field(default='mongodb://localhost:27017/studybuddy')

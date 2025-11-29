@@ -3,6 +3,28 @@ import json
 from unittest.mock import MagicMock, patch
 from src.domain.models.db_models import TaskStatus, Document
 
+# Import worker module once at module level with proper patching
+@pytest.fixture
+def worker_module():
+    """Fixture to import worker module with mocked dependencies."""
+    with patch('worker.task_repo') as mock_task_repo, \
+         patch('worker.doc_repo') as mock_doc_repo, \
+         patch('worker.summary_service') as mock_summary, \
+         patch('worker.flashcards_service') as mock_flashcards, \
+         patch('worker.assess_service') as mock_assess, \
+         patch('worker.homework_service') as mock_homework:
+        
+        import worker
+        yield {
+            'process_task': worker.process_task,
+            'task_repo': mock_task_repo,
+            'doc_repo': mock_doc_repo,
+            'summary_service': mock_summary,
+            'flashcards_service': mock_flashcards,
+            'assess_service': mock_assess,
+            'homework_service': mock_homework
+        }
+
 
 class TestWorkerTaskProcessing:
     """Tests for worker task processing logic."""
@@ -12,7 +34,6 @@ class TestWorkerTaskProcessing:
     @patch('worker.summary_service')
     def test_process_summarize_task_success(self, mock_summary_service, mock_doc_repo, mock_task_repo):
         """Test successful processing of a summarize task."""
-        # Import the worker module after mocking
         from worker import process_task
         
         # Setup
