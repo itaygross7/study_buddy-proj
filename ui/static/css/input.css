@@ -17,7 +17,7 @@
 
 /* Modal backdrop */
 .modal-backdrop {
-    background-color: rgba(0, 0, 0, 0.5);
+    background-color: rgba(75, 46, 22, 0.6);
 }
 
 /* Flashcard flip animation */
@@ -46,19 +46,19 @@
     transform: rotateY(180deg);
 }
 
-/* Custom scrollbar for RTL */
+/* Custom scrollbar for cozy theme */
 ::-webkit-scrollbar {
     width: 8px;
 }
 ::-webkit-scrollbar-track {
-    background: #FFF4E5;
+    background: #FFF8E6;
 }
 ::-webkit-scrollbar-thumb {
-    background: #F6A623;
+    background: #A47148;
     border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-    background: #e09515;
+    background: #8B5E34;
 }
 
 /* Mobile menu animation */
@@ -82,7 +82,7 @@
 }
 .btn-hover-lift:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 4px 12px rgba(75, 46, 22, 0.2);
 }
 
 /* Card hover effect */
@@ -91,31 +91,32 @@
 }
 .card-hover:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 8px 25px rgba(75, 46, 22, 0.15);
 }
 
-/* Speech bubble */
+/* Speech bubble - cozy theme */
 .speech-bubble {
     position: relative;
-    background: white;
+    background: #FAF3D7;
     border-radius: 1rem;
     padding: 1rem;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 8px rgba(75, 46, 22, 0.1);
+    border: 1px solid #F7D774;
 }
 .speech-bubble::before {
     content: '';
     position: absolute;
-    inset-inline-end: 20px; /* RTL-aware positioning */
+    inset-inline-end: 20px;
     bottom: -10px;
     border-width: 10px 10px 0;
     border-style: solid;
-    border-color: white transparent;
+    border-color: #FAF3D7 transparent;
 }
 
-/* File input styling */
+/* File input styling - cozy theme */
 input[type="file"]::file-selector-button {
-    background-color: #F6A623;
-    color: white;
+    background-color: #F2C94C;
+    color: #4B2E16;
     border: none;
     padding: 0.5rem 1rem;
     border-radius: 0.5rem;
@@ -125,9 +126,18 @@ input[type="file"]::file-selector-button {
     transition: background-color 0.15s;
 }
 input[type="file"]::file-selector-button:hover {
-    background-color: #e09515;
+    background-color: #F7D774;
 }
 [dir="rtl"] input[type="file"]::file-selector-button {
     margin-left: 0;
     margin-right: 1rem;
+}
+
+/* Avner wiggle animation */
+@keyframes wiggle {
+    0%, 100% { transform: rotate(-3deg); }
+    50% { transform: rotate(3deg); }
+}
+.avner-wiggle:hover {
+    animation: wiggle 0.3s ease-in-out;
 }

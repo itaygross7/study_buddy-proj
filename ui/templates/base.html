@@ -11,43 +11,43 @@
     <script src="https://unpkg.com/htmx.org@1.9.10" integrity="sha384-D1Kt99CQMDuVetoL1lrYwg5t+9QdHe7NLX/SoJYkXDFfX37iInKRy5xLSi8nO7UC" crossorigin="anonymous"></script>
 </head>
 <body class="h-full flex flex-col bg-warm-beige font-sans text-dark-brown">
-    <!-- Navbar -->
-    <nav class="bg-navbar-dark">
+    <!-- Navbar - Cozy Brown Theme -->
+    <nav class="bg-cozy-brown shadow-lg">
         <div class="mx-auto max-w-5xl px-4">
             <div class="flex h-16 items-center justify-between">
                 <!-- Right side: Logo and nav links (RTL) -->
                 <div class="flex items-center">
-                    <!-- Logo -->
-                    <a href="{{ url_for('index') }}" class="flex-shrink-0">
-                        <!-- avner_logo.png = cropped from "logo.jpeg", Avner's head only, 48x48 -->
+                    <!-- Logo with Avner -->
+                    <a href="{{ url_for('index') }}" class="flex-shrink-0 flex items-center gap-2">
                         <img src="{{ url_for('static', filename='img/avner_logo.png') }}" 
                              alt="אבנר ה-CapyBuddy לוגו" 
-                             class="h-10 w-10 rounded-lg object-cover"
+                             class="h-10 w-10 rounded-full object-cover border-2 border-warm-yellow shadow-md"
                              onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                        <span class="hidden h-10 w-10 items-center justify-center bg-hoodie-orange rounded-lg text-white font-bold text-xl" role="img" aria-label="אבנר ה-CapyBuddy לוגו">🦫</span>
+                        <span class="hidden h-10 w-10 items-center justify-center bg-warm-yellow rounded-full text-dark-brown font-bold text-xl" role="img" aria-label="אבנר לוגו">A</span>
+                        <span class="text-cream font-bold text-lg hidden sm:block">StudyBuddy</span>
                     </a>
                     
                     <!-- Desktop nav links -->
                     <div class="hidden md:block mr-8">
                         <div class="flex items-baseline gap-1">
                             <a href="{{ url_for('index') }}" 
-                               class="{% if request.endpoint == 'index' %}bg-gray-700 text-white font-bold underline{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} rounded-md px-3 py-2 text-sm transition-all duration-150">
+                               class="{% if request.endpoint == 'index' %}bg-caramel text-cream font-bold{% else %}text-cream hover:bg-caramel hover:text-white{% endif %} rounded-lg px-3 py-2 text-sm transition-all duration-150">
                                 בית
                             </a>
                             <a href="{{ url_for('summary_tool') }}" 
-                               class="{% if request.endpoint == 'summary_tool' %}bg-gray-700 text-white font-bold underline{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} rounded-md px-3 py-2 text-sm transition-all duration-150">
+                               class="{% if request.endpoint == 'summary_tool' %}bg-caramel text-cream font-bold{% else %}text-cream hover:bg-caramel hover:text-white{% endif %} rounded-lg px-3 py-2 text-sm transition-all duration-150">
                                 מסכם
                             </a>
                             <a href="{{ url_for('flashcards_tool') }}" 
-                               class="{% if request.endpoint == 'flashcards_tool' %}bg-gray-700 text-white font-bold underline{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} rounded-md px-3 py-2 text-sm transition-all duration-150">
+                               class="{% if request.endpoint == 'flashcards_tool' %}bg-caramel text-cream font-bold{% else %}text-cream hover:bg-caramel hover:text-white{% endif %} rounded-lg px-3 py-2 text-sm transition-all duration-150">
                                 כרטיסיות
                             </a>
                             <a href="{{ url_for('assess_tool') }}" 
-                               class="{% if request.endpoint == 'assess_tool' %}bg-gray-700 text-white font-bold underline{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} rounded-md px-3 py-2 text-sm transition-all duration-150">
+                               class="{% if request.endpoint == 'assess_tool' %}bg-caramel text-cream font-bold{% else %}text-cream hover:bg-caramel hover:text-white{% endif %} rounded-lg px-3 py-2 text-sm transition-all duration-150">
                                 בחן אותי
                             </a>
                             <a href="{{ url_for('homework_tool') }}" 
-                               class="{% if request.endpoint == 'homework_tool' %}bg-gray-700 text-white font-bold underline{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} rounded-md px-3 py-2 text-sm transition-all duration-150">
+                               class="{% if request.endpoint == 'homework_tool' %}bg-caramel text-cream font-bold{% else %}text-cream hover:bg-caramel hover:text-white{% endif %} rounded-lg px-3 py-2 text-sm transition-all duration-150">
                                 עוזר שיעורים
                             </a>
                         </div>
@@ -56,8 +56,11 @@
                 
                 <!-- Left side: Avner badge (desktop) -->
                 <div class="hidden md:flex items-center">
-                    <span class="inline-flex items-center gap-2 bg-gray-700 text-white text-sm px-4 py-2 rounded-full hover:bg-gray-600 transition-all duration-150">
-                        אבנר ה-CapyBuddy מחובר 🦫
+                    <span class="inline-flex items-center gap-2 bg-warm-yellow text-dark-brown text-sm px-4 py-2 rounded-full font-medium shadow-md hover:shadow-lg transition-all duration-150">
+                        <img src="{{ url_for('static', filename='img/avner_logo.png') }}" 
+                             alt="" class="h-6 w-6 rounded-full object-cover"
+                             onerror="this.style.display='none';">
+                        אבנר מחובר
                     </span>
                 </div>
                 
@@ -65,7 +68,7 @@
                 <div class="md:hidden">
                     <button type="button" 
                             id="mobile-menu-button"
-                            class="inline-flex items-center justify-center rounded-md p-2 text-gray-400 hover:bg-gray-700 hover:text-white focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
+                            class="inline-flex items-center justify-center rounded-lg p-2 text-cream hover:bg-caramel hover:text-white focus:outline-none focus:ring-2 focus:ring-inset focus:ring-warm-yellow"
                             aria-controls="mobile-menu" 
                             aria-expanded="false">
                         <span class="sr-only">פתח תפריט ראשי</span>
@@ -84,30 +87,33 @@
 
         <!-- Mobile menu -->
         <div class="md:hidden hidden mobile-menu-enter" id="mobile-menu">
-            <div class="space-y-1 px-4 pb-4 pt-2">
+            <div class="space-y-1 px-4 pb-4 pt-2 bg-coffee rounded-b-xl">
                 <a href="{{ url_for('index') }}" 
-                   class="{% if request.endpoint == 'index' %}bg-gray-700 text-white font-bold{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} block rounded-md px-3 py-2 text-base transition-all duration-150">
+                   class="{% if request.endpoint == 'index' %}bg-caramel text-cream font-bold{% else %}text-cream hover:bg-caramel hover:text-white{% endif %} block rounded-lg px-3 py-2 text-base transition-all duration-150">
                     בית
                 </a>
                 <a href="{{ url_for('summary_tool') }}" 
-                   class="{% if request.endpoint == 'summary_tool' %}bg-gray-700 text-white font-bold{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} block rounded-md px-3 py-2 text-base transition-all duration-150">
+                   class="{% if request.endpoint == 'summary_tool' %}bg-caramel text-cream font-bold{% else %}text-cream hover:bg-caramel hover:text-white{% endif %} block rounded-lg px-3 py-2 text-base transition-all duration-150">
                     מסכם
                 </a>
                 <a href="{{ url_for('flashcards_tool') }}" 
-                   class="{% if request.endpoint == 'flashcards_tool' %}bg-gray-700 text-white font-bold{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} block rounded-md px-3 py-2 text-base transition-all duration-150">
+                   class="{% if request.endpoint == 'flashcards_tool' %}bg-caramel text-cream font-bold{% else %}text-cream hover:bg-caramel hover:text-white{% endif %} block rounded-lg px-3 py-2 text-base transition-all duration-150">
                     כרטיסיות
                 </a>
                 <a href="{{ url_for('assess_tool') }}" 
-                   class="{% if request.endpoint == 'assess_tool' %}bg-gray-700 text-white font-bold{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} block rounded-md px-3 py-2 text-base transition-all duration-150">
+                   class="{% if request.endpoint == 'assess_tool' %}bg-caramel text-cream font-bold{% else %}text-cream hover:bg-caramel hover:text-white{% endif %} block rounded-lg px-3 py-2 text-base transition-all duration-150">
                     בחן אותי
                 </a>
                 <a href="{{ url_for('homework_tool') }}" 
-                   class="{% if request.endpoint == 'homework_tool' %}bg-gray-700 text-white font-bold{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} block rounded-md px-3 py-2 text-base transition-all duration-150">
+                   class="{% if request.endpoint == 'homework_tool' %}bg-caramel text-cream font-bold{% else %}text-cream hover:bg-caramel hover:text-white{% endif %} block rounded-lg px-3 py-2 text-base transition-all duration-150">
                     עוזר שיעורים
                 </a>
-                <div class="pt-2 border-t border-gray-700">
-                    <span class="block text-gray-400 text-sm px-3 py-2">
-                        אבנר ה-CapyBuddy מחובר 🦫
+                <div class="pt-2 border-t border-caramel">
+                    <span class="flex items-center gap-2 text-warm-yellow text-sm px-3 py-2">
+                        <img src="{{ url_for('static', filename='img/avner_logo.png') }}" 
+                             alt="" class="h-6 w-6 rounded-full object-cover"
+                             onerror="this.style.display='none';">
+                        אבנר מחובר
                     </span>
                 </div>
             </div>
@@ -121,36 +127,53 @@
         </div>
     </main>
 
-    <!-- Footer -->
-    <footer class="bg-navbar-dark py-4">
-        <div class="mx-auto max-w-5xl px-4 text-center">
-            <p class="text-gray-400 text-sm">
-                © 2025 StudyBuddyAI · אבנר ה-CapyBuddy לומד איתך
-            </p>
+    <!-- Footer - Cozy Brown Theme -->
+    <footer class="bg-cozy-brown py-6">
+        <div class="mx-auto max-w-5xl px-4">
+            <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+                <div class="flex items-center gap-3">
+                    <img src="{{ url_for('static', filename='img/avner_logo.png') }}" 
+                         alt="אבנר ה-CapyBuddy" 
+                         class="h-10 w-10 rounded-full object-cover border-2 border-warm-yellow"
+                         onerror="this.style.display='none';">
+                    <p class="text-cream text-sm">
+                        © 2025 StudyBuddyAI · לומדים יחד עם אבנר
+                    </p>
+                </div>
+                <p class="text-warm-gray text-xs">
+                    חדר למידה חמים ונעים
+                </p>
+            </div>
         </div>
     </footer>
 
-    <!-- Reusable Modal Component -->
+    <!-- Reusable Modal Component - Cozy Theme -->
     <div id="help-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-        <div class="bg-white rounded-2xl shadow-xl max-w-md w-full mx-4 p-6 relative">
+        <div class="bg-cream rounded-2xl shadow-xl max-w-md w-full mx-4 p-6 relative border-2 border-caramel">
             <button type="button" 
-                    class="absolute top-4 left-4 text-gray-400 hover:text-gray-600 transition-colors"
+                    class="absolute top-4 left-4 text-cozy-brown hover:text-dark-brown transition-colors"
                     onclick="closeModal()"
                     aria-label="סגור">
                 <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
             </button>
-            <h3 id="modal-title" class="text-xl font-bold text-dark-brown mb-4"></h3>
+            <div class="flex items-center gap-3 mb-4">
+                <img src="{{ url_for('static', filename='img/avner_teaching.png') }}" 
+                     alt="אבנר מסביר" 
+                     class="w-12 h-12 rounded-full object-cover border-2 border-warm-yellow"
+                     onerror="this.style.display='none';">
+                <h3 id="modal-title" class="text-xl font-bold text-dark-brown"></h3>
+            </div>
             <div id="modal-content" class="text-dark-brown leading-relaxed"></div>
             <div class="mt-6 flex flex-col gap-3">
                 <button type="button" 
                         onclick="closeModal()"
-                        class="w-full bg-hoodie-orange text-white font-semibold py-3 px-4 rounded-xl hover:bg-opacity-90 transition-all duration-150">
+                        class="w-full bg-golden-yellow text-dark-brown font-semibold py-3 px-4 rounded-xl hover:bg-warm-yellow transition-all duration-150 shadow-md">
                     הבנתי
                 </button>
-                <label class="flex items-center gap-2 text-sm text-gray-500 cursor-pointer justify-center">
-                    <input type="checkbox" class="rounded border-gray-300 text-hoodie-orange focus:ring-hoodie-orange">
+                <label class="flex items-center gap-2 text-sm text-cozy-brown cursor-pointer justify-center">
+                    <input type="checkbox" class="rounded border-cozy-brown text-golden-yellow focus:ring-golden-yellow">
                     <span>הצג שוב בפעם הבאה</span>
                 </label>
             </div>

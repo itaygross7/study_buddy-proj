@@ -4,45 +4,50 @@
      hx-swap="outerHTML">
 
     {% if task.status == 'PENDING' or task.status == 'PROCESSING' %}
-    <div class="p-4 rounded-xl bg-blue-50 border border-blue-200">
+    <div class="p-4 rounded-xl bg-cream border-2 border-warm-yellow">
         <div class="flex items-center gap-3">
-            <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-hoodie-orange"></div>
+            <img src="{{ url_for('static', filename='img/avner_thinking.png') }}" 
+                 alt="אבנר עובד"
+                 class="w-10 h-10 rounded-full object-cover border-2 border-golden-yellow animate-pulse"
+                 onerror="this.style.display='none'">
             <div>
                 <p class="text-sm font-medium text-dark-brown">
                     {% if task.status == 'PENDING' %}
                     ממתין בתור...
                     {% else %}
-                    מעבד את הבקשה...
+                    אבנר מעבד את הבקשה...
                     {% endif %}
                 </p>
-                <p class="text-sm text-gray-600 mt-1">
-                    אבנר ה-CapyBuddy עובד על זה. אנא המתינו.
+                <p class="text-sm text-coffee mt-1">
+                    אנא המתינו, אבנר עובד על זה.
                 </p>
             </div>
         </div>
     </div>
     {% elif task.status == 'COMPLETED' %}
-    <div class="p-4 rounded-xl bg-green-50 border border-success"
+    <div class="p-4 rounded-xl bg-cream border-2 border-success"
          hx-get="{{ url_for('results_bp.get_result', result_id=task.result_id) }}"
          hx-trigger="load"
          hx-target="this"
          hx-swap="innerHTML">
         <div class="flex items-center gap-3">
-            <svg class="w-5 h-5 text-success" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-            </svg>
+            <img src="{{ url_for('static', filename='img/avner_celebrate.png') }}" 
+                 alt="אבנר חוגג"
+                 class="w-10 h-10 rounded-full object-cover border-2 border-success"
+                 onerror="this.style.display='none'">
             <p class="text-success font-medium">הושלם! טוען תוצאות...</p>
         </div>
     </div>
     {% elif task.status == 'FAILED' %}
-    <div class="p-4 rounded-xl bg-red-50 border border-error">
+    <div class="p-4 rounded-xl bg-cream border-2 border-error">
         <div class="flex items-start gap-3">
-            <svg class="w-5 h-5 text-error flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
-            </svg>
+            <img src="{{ url_for('static', filename='img/avner_cry_laugh.png') }}" 
+                 alt="אבנר מצטער"
+                 class="w-10 h-10 rounded-full object-cover border-2 border-error flex-shrink-0"
+                 onerror="this.style.display='none'">
             <div>
                 <h3 class="text-sm font-medium text-error">משהו השתבש</h3>
-                <p class="mt-1 text-sm text-red-700">{{ task.error_message or 'אירעה שגיאה לא צפויה. נסו שוב.' }}</p>
+                <p class="mt-1 text-sm text-coffee">{{ task.error_message or 'אירעה שגיאה לא צפויה. נסו שוב.' }}</p>
             </div>
         </div>
     </div>

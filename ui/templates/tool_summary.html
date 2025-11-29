@@ -5,27 +5,26 @@
 {% block content %}
 <!-- Header Bar -->
 <div class="mb-6">
-    <nav class="text-sm text-gray-500 mb-2">
-        <a href="{{ url_for('index') }}" class="hover:text-hoodie-orange transition-colors">בית</a>
+    <nav class="text-sm text-cozy-brown mb-2">
+        <a href="{{ url_for('index') }}" class="hover:text-golden-yellow transition-colors">בית</a>
         <span class="mx-2">/</span>
         <span class="text-dark-brown">מסכם</span>
     </nav>
     <div class="flex items-center justify-between">
         <div class="flex items-center gap-4">
             <h1 class="text-2xl md:text-3xl font-bold text-dark-brown">מסכם</h1>
-            <!-- avner_book.png = reading pose from "WhatsApp Image 2025-11-29 at 13.02.183.jpeg", 40x40 -->
             <img src="{{ url_for('static', filename='img/avner_book.png') }}" 
-                 alt="אבנר ה-CapyBuddy קורא"
-                 class="w-10 h-10 rounded-lg"
+                 alt="אבנר קורא"
+                 class="w-10 h-10 rounded-lg object-cover border-2 border-golden-yellow shadow-md"
                  onerror="this.style.display='none';">
         </div>
         <button type="button" 
                 onclick="openSummarizerHelp()"
-                class="inline-flex items-center gap-1 text-teal hover:text-opacity-80 text-sm font-medium transition-colors">
+                class="inline-flex items-center gap-1 text-cozy-brown hover:text-caramel text-sm font-medium transition-colors">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z" />
             </svg>
-            ? הסבר קצר
+            הסבר קצר
         </button>
     </div>
 </div>
@@ -33,7 +32,7 @@
 <!-- Two-pane Layout -->
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
     <!-- Right Pane: Input Area -->
-    <div class="bg-white rounded-2xl p-6 shadow-md">
+    <div class="bg-cream rounded-2xl p-6 shadow-md border border-warm-yellow">
         <h2 class="text-xl font-bold text-dark-brown mb-4">העלאת חומר לימוד</h2>
         
         <form id="summarize-form">
@@ -46,10 +45,10 @@
                     id="text-input" 
                     name="text"
                     rows="8"
-                    class="w-full p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-hoodie-orange focus:border-hoodie-orange transition-all resize-none"
+                    class="w-full p-4 border-2 border-warm-gray rounded-xl focus:ring-2 focus:ring-golden-yellow focus:border-golden-yellow transition-all resize-none bg-warm-beige"
                     placeholder="הדביקו כאן סיכום, שיעור, מאמר או כל טקסט אחר..."
                     aria-describedby="text-helper"></textarea>
-                <p id="text-helper" class="text-sm text-gray-500 mt-2">
+                <p id="text-helper" class="text-sm text-cozy-brown mt-2">
                     או העלו קובץ מהמחשב
                 </p>
             </div>
@@ -59,25 +58,25 @@
                 <label class="block text-sm font-medium text-dark-brown mb-2">
                     בחרו קובץ מהמחשב
                 </label>
-                <div class="border-2 border-dashed border-gray-200 rounded-xl p-4 hover:border-hoodie-orange transition-colors">
+                <div class="border-2 border-dashed border-warm-gray rounded-xl p-4 hover:border-golden-yellow transition-colors bg-warm-beige">
                     <input 
                         type="file" 
                         id="file-input"
                         name="file"
                         accept=".pdf,.doc,.docx,.txt"
-                        class="w-full text-sm text-gray-600"
+                        class="w-full text-sm text-coffee"
                         onchange="handleFileSelect(this, 'file-display')"
                         aria-label="בחירת קובץ להעלאה">
-                    <p class="text-xs text-gray-500 mt-2">
+                    <p class="text-xs text-cozy-brown mt-2">
                         ניתן להעלות קבצי PDF, Word או טקסט עד 10MB
                     </p>
                 </div>
-                <div id="file-display" class="hidden mt-3 inline-flex items-center gap-2 bg-gray-100 text-dark-brown text-sm px-3 py-2 rounded-lg">
+                <div id="file-display" class="hidden mt-3 inline-flex items-center gap-2 bg-warm-yellow text-dark-brown text-sm px-3 py-2 rounded-lg">
                 </div>
             </div>
             
             <!-- Privacy Note -->
-            <p class="text-xs text-gray-400 mb-6">
+            <p class="text-xs text-cozy-brown mb-6">
                 <svg class="w-4 h-4 inline-block ml-1" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
                 </svg>
@@ -85,7 +84,7 @@
             </p>
             
             <!-- Error Message -->
-            <div id="error-message" class="hidden mb-4 p-3 bg-red-50 border border-error rounded-lg text-error text-sm">
+            <div id="error-message" class="hidden mb-4 p-3 bg-warm-beige border-2 border-error rounded-lg text-error text-sm">
             </div>
             
             <!-- Submit Button -->
@@ -95,7 +94,7 @@
                 hx-post="{{ url_for('upload_bp.upload_file_route') }}"
                 hx-encoding="multipart/form-data"
                 hx-target="#upload-result"
-                class="w-full bg-hoodie-orange text-white font-semibold py-3 px-6 rounded-xl btn-hover-lift transition-all duration-150 flex items-center justify-center gap-2 min-h-[48px]">
+                class="w-full bg-golden-yellow text-dark-brown font-semibold py-3 px-6 rounded-xl btn-hover-lift transition-all duration-150 flex items-center justify-center gap-2 min-h-[48px] shadow-md">
                 <span>צור סיכום</span>
                 <svg class="w-5 h-5 htmx-indicator animate-spin" fill="none" viewBox="0 0 24 24">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -108,18 +107,17 @@
     </div>
     
     <!-- Left Pane: Results Area -->
-    <div class="bg-white rounded-2xl p-6 shadow-md">
+    <div class="bg-cream rounded-2xl p-6 shadow-md border border-warm-yellow">
         <h2 class="text-xl font-bold text-dark-brown mb-4">תוצאות הסיכום</h2>
         
         <div id="results-container">
-            <!-- Empty State -->
+            <!-- Empty State with Avner -->
             <div id="empty-state" class="text-center py-12">
-                <!-- avner_sleep.png = sleeping/relaxed pose from "WhatsApp Image 2025-11-29 at 13.02.184.jpeg", capybara relaxed, 120x120 -->
                 <img src="{{ url_for('static', filename='img/avner_sleep.png') }}" 
-                     alt="אבנר ה-CapyBuddy ממתין"
-                     class="w-24 h-24 mx-auto mb-4 rounded-xl"
-                     onerror="this.onerror=null; this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect fill=%22%23FFF4E5%22 width=%22100%22 height=%22100%22 rx=%2210%22/><text x=%2250%%22 y=%2255%%22 font-size=%2240%22 text-anchor=%22middle%22>😴</text></svg>';">
-                <p class="text-gray-500 leading-relaxed">
+                     alt="אבנר ממתין"
+                     class="w-24 h-24 mx-auto mb-4 rounded-xl object-cover border-2 border-warm-yellow shadow-md"
+                     onerror="this.style.display='none'">
+                <p class="text-cozy-brown leading-relaxed">
                     עוד אין סיכום.<br>
                     הזינו טקסט או העלו קובץ, ולחצו על "צור סיכום".
                 </p>
@@ -134,12 +132,11 @@
         <!-- Avner Speech Bubble (shown after results) -->
         <div id="speech-bubble" class="hidden mt-6">
             <div class="flex items-end gap-3">
-                <!-- avner_hearts.png = loving pose from "WhatsApp Image 2025-11-29 at 13.02.19.jpeg", capybara with hearts, 48x48 -->
                 <img src="{{ url_for('static', filename='img/avner_hearts.png') }}" 
-                     alt="אבנר ה-CapyBuddy"
-                     class="w-12 h-12 rounded-full"
+                     alt="אבנר"
+                     class="w-12 h-12 rounded-full object-cover border-2 border-golden-yellow"
                      onerror="this.style.display='none';">
-                <div class="speech-bubble flex-1">
+                <div class="speech-bubble flex-1 bg-warm-beige border border-warm-yellow">
                     <p class="text-dark-brown">
                         רוצים שאסביר חלק מסוים? נסחו שאלה קצרה על הסיכום.
                     </p>
