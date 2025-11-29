@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: studybuddy_web
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./src:/app/src
+      - ./sb_utils:/app/sb_utils
+      - ./ui:/app/ui
+      - ./app.py:/app/app.py
+      - ./worker.py:/app/worker.py
+    env_file: .env
+    depends_on:
+      - mongo
+      - rabbitmq
+    restart: on-failure
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: studybuddy_worker
+    command: ["python", "worker.py"]
+    volumes:
+      - ./src:/app/src
+      - ./sb_utils:/app/sb_utils
+      - ./worker.py:/app/worker.py
+    env_file: .env
+    depends_on:
+      - web # Depends on web to ensure code is available
+      - rabbitmq
+    restart: on-failure
+
+  mongo:
+    image: mongo:5.0
+    container_name: studybuddy_mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+      - ./docker/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    restart: always
+
+  rabbitmq:
+    image: rabbitmq:3.9-management
+    container_name: studybuddy_rabbitmq
+    ports:
+      - "5672:5672"  # For services
+      - "15672:15672" # For management UI
+    environment:
+      RABBITMQ_DEFAULT_USER: user
+      RABBITMQ_DEFAULT_PASS: password
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    restart: always
+
+volumes:
+  mongo_data:
+  rabbitmq_data:

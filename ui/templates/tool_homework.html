@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block header %}Homework Helper{% endblock %}
+{% block content %}
+<div class="bg-white p-6 rounded-lg shadow-md">
+    <h2 class="text-xl font-bold mb-4">Enter Your Problem</h2>
+    <form hx-post="{{ url_for('homework_bp.trigger_homework_helper') }}"
+          hx-target="#task-status-container"
+          hx-swap="innerHTML">
+        <textarea name="problem_statement" class="w-full p-2 border rounded" rows="8" placeholder="Type or paste your homework problem here..."></textarea>
+        <button type="submit" class="mt-4 w-full bg-purple-600 text-white font-bold py-2 px-4 rounded hover:bg-purple-700">
+            Get Help
+        </button>
+    </form>
+    <div id="task-status-container" class="mt-4">
+        <!-- Task polling status will appear here -->
+    </div>
+</div>
+{% endblock %}

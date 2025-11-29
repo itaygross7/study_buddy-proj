@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block header %}Interactive Summarizer{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <!-- Input Column -->
+    <div class="bg-white p-6 rounded-lg shadow-md">
+        <h2 class="text-xl font-bold mb-4">1. Upload Your Document</h2>
+        <form id="upload-form" 
+              hx-post="{{ url_for('upload_bp.upload_file_route') }}" 
+              hx-encoding="multipart/form-data"
+              hx-target="#upload-result"
+              hx-swap="innerHTML">
+            <input type="file" name="file" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"/>
+            <button type="submit" class="mt-4 w-full bg-blue-600 text-white font-bold py-2 px-4 rounded hover:bg-blue-700">
+                Upload and Process
+            </button>
+        </form>
+        <div id="upload-result" class="mt-4">
+            <!-- Upload status will appear here -->
+        </div>
+    </div>
+
+    <!-- Action/Result Column -->
+    <div id="action-container" class="bg-white p-6 rounded-lg shadow-md">
+        <h2 class="text-xl font-bold mb-4">2. Generate Summary</h2>
+        <div id="summary-controls" class="hidden">
+            <p class="mb-2">Document <strong id="uploaded-filename"></strong> ready.</p>
+            <button id="generate-btn"
+                    hx-post="{{ url_for('summary_bp.trigger_summary') }}"
+                    hx-vals='{"document_id": ""}'
+                    hx-target="#task-status-container"
+                    hx-swap="innerHTML"
+                    class="w-full bg-green-600 text-white font-bold py-2 px-4 rounded hover:bg-green-700">
+                Generate Summary
+            </button>
+        </div>
+        <p id="action-placeholder">Upload a document to begin.</p>
+        
+        <div id="task-status-container" class="mt-4">
+            <!-- Task polling status will appear here -->
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('upload-form').addEventListener('htmx:afterOnLoad', function(evt) {
+    // Check if the upload was successful
+    if (evt.detail.xhr.status === 201) {
+        const response = JSON.parse(evt.detail.xhr.responseText);
+        const docId = response.document_id;
+        const filename = response.filename;
+
+        // Show the generate button and set its hx-vals
+        document.getElementById('summary-controls').classList.remove('hidden');
+        document.getElementById('action-placeholder').classList.add('hidden');
+        
+        const generateBtn = document.getElementById('generate-btn');
+        generateBtn.setAttribute('hx-vals', `{"document_id": "${docId}"}`);
+        document.getElementById('uploaded-filename').textContent = filename;
+    }
+});
+</script>
+{% endblock %}

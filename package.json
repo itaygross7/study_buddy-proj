@@ -1,0 +1,12 @@
+{
+  "name": "studybuddyai",
+  "version": "1.0.0",
+  "description": "UI for StudyBuddyAI",
+  "scripts": {
+    "tailwind:build": "tailwindcss -i ./ui/static/css/input.css -o ./ui/static/css/styles.css --minify",
+    "tailwind:watch": "tailwindcss -i ./ui/static/css/input.css -o ./ui/static/css/styles.css --watch"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.3.0"
+  }
+}

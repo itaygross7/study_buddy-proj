@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Flashcards Export</title>
+    <style>
+        body { font-family: sans-serif; }
+        .card { 
+            border: 1px solid #ccc; 
+            border-radius: 8px; 
+            padding: 15px; 
+            margin-bottom: 20px;
+            page-break-inside: avoid;
+        }
+        .question { font-weight: bold; }
+        .answer { margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Flashcards</h1>
+    {% for card in flashcard_set.cards %}
+    <div class="card">
+        <div class="question">Q: {{ card.question }}</div>
+        <div class="answer">A: {{ card.answer }}</div>
+    </div>
+    {% endfor %}
+</body>
+</html>

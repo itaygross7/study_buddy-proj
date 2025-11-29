@@ -1,2 +1,23 @@
-# Project dependencies
-pytest>=7.0.0
+flask
+flask-cors
+pymongo
+pika
+tenacity
+google-generativeai
+openai
+python-dotenv
+pydantic
+requests
+python-magic-bin; sys_platform == 'win32'
+python-magic; sys_platform != 'win32'
+beautifulsoup4
+markdown
+weasyprint
+werkzeug
+rich
+python-json-logger
+pypdf2
+python-docx
+python-pptx
+pytesseract
+Pillow

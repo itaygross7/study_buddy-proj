@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}StudyBuddy{% endblock %}</title>
+    <link href="/static/css/tailwind.css" rel="stylesheet">
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+</head>
+<body class="bg-gray-100">
+    <nav class="bg-white shadow-md">
+        <div class="container mx-auto px-6 py-3">
+            <div class="flex items-center justify-between">
+                <div class="text-xl font-semibold text-gray-700">
+                    <a href="/">StudyBuddy</a>
+                </div>
+                <div>
+                    <a href="/summarize" class="text-gray-700 hover:text-blue-500 mx-2">Summarize</a>
+                    <a href="/flashcards" class="text-gray-700 hover:text-blue-500 mx-2">Flashcards</a>
+                    <a href="/assess" class="text-gray-700 hover:text-blue-500 mx-2">Assess-Me</a>
+                    <a href="/homework" class="text-gray-700 hover:text-blue-500 mx-2">Homework Helper</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+    <main class="container mx-auto px-6 py-8">
+        {% block content %}{% endblock %}
+    </main>
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
