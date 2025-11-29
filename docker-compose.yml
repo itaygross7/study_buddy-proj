@@ -1,19 +1,17 @@
 version: '3.8'
 
 services:
-  web:
+  app:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: studybuddy_web
+    container_name: studybuddy_app
     ports:
       - "5000:5000"
     volumes:
       - ./src:/app/src
-      - ./sb_utils:/app/sb_utils
       - ./ui:/app/ui
       - ./app.py:/app/app.py
-      - ./worker.py:/app/worker.py
     env_file: .env
     depends_on:
       - mongo
@@ -25,14 +23,13 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: studybuddy_worker
-    command: ["python", "worker.py"]
+    # The command to run the worker script
+    command: ["python", "-m", "src.workers.main"]
     volumes:
       - ./src:/app/src
-      - ./sb_utils:/app/sb_utils
-      - ./worker.py:/app/worker.py
     env_file: .env
     depends_on:
-      - web # Depends on web to ensure code is available
+      - app # Wait for app to be built
       - rabbitmq
     restart: on-failure
 
@@ -43,7 +40,6 @@ services:
       - "27017:27017"
     volumes:
       - mongo_data:/data/db
-      - ./docker/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
     restart: always
 
   rabbitmq:

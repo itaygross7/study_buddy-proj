@@ -5,7 +5,6 @@ name = "pypi"
 
 [packages]
 flask = "*"
-flask-cors = "*"
 pymongo = "*"
 pika = "*"
 tenacity = "*"
@@ -13,28 +12,30 @@ google-generativeai = "*"
 openai = "*"
 python-dotenv = "*"
 pydantic = "*"
-requests = "*"
+werkzeug = "*"
+# Logging
+python-json-logger = "*"
+rich = "*"
+# File Processing
 python-magic-bin = {version = "*", sys_platform = "== 'win32'"}
 python-magic = {version = "*", sys_platform = "!= 'win32'"}
 beautifulsoup4 = "*"
-markdown = "*"
-weasyprint = "*"
-werkzeug = "*"
-rich = "*"
-python-json-logger = "*"
 pypdf2 = "*"
 python-docx = "*"
 python-pptx = "*"
 pytesseract = "*"
 Pillow = "*"
+# PDF Export
+weasyprint = "*"
 
 [dev-packages]
 pytest = "*"
 pytest-cov = "*"
-responses = "*"
+pytest-mock = "*"
 mongomock = "*"
 faker = "*"
 black = "*"
+mypy = "*"
 
 [requires]
 python_version = "3.11"
