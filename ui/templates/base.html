@@ -1,45 +1,227 @@
 <!DOCTYPE html>
-<html lang="en" class="h-full bg-gray-100">
+<html lang="he" dir="rtl" class="h-full">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}StudyBuddyAI{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
     <script src="https://unpkg.com/htmx.org@1.9.10" integrity="sha384-D1Kt99CQMDuVetoL1lrYwg5t+9QdHe7NLX/SoJYkXDFfX37iInKRy5xLSi8nO7UC" crossorigin="anonymous"></script>
 </head>
-<body class="h-full">
-    <div class="min-h-full">
-        <nav class="bg-gray-800">
-            <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                <div class="flex h-16 items-center justify-between">
-                    <div class="flex items-center">
-                        <div class="flex-shrink-0">
-                            <a href="/" class="text-white font-bold text-xl">🦉 StudyBuddyAI</a>
-                        </div>
-                        <div class="hidden md:block">
-                            <div class="ml-10 flex items-baseline space-x-4">
-                                <a href="{{ url_for('summary_tool') }}" class="text-gray-300 hover:bg-gray-700 hover:text-white rounded-md px-3 py-2 text-sm font-medium">Summarizer</a>
-                                <a href="{{ url_for('flashcards_tool') }}" class="text-gray-300 hover:bg-gray-700 hover:text-white rounded-md px-3 py-2 text-sm font-medium">Flashcards</a>
-                                <a href="{{ url_for('assess_tool') }}" class="text-gray-300 hover:bg-gray-700 hover:text-white rounded-md px-3 py-2 text-sm font-medium">Assess Me</a>
-                                <a href="{{ url_for('homework_tool') }}" class="text-gray-300 hover:bg-gray-700 hover:text-white rounded-md px-3 py-2 text-sm font-medium">Homework Helper</a>
-                            </div>
+<body class="h-full flex flex-col bg-warm-beige font-sans text-dark-brown">
+    <!-- Navbar -->
+    <nav class="bg-navbar-dark">
+        <div class="mx-auto max-w-5xl px-4">
+            <div class="flex h-16 items-center justify-between">
+                <!-- Right side: Logo and nav links (RTL) -->
+                <div class="flex items-center">
+                    <!-- Logo -->
+                    <a href="{{ url_for('index') }}" class="flex-shrink-0">
+                        <!-- avner_logo.png = cropped from "logo.jpeg", Avner's head only, 48x48 -->
+                        <img src="{{ url_for('static', filename='img/avner_logo.png') }}" 
+                             alt="אבנר ה-CapyBuddy לוגו" 
+                             class="h-10 w-10 rounded-lg object-cover"
+                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                        <span class="hidden h-10 w-10 items-center justify-center bg-hoodie-orange rounded-lg text-white font-bold text-xl" role="img" aria-label="אבנר ה-CapyBuddy לוגו">🦫</span>
+                    </a>
+                    
+                    <!-- Desktop nav links -->
+                    <div class="hidden md:block mr-8">
+                        <div class="flex items-baseline gap-1">
+                            <a href="{{ url_for('index') }}" 
+                               class="{% if request.endpoint == 'index' %}bg-gray-700 text-white font-bold underline{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} rounded-md px-3 py-2 text-sm transition-all duration-150">
+                                בית
+                            </a>
+                            <a href="{{ url_for('summary_tool') }}" 
+                               class="{% if request.endpoint == 'summary_tool' %}bg-gray-700 text-white font-bold underline{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} rounded-md px-3 py-2 text-sm transition-all duration-150">
+                                מסכם
+                            </a>
+                            <a href="{{ url_for('flashcards_tool') }}" 
+                               class="{% if request.endpoint == 'flashcards_tool' %}bg-gray-700 text-white font-bold underline{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} rounded-md px-3 py-2 text-sm transition-all duration-150">
+                                כרטיסיות
+                            </a>
+                            <a href="{{ url_for('assess_tool') }}" 
+                               class="{% if request.endpoint == 'assess_tool' %}bg-gray-700 text-white font-bold underline{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} rounded-md px-3 py-2 text-sm transition-all duration-150">
+                                בחן אותי
+                            </a>
+                            <a href="{{ url_for('homework_tool') }}" 
+                               class="{% if request.endpoint == 'homework_tool' %}bg-gray-700 text-white font-bold underline{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} rounded-md px-3 py-2 text-sm transition-all duration-150">
+                                עוזר שיעורים
+                            </a>
                         </div>
                     </div>
                 </div>
+                
+                <!-- Left side: Avner badge (desktop) -->
+                <div class="hidden md:flex items-center">
+                    <span class="inline-flex items-center gap-2 bg-gray-700 text-white text-sm px-4 py-2 rounded-full hover:bg-gray-600 transition-all duration-150">
+                        אבנר ה-CapyBuddy מחובר 🦫
+                    </span>
+                </div>
+                
+                <!-- Mobile hamburger button -->
+                <div class="md:hidden">
+                    <button type="button" 
+                            id="mobile-menu-button"
+                            class="inline-flex items-center justify-center rounded-md p-2 text-gray-400 hover:bg-gray-700 hover:text-white focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
+                            aria-controls="mobile-menu" 
+                            aria-expanded="false">
+                        <span class="sr-only">פתח תפריט ראשי</span>
+                        <!-- Hamburger icon -->
+                        <svg class="block h-6 w-6" id="menu-icon-open" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+                        </svg>
+                        <!-- Close icon -->
+                        <svg class="hidden h-6 w-6" id="menu-icon-close" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
             </div>
-        </nav>
+        </div>
 
-        <header class="bg-white shadow">
-            <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-                <h1 class="text-3xl font-bold tracking-tight text-gray-900">{% block header %}{% endblock %}</h1>
+        <!-- Mobile menu -->
+        <div class="md:hidden hidden mobile-menu-enter" id="mobile-menu">
+            <div class="space-y-1 px-4 pb-4 pt-2">
+                <a href="{{ url_for('index') }}" 
+                   class="{% if request.endpoint == 'index' %}bg-gray-700 text-white font-bold{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} block rounded-md px-3 py-2 text-base transition-all duration-150">
+                    בית
+                </a>
+                <a href="{{ url_for('summary_tool') }}" 
+                   class="{% if request.endpoint == 'summary_tool' %}bg-gray-700 text-white font-bold{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} block rounded-md px-3 py-2 text-base transition-all duration-150">
+                    מסכם
+                </a>
+                <a href="{{ url_for('flashcards_tool') }}" 
+                   class="{% if request.endpoint == 'flashcards_tool' %}bg-gray-700 text-white font-bold{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} block rounded-md px-3 py-2 text-base transition-all duration-150">
+                    כרטיסיות
+                </a>
+                <a href="{{ url_for('assess_tool') }}" 
+                   class="{% if request.endpoint == 'assess_tool' %}bg-gray-700 text-white font-bold{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} block rounded-md px-3 py-2 text-base transition-all duration-150">
+                    בחן אותי
+                </a>
+                <a href="{{ url_for('homework_tool') }}" 
+                   class="{% if request.endpoint == 'homework_tool' %}bg-gray-700 text-white font-bold{% else %}text-gray-300 hover:bg-gray-700 hover:text-white{% endif %} block rounded-md px-3 py-2 text-base transition-all duration-150">
+                    עוזר שיעורים
+                </a>
+                <div class="pt-2 border-t border-gray-700">
+                    <span class="block text-gray-400 text-sm px-3 py-2">
+                        אבנר ה-CapyBuddy מחובר 🦫
+                    </span>
+                </div>
             </div>
-        </header>
+        </div>
+    </nav>
 
-        <main>
-            <div class="mx-auto max-w-7xl py-6 sm:px-6 lg:px-8">
-                {% block content %}{% endblock %}
+    <!-- Main content -->
+    <main class="flex-grow">
+        <div class="mx-auto max-w-5xl px-4 py-6">
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-navbar-dark py-4">
+        <div class="mx-auto max-w-5xl px-4 text-center">
+            <p class="text-gray-400 text-sm">
+                © 2025 StudyBuddyAI · אבנר ה-CapyBuddy לומד איתך
+            </p>
+        </div>
+    </footer>
+
+    <!-- Reusable Modal Component -->
+    <div id="help-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <div class="bg-white rounded-2xl shadow-xl max-w-md w-full mx-4 p-6 relative">
+            <button type="button" 
+                    class="absolute top-4 left-4 text-gray-400 hover:text-gray-600 transition-colors"
+                    onclick="closeModal()"
+                    aria-label="סגור">
+                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+            <h3 id="modal-title" class="text-xl font-bold text-dark-brown mb-4"></h3>
+            <div id="modal-content" class="text-dark-brown leading-relaxed"></div>
+            <div class="mt-6 flex flex-col gap-3">
+                <button type="button" 
+                        onclick="closeModal()"
+                        class="w-full bg-hoodie-orange text-white font-semibold py-3 px-4 rounded-xl hover:bg-opacity-90 transition-all duration-150">
+                    הבנתי
+                </button>
+                <label class="flex items-center gap-2 text-sm text-gray-500 cursor-pointer justify-center">
+                    <input type="checkbox" class="rounded border-gray-300 text-hoodie-orange focus:ring-hoodie-orange">
+                    <span>הצג שוב בפעם הבאה</span>
+                </label>
             </div>
-        </main>
+        </div>
     </div>
+
+    <script>
+        // Mobile menu toggle
+        const mobileMenuButton = document.getElementById('mobile-menu-button');
+        const mobileMenu = document.getElementById('mobile-menu');
+        const menuIconOpen = document.getElementById('menu-icon-open');
+        const menuIconClose = document.getElementById('menu-icon-close');
+        
+        if (mobileMenuButton && mobileMenu) {
+            mobileMenuButton.addEventListener('click', function() {
+                const expanded = mobileMenuButton.getAttribute('aria-expanded') === 'true';
+                mobileMenuButton.setAttribute('aria-expanded', !expanded);
+                mobileMenu.classList.toggle('hidden');
+                menuIconOpen.classList.toggle('hidden');
+                menuIconClose.classList.toggle('hidden');
+            });
+        }
+
+        // Modal functions
+        function openModal(title, content) {
+            const modal = document.getElementById('help-modal');
+            const modalTitle = document.getElementById('modal-title');
+            const modalContent = document.getElementById('modal-content');
+            
+            modalTitle.textContent = title;
+            modalContent.innerHTML = content;
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('help-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            document.body.style.overflow = '';
+        }
+
+        // Close modal on backdrop click
+        document.getElementById('help-modal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+
+        // Close modal on Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeModal();
+            }
+        });
+
+        // File picker enhancement
+        function handleFileSelect(input, displayId) {
+            const display = document.getElementById(displayId);
+            if (input.files && input.files.length > 0) {
+                const file = input.files[0];
+                const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+                display.textContent = `קובץ שנבחר: ${file.name} (${sizeMB}MB)`;
+                display.classList.remove('hidden');
+            } else {
+                display.classList.add('hidden');
+            }
+        }
+    </script>
+
+    {% block scripts %}{% endblock %}
 </body>
 </html>

@@ -2,10 +2,132 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Add any custom base styles or components here */
+/* HTMX loading indicator styles */
 .htmx-indicator {
     display: none;
 }
 .htmx-request .htmx-indicator {
     display: inline-block;
+}
+
+/* RTL Support */
+[dir="rtl"] {
+    text-align: right;
+}
+
+/* Modal backdrop */
+.modal-backdrop {
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+/* Flashcard flip animation */
+.flashcard {
+    perspective: 1000px;
+}
+.flashcard-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transition: transform 0.6s;
+    transform-style: preserve-3d;
+}
+.flashcard.flipped .flashcard-inner {
+    transform: rotateY(180deg);
+}
+.flashcard-front,
+.flashcard-back {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+    border-radius: 0.75rem;
+}
+.flashcard-back {
+    transform: rotateY(180deg);
+}
+
+/* Custom scrollbar for RTL */
+::-webkit-scrollbar {
+    width: 8px;
+}
+::-webkit-scrollbar-track {
+    background: #FFF4E5;
+}
+::-webkit-scrollbar-thumb {
+    background: #F6A623;
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #e09515;
+}
+
+/* Mobile menu animation */
+.mobile-menu-enter {
+    animation: slideDown 0.2s ease-out;
+}
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Button hover effect */
+.btn-hover-lift {
+    transition: all 0.15s ease;
+}
+.btn-hover-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Card hover effect */
+.card-hover {
+    transition: all 0.15s ease;
+}
+.card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+/* Speech bubble */
+.speech-bubble {
+    position: relative;
+    background: white;
+    border-radius: 1rem;
+    padding: 1rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+.speech-bubble::before {
+    content: '';
+    position: absolute;
+    inset-inline-end: 20px; /* RTL-aware positioning */
+    bottom: -10px;
+    border-width: 10px 10px 0;
+    border-style: solid;
+    border-color: white transparent;
+}
+
+/* File input styling */
+input[type="file"]::file-selector-button {
+    background-color: #F6A623;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    font-weight: 600;
+    margin-left: 1rem;
+    transition: background-color 0.15s;
+}
+input[type="file"]::file-selector-button:hover {
+    background-color: #e09515;
+}
+[dir="rtl"] input[type="file"]::file-selector-button {
+    margin-left: 0;
+    margin-right: 1rem;
 }
