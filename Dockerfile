@@ -51,8 +51,10 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 # Copy built static assets and application code
 COPY --from=builder /app/ui/static/css/styles.css ./ui/static/css/styles.css
 COPY src ./src
+COPY sb_utils ./sb_utils
 COPY ui/templates ./ui/templates
 COPY app.py .
+COPY worker.py .
 
 # Set environment variables
 ENV FLASK_APP=app.py

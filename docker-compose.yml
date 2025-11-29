@@ -10,6 +10,7 @@ services:
       - "5000:5000"
     volumes:
       - ./src:/app/src
+      - ./sb_utils:/app/sb_utils
       - ./ui:/app/ui
       - ./app.py:/app/app.py
     env_file: .env
@@ -24,12 +25,14 @@ services:
       dockerfile: Dockerfile
     container_name: studybuddy_worker
     # The command to run the worker script
-    command: ["python", "-m", "src.workers.main"]
+    command: ["python", "worker.py"]
     volumes:
       - ./src:/app/src
+      - ./sb_utils:/app/sb_utils
+      - ./worker.py:/app/worker.py
     env_file: .env
     depends_on:
-      - app # Wait for app to be built
+      - mongo
       - rabbitmq
     restart: on-failure
 

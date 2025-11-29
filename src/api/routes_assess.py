@@ -21,6 +21,7 @@ def trigger_assessment():
     
     message_body = json.dumps({
         "task_id": task_id,
+        "queue_name": "assess",
         "document_id": req_data.document_id,
         "num_questions": req_data.num_questions,
         "question_type": req_data.question_type
@@ -35,4 +36,4 @@ def trigger_assessment():
         polling_url=url_for('task_bp.get_task_status_route', task_id=task_id, _external=True)
     )
     
-    return jsonify(response.dict()), 202
+    return jsonify(response.to_dict()), 202

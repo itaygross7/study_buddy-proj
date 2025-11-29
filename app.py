@@ -4,7 +4,7 @@ from flask_cors import CORS
 from werkzeug.exceptions import NotFound
 
 from src.infrastructure.config import settings
-from src.infrastructure.database import db
+from src.infrastructure.database import init_app as init_db
 from sb_utils.logger_utils import logger
 
 # Import Blueprints
@@ -14,18 +14,23 @@ from src.api.routes_assess import assess_bp
 from src.api.routes_homework import homework_bp
 from src.api.routes_upload import upload_bp
 from src.api.routes_task import task_bp
-from src.api.routes_results import results_bp # New
-from src.api.routes_pdf import pdf_bp         # New
+from src.api.routes_results import results_bp
+from src.api.routes_pdf import pdf_bp
 
 
 def create_app():
     """Application factory for Flask."""
     app = Flask(__name__, template_folder='ui/templates', static_folder='ui/static')
-    app.config.from_object(settings)
+    
+    # Configure from settings
+    app.config['MONGO_URI'] = settings.MONGO_URI
+    app.config['SECRET_KEY'] = settings.SECRET_KEY
+    app.config['FLASK_ENV'] = settings.FLASK_ENV
+    
     CORS(app, resources={r"/api/*": {"origins": "*"}})
 
     # Initialize extensions
-    db.init_app(app)
+    init_db(app)
 
     # Register Blueprints
     app.register_blueprint(summary_bp, url_prefix='/api/summary')
@@ -34,8 +39,8 @@ def create_app():
     app.register_blueprint(homework_bp, url_prefix='/api/homework')
     app.register_blueprint(upload_bp, url_prefix='/api/upload')
     app.register_blueprint(task_bp, url_prefix='/api/tasks')
-    app.register_blueprint(results_bp, url_prefix='/results') # New
-    app.register_blueprint(pdf_bp, url_prefix='/export/pdf')   # New
+    app.register_blueprint(results_bp, url_prefix='/results')
+    app.register_blueprint(pdf_bp, url_prefix='/export/pdf')
 
     # --- Main UI Routes ---
     @app.route('/')

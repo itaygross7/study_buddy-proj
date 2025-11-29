@@ -1,5 +1,6 @@
 flask
 flask-cors
+celery
 pymongo
 pika
 tenacity
@@ -7,6 +8,7 @@ google-generativeai
 openai
 python-dotenv
 pydantic
+pydantic-settings
 requests
 python-magic-bin; sys_platform == 'win32'
 python-magic; sys_platform != 'win32'

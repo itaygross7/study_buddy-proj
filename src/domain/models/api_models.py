@@ -29,3 +29,7 @@ class TaskResponse(BaseModel):
     task_id: str
     status: str
     polling_url: str
+    
+    def to_dict(self):
+        """Convert model to dictionary for JSON serialization."""
+        return self.model_dump()

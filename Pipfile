@@ -5,6 +5,8 @@ name = "pypi"
 
 [packages]
 flask = "*"
+flask-cors = "*"
+celery = "*"
 pymongo = "*"
 pika = "*"
 tenacity = "*"
@@ -12,6 +14,7 @@ google-generativeai = "*"
 openai = "*"
 python-dotenv = "*"
 pydantic = "*"
+pydantic-settings = "*"
 werkzeug = "*"
 # Logging
 python-json-logger = "*"

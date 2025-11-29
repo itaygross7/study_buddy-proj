@@ -1,5 +1,6 @@
 import uuid
 from flask import Blueprint, request, jsonify
+
 from werkzeug.utils import secure_filename
 
 from src.infrastructure.database import db
@@ -10,7 +11,6 @@ from src.domain.errors import InvalidFileTypeError
 from sb_utils.logger_utils import logger
 
 upload_bp = Blueprint('upload_bp', __name__)
-doc_repo = MongoDocumentRepository(db)
 
 @upload_bp.route('/', methods=['POST'])
 def upload_file_route():
@@ -28,6 +28,7 @@ def upload_file_route():
     try:
         text_content = process_uploaded_file(file)
         
+        doc_repo = MongoDocumentRepository(db)
         document = Document(
             _id=str(uuid.uuid4()),
             filename=filename,

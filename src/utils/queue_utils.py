@@ -1,10 +1,12 @@
 from celery import Celery
-from ..config.settings import settings
+from src.infrastructure.config import settings
 
+# Note: Celery is configured but the main worker.py uses RabbitMQ directly with pika
+# This celery_app can be used for future migration to Celery-based workers
 celery_app = Celery(
     "studybuddy",
-    broker=settings.REDIS_URI,
-    backend=settings.REDIS_URI
+    broker=settings.RABBITMQ_URI,
+    backend="rpc://"  # Use RPC for results
 )
 
 celery_app.conf.update(

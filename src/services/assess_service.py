@@ -38,7 +38,7 @@ def generate_assessment(document_id: str, document_content: str, num_questions: 
             document_id=document_id,
             questions=questions
         )
-        db.assessments.insert_one(assessment.dict(by_alias=True))
+        db.assessments.insert_one(assessment.to_dict())
 
         logger.info(f"Successfully created and saved assessment for document {document_id}")
         return assessment.id

@@ -21,6 +21,7 @@ def trigger_summary():
     
     message_body = json.dumps({
         "task_id": task_id,
+        "queue_name": "summarize",
         "document_id": req_data.document_id
     })
     
@@ -33,4 +34,4 @@ def trigger_summary():
         polling_url=url_for('task_bp.get_task_status_route', task_id=task_id, _external=True)
     )
     
-    return jsonify(response.dict()), 202
+    return jsonify(response.to_dict()), 202

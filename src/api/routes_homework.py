@@ -21,6 +21,7 @@ def trigger_homework_helper():
     
     message_body = json.dumps({
         "task_id": task_id,
+        "queue_name": "homework",
         "problem_statement": req_data.problem_statement
     })
     
@@ -33,4 +34,4 @@ def trigger_homework_helper():
         polling_url=url_for('task_bp.get_task_status_route', task_id=task_id, _external=True)
     )
     
-    return jsonify(response.dict()), 202
+    return jsonify(response.to_dict()), 202
