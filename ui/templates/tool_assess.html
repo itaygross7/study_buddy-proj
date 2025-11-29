@@ -214,8 +214,12 @@
         document.getElementById('error-message').classList.add('hidden');
     });
     
-    // Render quiz questions
-    function renderQuiz(questions) {
+    /**
+     * Render quiz questions - called when API returns assessment results.
+     * Exposed globally for HTMX response handlers.
+     * @param {Array} questions - Array of question objects with question, options, and correctIndex
+     */
+    window.renderQuiz = function(questions) {
         quizData = questions;
         userAnswers = {};
         

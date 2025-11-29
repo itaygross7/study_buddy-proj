@@ -110,10 +110,11 @@
             <h2 class="text-xl font-bold text-dark-brown">הכרטיסיות שלך</h2>
             
             <!-- Shuffle Toggle (hidden until cards exist) -->
-            <label id="shuffle-toggle" class="hidden items-center gap-2 cursor-pointer">
+            <label id="shuffle-toggle" for="shuffle-checkbox" class="hidden items-center gap-2 cursor-pointer" aria-label="הפעל או כבה מצב ערבוב כרטיסיות">
                 <span class="text-sm text-gray-600">מצב ערבוב</span>
                 <div class="relative">
-                    <input type="checkbox" id="shuffle-checkbox" class="sr-only" onchange="toggleShuffle()">
+                    <input type="checkbox" id="shuffle-checkbox" class="sr-only" onchange="toggleShuffle()" aria-describedby="shuffle-desc">
+                    <span id="shuffle-desc" class="sr-only">כאשר מופעל, הכרטיסיות יוצגו בסדר אקראי</span>
                     <div class="block bg-gray-200 w-10 h-6 rounded-full"></div>
                     <div class="dot absolute right-1 top-1 bg-white w-4 h-4 rounded-full transition"></div>
                 </div>
@@ -209,7 +210,7 @@
     });
     
     // Toggle shuffle mode
-    function toggleShuffle() {
+    window.toggleShuffle = function() {
         const container = document.getElementById('flashcards-container');
         const isShuffled = document.getElementById('shuffle-checkbox').checked;
         
@@ -227,12 +228,16 @@
     }
     
     // Flip card function
-    function flipCard(cardElement) {
+    window.flipCard = function(cardElement) {
         cardElement.classList.toggle('flipped');
     }
     
-    // Example of how to render flashcards (to be connected to API)
-    function renderFlashcards(cards) {
+    /**
+     * Render flashcards - called when API returns flashcard results.
+     * Exposed globally for HTMX response handlers.
+     * @param {Array} cards - Array of card objects with question and answer
+     */
+    window.renderFlashcards = function(cards) {
         const container = document.getElementById('flashcards-container');
         const emptyState = document.getElementById('empty-state');
         const shuffleToggle = document.getElementById('shuffle-toggle');

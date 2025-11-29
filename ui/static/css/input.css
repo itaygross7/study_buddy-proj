@@ -105,7 +105,7 @@
 .speech-bubble::before {
     content: '';
     position: absolute;
-    right: 20px;
+    inset-inline-end: 20px; /* RTL-aware positioning */
     bottom: -10px;
     border-width: 10px 10px 0;
     border-style: solid;

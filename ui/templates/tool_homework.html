@@ -237,8 +237,13 @@
         document.getElementById('error-message').classList.add('hidden');
     });
     
-    // Render solution steps (to be connected to API response)
-    function renderSolution(solution) {
+    /**
+     * Render solution steps - called when API returns homework help results.
+     * This function is exposed globally so it can be called from HTMX response handlers
+     * or injected script tags in the task_status template.
+     * @param {Object} solution - The solution object with understanding, breakdown, and tips
+     */
+    window.renderSolution = function(solution) {
         const emptyState = document.getElementById('empty-state');
         const solutionContainer = document.getElementById('solution-container');
         const stepUnderstanding = document.getElementById('step-understanding');
