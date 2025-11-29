@@ -4,12 +4,12 @@
         {% for card in flashcard_set.cards %}
         <div class="flashcard cursor-pointer min-h-[180px]" onclick="this.classList.toggle('flipped')">
             <div class="flashcard-inner">
-                <div class="flashcard-front bg-white border-2 border-hoodie-orange p-6 flex flex-col items-center justify-center text-center">
-                    <span class="text-xs text-gray-400 mb-2">שאלה {{ loop.index }}</span>
+                <div class="flashcard-front bg-cream border-2 border-golden-yellow p-6 flex flex-col items-center justify-center text-center">
+                    <span class="text-xs text-cozy-brown mb-2">שאלה {{ loop.index }}</span>
                     <p class="text-lg font-medium text-dark-brown">{{ card.question }}</p>
-                    <span class="text-xs text-gray-400 mt-4">לחצו להפוך</span>
+                    <span class="text-xs text-cozy-brown mt-4">לחצו להפוך</span>
                 </div>
-                <div class="flashcard-back bg-hoodie-orange text-white p-6 flex flex-col items-center justify-center text-center">
+                <div class="flashcard-back bg-cozy-brown text-cream p-6 flex flex-col items-center justify-center text-center">
                     <span class="text-xs opacity-75 mb-2">תשובה</span>
                     <p class="text-lg font-medium">{{ card.answer }}</p>
                 </div>
@@ -19,7 +19,7 @@
     </div>
     <div class="mt-6 flex flex-wrap gap-4">
         <a href="{{ url_for('pdf_bp.export_flashcards_pdf', set_id=flashcard_set._id) }}" 
-           class="inline-flex items-center gap-2 bg-teal text-white font-semibold py-2 px-4 rounded-xl btn-hover-lift transition-all duration-150"
+           class="inline-flex items-center gap-2 bg-cozy-brown text-cream font-semibold py-2 px-4 rounded-xl btn-hover-lift transition-all duration-150 shadow-md"
            target="_blank">
            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
