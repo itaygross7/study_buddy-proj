@@ -1,7 +1,319 @@
 {% extends "base.html" %}
-{% block header %}Assess-Me Quiz Builder{% endblock %}
+
+{% block title %}בחן אותי - StudyBuddyAI{% endblock %}
+
 {% block content %}
-<div class="bg-white p-6 rounded-lg shadow-md">
-    <p>Assessment tool will be implemented here, following the same upload/process pattern as the Summarizer.</p>
+<!-- Header Bar -->
+<div class="mb-6">
+    <nav class="text-sm text-gray-500 mb-2">
+        <a href="{{ url_for('index') }}" class="hover:text-hoodie-orange transition-colors">בית</a>
+        <span class="mx-2">/</span>
+        <span class="text-dark-brown">בחן אותי</span>
+    </nav>
+    <div class="flex items-center justify-between">
+        <div class="flex items-center gap-4">
+            <h1 class="text-2xl md:text-3xl font-bold text-dark-brown">בחן אותי</h1>
+            <!-- avner_thinking.png = thinking pose from "WhatsApp Image 2025-11-29 at 13.02.183.jpeg", 40x40 -->
+            <img src="{{ url_for('static', filename='img/avner_thinking.png') }}" 
+                 alt="אבנר ה-CapyBuddy חושב"
+                 class="w-10 h-10 rounded-lg"
+                 onerror="this.style.display='none';">
+        </div>
+        <button type="button" 
+                onclick="openAssessHelp()"
+                class="inline-flex items-center gap-1 text-teal hover:text-opacity-80 text-sm font-medium transition-colors">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z" />
+            </svg>
+            ? הסבר קצר
+        </button>
+    </div>
 </div>
+
+<!-- Two-pane Layout -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- Right Pane: Input Area -->
+    <div class="bg-white rounded-2xl p-6 shadow-md">
+        <h2 class="text-xl font-bold text-dark-brown mb-4">העלאת חומר לימוד</h2>
+        
+        <form id="assess-form">
+            <!-- Text Area -->
+            <div class="mb-6">
+                <label for="text-input" class="block text-sm font-medium text-dark-brown mb-2">
+                    טקסט ללמידה
+                </label>
+                <textarea 
+                    id="text-input" 
+                    name="text"
+                    rows="8"
+                    class="w-full p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-hoodie-orange focus:border-hoodie-orange transition-all resize-none"
+                    placeholder="הדביקו כאן סיכום, שיעור, מאמר או כל טקסט אחר..."
+                    aria-describedby="text-helper"></textarea>
+                <p id="text-helper" class="text-sm text-gray-500 mt-2">
+                    או העלו קובץ מהמחשב
+                </p>
+            </div>
+            
+            <!-- File Picker -->
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-dark-brown mb-2">
+                    בחרו קובץ מהמחשב
+                </label>
+                <div class="border-2 border-dashed border-gray-200 rounded-xl p-4 hover:border-hoodie-orange transition-colors">
+                    <input 
+                        type="file" 
+                        id="file-input"
+                        name="file"
+                        accept=".pdf,.doc,.docx,.txt"
+                        class="w-full text-sm text-gray-600"
+                        onchange="handleFileSelect(this, 'file-display')"
+                        aria-label="בחירת קובץ להעלאה">
+                    <p class="text-xs text-gray-500 mt-2">
+                        ניתן להעלות קבצי PDF, Word או טקסט עד 10MB
+                    </p>
+                </div>
+                <div id="file-display" class="hidden mt-3 inline-flex items-center gap-2 bg-gray-100 text-dark-brown text-sm px-3 py-2 rounded-lg">
+                </div>
+            </div>
+            
+            <!-- Privacy Note -->
+            <p class="text-xs text-gray-400 mb-6">
+                <svg class="w-4 h-4 inline-block ml-1" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                </svg>
+                הערה: הטקסט לא נשמר לצמיתות – הוא משמש רק לעיבוד עבורכם בזמן השימוש.
+            </p>
+            
+            <!-- Error Message -->
+            <div id="error-message" class="hidden mb-4 p-3 bg-red-50 border border-error rounded-lg text-error text-sm">
+            </div>
+            
+            <!-- Submit Button -->
+            <button 
+                type="submit"
+                id="submit-btn"
+                class="w-full bg-hoodie-orange text-white font-semibold py-3 px-6 rounded-xl btn-hover-lift transition-all duration-150 flex items-center justify-center gap-2 min-h-[48px]">
+                <span>צור שאלות</span>
+                <svg class="w-5 h-5 htmx-indicator animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+            </button>
+        </form>
+        
+        <div id="upload-result" class="mt-4"></div>
+    </div>
+    
+    <!-- Left Pane: Quiz Area -->
+    <div class="bg-white rounded-2xl p-6 shadow-md">
+        <h2 class="text-xl font-bold text-dark-brown mb-4">המבחן שלך</h2>
+        
+        <div id="results-container">
+            <!-- Empty State -->
+            <div id="empty-state" class="text-center py-12">
+                <!-- avner_thinking.png = thinking pose from "WhatsApp Image 2025-11-29 at 13.02.183.jpeg", 120x120 -->
+                <img src="{{ url_for('static', filename='img/avner_thinking.png') }}" 
+                     alt="אבנר ה-CapyBuddy חושב"
+                     class="w-24 h-24 mx-auto mb-4 rounded-xl"
+                     onerror="this.onerror=null; this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect fill=%22%23FFF4E5%22 width=%22100%22 height=%22100%22 rx=%2210%22/><text x=%2250%%22 y=%2255%%22 font-size=%2240%22 text-anchor=%22middle%22>🤔</text></svg>';">
+                <p class="text-gray-500 leading-relaxed">
+                    עוד אין שאלות.<br>
+                    העלו חומר לימוד, ואצור לכם מבחן לתרגול.
+                </p>
+            </div>
+            
+            <!-- Quiz Container -->
+            <form id="quiz-form" class="hidden space-y-6">
+                <div id="questions-container">
+                    <!-- Questions will be injected here -->
+                </div>
+                
+                <button 
+                    type="button"
+                    onclick="checkAnswers()"
+                    class="w-full bg-teal text-white font-semibold py-3 px-6 rounded-xl btn-hover-lift transition-all duration-150 min-h-[48px]">
+                    בדוק תשובות
+                </button>
+            </form>
+            
+            <!-- Score Result -->
+            <div id="score-result" class="hidden text-center py-8">
+                <div id="score-avner" class="mb-4">
+                    <!-- Dynamic Avner based on score -->
+                </div>
+                <div id="score-text" class="text-2xl font-bold mb-4">
+                    <!-- Score display -->
+                </div>
+                <p id="score-message" class="text-gray-600 mb-6">
+                    <!-- Feedback message -->
+                </p>
+                <button 
+                    type="button"
+                    onclick="resetQuiz()"
+                    class="inline-flex items-center gap-2 bg-hoodie-orange text-white font-semibold py-2 px-4 rounded-xl btn-hover-lift transition-all duration-150">
+                    נסו שוב
+                </button>
+            </div>
+        </div>
+        
+        <div id="task-status-container" class="mt-4"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Help modal for assess
+    function openAssessHelp() {
+        openModal('איך להשתמש בבחן אותי?', 
+            '<ul class="list-disc list-inside space-y-2 text-right">' +
+            '<li>העלו חומר לימוד או הדביקו טקסט</li>' +
+            '<li>לחצו על "צור שאלות"</li>' +
+            '<li>ענו על השאלות ובחרו את התשובה הנכונה</li>' +
+            '<li>לחצו על "בדוק תשובות" לקבלת ציון</li>' +
+            '</ul>');
+    }
+
+    let quizData = [];
+    let userAnswers = {};
+    
+    // Form validation
+    document.getElementById('assess-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const textInput = document.getElementById('text-input').value.trim();
+        const fileInput = document.getElementById('file-input').files.length;
+        const errorDiv = document.getElementById('error-message');
+        
+        if (!textInput && !fileInput) {
+            errorDiv.textContent = 'כדי להמשיך, הזינו טקסט או בחרו קובץ מהמחשב.';
+            errorDiv.classList.remove('hidden');
+            return;
+        }
+        
+        // Check file size
+        if (fileInput) {
+            const file = document.getElementById('file-input').files[0];
+            if (file.size > 10 * 1024 * 1024) {
+                errorDiv.textContent = 'לא ניתן להעלות את הקובץ הזה. בדקו שהקובץ עד 10MB ובפורמט נתמך.';
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+        }
+        
+        errorDiv.classList.add('hidden');
+        // Here you would typically trigger the assessment generation API
+    });
+    
+    // Clear error when user types or selects file
+    document.getElementById('text-input').addEventListener('input', function() {
+        document.getElementById('error-message').classList.add('hidden');
+    });
+    
+    document.getElementById('file-input').addEventListener('change', function() {
+        document.getElementById('error-message').classList.add('hidden');
+    });
+    
+    // Render quiz questions
+    function renderQuiz(questions) {
+        quizData = questions;
+        userAnswers = {};
+        
+        const container = document.getElementById('questions-container');
+        const emptyState = document.getElementById('empty-state');
+        const quizForm = document.getElementById('quiz-form');
+        const scoreResult = document.getElementById('score-result');
+        
+        container.innerHTML = '';
+        
+        questions.forEach((q, qIndex) => {
+            const questionDiv = document.createElement('div');
+            questionDiv.className = 'p-4 border border-gray-200 rounded-xl';
+            questionDiv.innerHTML = `
+                <p class="font-medium text-dark-brown mb-4">${qIndex + 1}. ${q.question}</p>
+                <div class="space-y-2">
+                    ${q.options.map((option, oIndex) => `
+                        <label class="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
+                            <input 
+                                type="radio" 
+                                name="q${qIndex}" 
+                                value="${oIndex}"
+                                onchange="userAnswers[${qIndex}] = ${oIndex}"
+                                class="w-5 h-5 text-hoodie-orange border-gray-300 focus:ring-hoodie-orange">
+                            <span class="text-gray-700">${option}</span>
+                        </label>
+                    `).join('')}
+                </div>
+            `;
+            container.appendChild(questionDiv);
+        });
+        
+        emptyState.classList.add('hidden');
+        quizForm.classList.remove('hidden');
+        scoreResult.classList.add('hidden');
+    }
+    
+    // Check answers and show score
+    function checkAnswers() {
+        let correct = 0;
+        const total = quizData.length;
+        
+        quizData.forEach((q, index) => {
+            if (userAnswers[index] === q.correctIndex) {
+                correct++;
+            }
+        });
+        
+        const percentage = Math.round((correct / total) * 100);
+        
+        // Show score result
+        const scoreResult = document.getElementById('score-result');
+        const quizForm = document.getElementById('quiz-form');
+        const scoreAvner = document.getElementById('score-avner');
+        const scoreText = document.getElementById('score-text');
+        const scoreMessage = document.getElementById('score-message');
+        
+        quizForm.classList.add('hidden');
+        scoreResult.classList.remove('hidden');
+        
+        scoreText.textContent = `${correct} מתוך ${total} תשובות נכונות (${percentage}%)`;
+        
+        if (percentage >= 70) {
+            // High score - avner_celebrate.png = celebrating pose from "WhatsApp Image 2025-11-29 at 13.02.19.jpeg", 120x120
+            scoreAvner.innerHTML = `
+                <img src="{{ url_for('static', filename='img/avner_celebrate.png') }}" 
+                     alt="אבנר ה-CapyBuddy חוגג"
+                     class="w-24 h-24 mx-auto rounded-xl"
+                     onerror="this.onerror=null; this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect fill=%22%233BA55C%22 width=%22100%22 height=%22100%22 rx=%2210%22/><text x=%2250%%22 y=%2255%%22 font-size=%2240%22 text-anchor=%22middle%22>🎉</text></svg>';">
+            `;
+            scoreText.className = 'text-2xl font-bold mb-4 text-success';
+            scoreMessage.textContent = 'אלופים! המשיכו ככה.';
+        } else {
+            // Low score - avner_hearts.png = supportive pose from "WhatsApp Image 2025-11-29 at 13.02.19.jpeg", 120x120
+            scoreAvner.innerHTML = `
+                <img src="{{ url_for('static', filename='img/avner_hearts.png') }}" 
+                     alt="אבנר ה-CapyBuddy מעודד"
+                     class="w-24 h-24 mx-auto rounded-xl"
+                     onerror="this.onerror=null; this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect fill=%22%23F9C74F%22 width=%22100%22 height=%22100%22 rx=%2210%22/><text x=%2250%%22 y=%2255%%22 font-size=%2240%22 text-anchor=%22middle%22>💪</text></svg>';">
+            `;
+            scoreText.className = 'text-2xl font-bold mb-4 text-warning';
+            scoreMessage.textContent = 'זה רק תרגול. בואו נעבור שוב על החומר ביחד.';
+        }
+    }
+    
+    // Reset quiz
+    function resetQuiz() {
+        userAnswers = {};
+        const quizForm = document.getElementById('quiz-form');
+        const scoreResult = document.getElementById('score-result');
+        
+        // Reset radio buttons
+        quizForm.querySelectorAll('input[type="radio"]').forEach(input => {
+            input.checked = false;
+        });
+        
+        quizForm.classList.remove('hidden');
+        scoreResult.classList.add('hidden');
+    }
+</script>
 {% endblock %}

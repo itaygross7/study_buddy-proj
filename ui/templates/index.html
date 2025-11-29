@@ -1,30 +1,203 @@
 {% extends "base.html" %}
 
-{% block header %}Welcome!{% endblock %}
+{% block title %}StudyBuddyAI - לומדים יחד עם אבנר ה-CapyBuddy{% endblock %}
 
 {% block content %}
-<div class="bg-white p-8 rounded-lg shadow-md">
-    <h2 class="text-2xl font-bold text-gray-800 mb-4">Your AI-Powered Learning Assistant</h2>
-    <p class="text-gray-600 mb-6">
-        Choose a tool from the navigation bar to get started. Upload a document, paste some text, and let StudyBuddyAI help you learn faster and more effectively.
-    </p>
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <a href="{{ url_for('summary_tool') }}" class="block p-6 bg-blue-50 hover:bg-blue-100 rounded-lg border border-blue-200">
-            <h3 class="font-semibold text-lg text-blue-800">Summarizer</h3>
-            <p class="text-blue-600">Condense long texts into key points.</p>
-        </a>
-        <a href="{{ url_for('flashcards_tool') }}" class="block p-6 bg-green-50 hover:bg-green-100 rounded-lg border border-green-200">
-            <h3 class="font-semibold text-lg text-green-800">Flashcards</h3>
-            <p class="text-green-600">Generate Q&A cards from your notes.</p>
-        </a>
-        <a href="{{ url_for('assess_tool') }}" class="block p-6 bg-yellow-50 hover:bg-yellow-100 rounded-lg border border-yellow-200">
-            <h3 class="font-semibold text-lg text-yellow-800">Assess Me</h3>
-            <p class="text-yellow-600">Create quizzes to test your knowledge.</p>
-        </a>
-        <a href="{{ url_for('homework_tool') }}" class="block p-6 bg-purple-50 hover:bg-purple-100 rounded-lg border border-purple-200">
-            <h3 class="font-semibold text-lg text-purple-800">Homework Helper</h3>
-            <p class="text-purple-600">Get step-by-step problem explanations.</p>
-        </a>
+<!-- Hero Section -->
+<section class="py-8 md:py-12">
+    <div class="flex flex-col-reverse md:flex-row items-center gap-8 md:gap-12">
+        <!-- Right column: Text content (RTL) -->
+        <div class="flex-1 text-center md:text-right">
+            <h1 class="text-3xl md:text-4xl font-bold text-dark-brown mb-4">
+                ברוך הבא ל-StudyBuddyAI
+            </h1>
+            <p class="text-xl text-gray-600 mb-4">
+                לומדים יחד עם אבנר ה-CapyBuddy – עוזר הלמידה החכם שלך.
+            </p>
+            <p class="text-gray-500 mb-8 leading-relaxed">
+                העלו סיכומים, מצגות או דפי שיעור, ותנו ל-StudyBuddyAI להפוך אותם לסיכומים קצרים, כרטיסיות ותרגול שאלות – כדי שתוכלו ללמוד בלי לחץ.
+            </p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
+                <a href="{{ url_for('summary_tool') }}" 
+                   class="inline-flex items-center justify-center gap-2 bg-hoodie-orange text-white font-semibold py-3 px-6 rounded-xl btn-hover-lift transition-all duration-150">
+                    התחל ללמוד
+                    <svg class="w-5 h-5 rotate-180" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                    </svg>
+                </a>
+                <a href="#tools-section" 
+                   class="inline-flex items-center justify-center gap-2 border-2 border-teal text-teal font-semibold py-3 px-6 rounded-xl hover:bg-teal hover:text-white transition-all duration-150">
+                    להכיר את הכלים
+                </a>
+            </div>
+        </div>
+        
+        <!-- Left column: Avner illustration -->
+        <div class="flex-1 flex justify-center">
+            <div class="bg-white rounded-3xl p-6 shadow-lg max-w-sm">
+                <!-- avner_wave.png = main pose from "WhatsApp Image 2025-11-29 at 13.02.182.jpeg", full capybara image, 400x400 -->
+                <img src="{{ url_for('static', filename='img/avner_wave.png') }}" 
+                     alt="אבנר ה-CapyBuddy מנופף לשלום"
+                     class="w-full h-auto rounded-2xl"
+                     onerror="this.onerror=null; this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 400 400%22><rect fill=%22%23FFF4E5%22 width=%22400%22 height=%22400%22/><text x=%2250%%22 y=%2250%%22 font-size=%22120%22 text-anchor=%22middle%22 dy=%22.35em%22>🦫</text></svg>';">
+            </div>
+        </div>
     </div>
-</div>
+</section>
+
+<!-- Tools Grid Section -->
+<section id="tools-section" class="py-12">
+    <h2 class="text-2xl md:text-3xl font-bold text-dark-brown text-center mb-8">
+        מה אבנר ה-CapyBuddy יכול לעשות בשבילך?
+    </h2>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Summarizer Card -->
+        <div class="bg-white rounded-2xl p-6 shadow-md card-hover">
+            <div class="flex items-start gap-4 mb-4">
+                <!-- avner_book.png = reading pose from "WhatsApp Image 2025-11-29 at 13.02.183.jpeg", capybara with book, 64x64 -->
+                <img src="{{ url_for('static', filename='img/avner_book.png') }}" 
+                     alt="אבנר ה-CapyBuddy קורא ספר"
+                     class="w-16 h-16 rounded-xl object-cover"
+                     onerror="this.onerror=null; this.textContent='📚';">
+                <h3 class="text-xl font-bold text-dark-brown">מסכם</h3>
+            </div>
+            <ul class="text-gray-600 mb-6 space-y-2 list-disc list-inside">
+                <li>מסכם טקסטים ארוכים לעמוד אחד ברור</li>
+                <li>מסמן מושגים חשובים ושאלות הבנה</li>
+                <li>מאפשר המשך שאלות על הסיכום</li>
+            </ul>
+            <a href="{{ url_for('summary_tool') }}" 
+               class="inline-flex items-center gap-2 bg-hoodie-orange text-white font-semibold py-2 px-4 rounded-xl btn-hover-lift transition-all duration-150">
+                פתח מסכם
+                <svg class="w-4 h-4 rotate-180" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                </svg>
+            </a>
+        </div>
+        
+        <!-- Flashcards Card -->
+        <div class="bg-white rounded-2xl p-6 shadow-md card-hover">
+            <div class="flex items-start gap-4 mb-4">
+                <!-- avner_pencil.png = writing/pencil pose from "WhatsApp Image 2025-11-29 at 13.02.184.jpeg", capybara with pencil, 64x64 -->
+                <img src="{{ url_for('static', filename='img/avner_pencil.png') }}" 
+                     alt="אבנר ה-CapyBuddy כותב"
+                     class="w-16 h-16 rounded-xl object-cover"
+                     onerror="this.onerror=null; this.textContent='✏️';">
+                <h3 class="text-xl font-bold text-dark-brown">כרטיסיות</h3>
+            </div>
+            <ul class="text-gray-600 mb-6 space-y-2 list-disc list-inside">
+                <li>יוצר כרטיסיות שאלה-תשובה מהחומר</li>
+                <li>מאפשר תרגול עם היפוך כרטיסים</li>
+                <li>עוזר לזכור מושגים חשובים</li>
+            </ul>
+            <a href="{{ url_for('flashcards_tool') }}" 
+               class="inline-flex items-center gap-2 bg-hoodie-orange text-white font-semibold py-2 px-4 rounded-xl btn-hover-lift transition-all duration-150">
+                פתח כרטיסיות
+                <svg class="w-4 h-4 rotate-180" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                </svg>
+            </a>
+        </div>
+        
+        <!-- Assess Me Card -->
+        <div class="bg-white rounded-2xl p-6 shadow-md card-hover">
+            <div class="flex items-start gap-4 mb-4">
+                <!-- avner_thinking.png = thinking pose from "WhatsApp Image 2025-11-29 at 13.02.183.jpeg", capybara thinking, 64x64 -->
+                <img src="{{ url_for('static', filename='img/avner_thinking.png') }}" 
+                     alt="אבנר ה-CapyBuddy חושב"
+                     class="w-16 h-16 rounded-xl object-cover"
+                     onerror="this.onerror=null; this.textContent='🤔';">
+                <h3 class="text-xl font-bold text-dark-brown">בחן אותי</h3>
+            </div>
+            <ul class="text-gray-600 mb-6 space-y-2 list-disc list-inside">
+                <li>יוצר שאלות בחירה על החומר</li>
+                <li>בודק תשובות ונותן ציון</li>
+                <li>עוזר להבין מה צריך לחזור</li>
+            </ul>
+            <a href="{{ url_for('assess_tool') }}" 
+               class="inline-flex items-center gap-2 bg-hoodie-orange text-white font-semibold py-2 px-4 rounded-xl btn-hover-lift transition-all duration-150">
+                פתח בחן אותי
+                <svg class="w-4 h-4 rotate-180" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                </svg>
+            </a>
+        </div>
+        
+        <!-- Homework Helper Card -->
+        <div class="bg-white rounded-2xl p-6 shadow-md card-hover">
+            <div class="flex items-start gap-4 mb-4">
+                <!-- avner_laptop.png = laptop pose from "WhatsApp Image 2025-11-29 at 13.02.191.jpeg", capybara at laptop, 64x64 -->
+                <img src="{{ url_for('static', filename='img/avner_laptop.png') }}" 
+                     alt="אבנר ה-CapyBuddy עובד על מחשב"
+                     class="w-16 h-16 rounded-xl object-cover"
+                     onerror="this.onerror=null; this.textContent='💻';">
+                <h3 class="text-xl font-bold text-dark-brown">עוזר שיעורים</h3>
+            </div>
+            <ul class="text-gray-600 mb-6 space-y-2 list-disc list-inside">
+                <li>מסביר איך לגשת לשאלה</li>
+                <li>מפרק לשלבים ברורים</li>
+                <li>נותן טיפים לכתיבה ופתרון</li>
+            </ul>
+            <a href="{{ url_for('homework_tool') }}" 
+               class="inline-flex items-center gap-2 bg-hoodie-orange text-white font-semibold py-2 px-4 rounded-xl btn-hover-lift transition-all duration-150">
+                פתח עוזר שיעורים
+                <svg class="w-4 h-4 rotate-180" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                </svg>
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- How to Learn with Avner Section -->
+<section class="py-12">
+    <h2 class="text-2xl md:text-3xl font-bold text-dark-brown text-center mb-8">
+        איך לומדים עם אבנר ה-CapyBuddy
+    </h2>
+    
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Step 1 -->
+        <div class="bg-white rounded-2xl p-6 shadow-md text-center">
+            <div class="w-16 h-16 bg-hoodie-orange rounded-full flex items-center justify-center mx-auto mb-4">
+                <span class="text-white text-2xl font-bold">1</span>
+            </div>
+            <!-- avner_teaching.png = teaching pose from "WhatsApp Image 2025-11-29 at 13.02.42.jpeg", capybara teaching, 48x48 -->
+            <img src="{{ url_for('static', filename='img/avner_teaching.png') }}" 
+                 alt="אבנר ה-CapyBuddy מלמד"
+                 class="w-12 h-12 rounded-full mx-auto mb-4"
+                 onerror="this.style.display='none';">
+            <h3 class="text-lg font-bold text-dark-brown mb-2">מעלים חומר לימוד</h3>
+            <p class="text-gray-600">מעלים חומר לימוד מהמחשב או מדביקים טקסט</p>
+        </div>
+        
+        <!-- Step 2 -->
+        <div class="bg-white rounded-2xl p-6 shadow-md text-center">
+            <div class="w-16 h-16 bg-hoodie-orange rounded-full flex items-center justify-center mx-auto mb-4">
+                <span class="text-white text-2xl font-bold">2</span>
+            </div>
+            <!-- avner_thinking.png = thinking pose from "WhatsApp Image 2025-11-29 at 13.02.183.jpeg", 48x48 -->
+            <img src="{{ url_for('static', filename='img/avner_thinking.png') }}" 
+                 alt="אבנר ה-CapyBuddy חושב"
+                 class="w-12 h-12 rounded-full mx-auto mb-4"
+                 onerror="this.style.display='none';">
+            <h3 class="text-lg font-bold text-dark-brown mb-2">בוחרים כלי</h3>
+            <p class="text-gray-600">בוחרים כלי – סיכום, כרטיסיות, בחן אותי או עזרה בשיעורים</p>
+        </div>
+        
+        <!-- Step 3 -->
+        <div class="bg-white rounded-2xl p-6 shadow-md text-center">
+            <div class="w-16 h-16 bg-hoodie-orange rounded-full flex items-center justify-center mx-auto mb-4">
+                <span class="text-white text-2xl font-bold">3</span>
+            </div>
+            <!-- avner_celebrate.png = celebrating pose from "WhatsApp Image 2025-11-29 at 13.02.19.jpeg", capybara celebrating, 48x48 -->
+            <img src="{{ url_for('static', filename='img/avner_celebrate.png') }}" 
+                 alt="אבנר ה-CapyBuddy חוגג"
+                 class="w-12 h-12 rounded-full mx-auto mb-4"
+                 onerror="this.style.display='none';">
+            <h3 class="text-lg font-bold text-dark-brown mb-2">לומדים יחד</h3>
+            <p class="text-gray-600">לומדים יחד עם אבנר ה-CapyBuddy בקצב שלכם</p>
+        </div>
+    </div>
+</section>
 {% endblock %}
