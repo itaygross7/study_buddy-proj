@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <!-- ...existing head code... -->
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <title>StudyBuddyAI — אבנר ה-CapyBuddy</title>
+</head>
+<body class="rtl-root">
+  <nav class="topnav">
+    <!-- exact nav labels -->
+    <ul class="nav-list" role="navigation">
+      <li class="nav-item"><a href="/" class="nav-link">בית</a></li>
+      <li class="nav-item"><a href="/summarizer" class="nav-link">מסכם</a></li>
+      <li class="nav-item"><a href="/flashcards" class="nav-link">כרטיסיות</a></li>
+      <li class="nav-item"><a href="/assess" class="nav-link">בחן אותי</a></li>
+      <li class="nav-item"><a href="/homework" class="nav-link">עוזר שיעורים</a></li>
+    </ul>
+    <!-- ...existing nav code... -->
+  </nav>
+  <main class="container">
+    {% block content %}{% endblock %}
+  </main>
+  <!-- ...existing footer code... -->
+</body>
+</html>
+

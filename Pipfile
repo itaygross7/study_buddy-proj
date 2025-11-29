@@ -4,9 +4,41 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
+flask = "*"
+flask-cors = "*"
+celery = "*"
+pymongo = "*"
+pika = "*"
+tenacity = "*"
+google-generativeai = "*"
+openai = "*"
+python-dotenv = "*"
+pydantic = "*"
+pydantic-settings = "*"
+werkzeug = "*"
+# Logging
+python-json-logger = "*"
+rich = "*"
+# File Processing
+python-magic-bin = {version = "*", sys_platform = "== 'win32'"}
+python-magic = {version = "*", sys_platform = "!= 'win32'"}
+beautifulsoup4 = "*"
+pypdf2 = "*"
+python-docx = "*"
+python-pptx = "*"
+pytesseract = "*"
+Pillow = "*"
+# PDF Export
+weasyprint = "*"
 
 [dev-packages]
+pytest = "*"
+pytest-cov = "*"
+pytest-mock = "*"
+mongomock = "*"
+faker = "*"
+black = "*"
+mypy = "*"
 
 [requires]
-python_version = "3.13"
-python_full_version = "3.13.0"
+python_version = "3.11"

@@ -1,0 +1,12 @@
+<div class="prose max-w-none">
+    <h3 class="text-lg font-bold text-dark-brown mb-4">סיכום</h3>
+    <div class="bg-warm-beige p-4 rounded-xl">
+        <p class="text-dark-brown leading-relaxed">{{ summary.summary_text }}</p>
+    </div>
+    
+    <!-- Show speech bubble after results -->
+    <script>
+        document.getElementById('empty-state')?.classList.add('hidden');
+        document.getElementById('speech-bubble')?.classList.remove('hidden');
+    </script>
+</div>

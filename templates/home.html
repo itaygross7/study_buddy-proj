@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="hero">
+  <div class="hero-left">
+    <!-- Avner big pose on left -->
+    <img src="{{ url_for('static', filename='images/avner_laptop.png') }}" alt="אבנר ה-CapyBuddy יושב מול המחשב" class="avner-hero">
+  </div>
+  <div class="hero-right">
+    <h1>שלום! אני אבנר ה-CapyBuddy — כאן כדי לעזור לך ללמוד בקלות.</h1>
+    <p class="muted">בחר כלי, העלה קובץ או הדבק טקסט והתחל ללמוד.</p>
+  </div>
+</div>
+
+<div class="tools-grid">
+  <!-- 4 cards; correct Avner stickers and alt text -->
+  <div class="tool-card">
+    <img src="{{ url_for('static', filename='images/avner_thinking.png') }}" alt="אבנר ה-CapyBuddy חושב" class="sticker">
+    <h3>מסכם</h3>
+    <p>קבל סיכום ידידותי וממוקד לטקסטים וקבצים.</p>
+  </div>
+  <div class="tool-card">
+    <img src="{{ url_for('static', filename='images/avner_book.png') }}" alt="אבנר ה-CapyBuddy עם ספר" class="sticker">
+    <h3>כרטיסיות</h3>
+    <p>ייצור כרטיסיות לזיכרון ותרגול ממוקד.</p>
+  </div>
+  <div class="tool-card">
+    <img src="{{ url_for('static', filename='images/avner_celebrate.png') }}" alt="אבנר ה-CapyBuddy חוגג" class="sticker">
+    <h3>בחן אותי</h3>
+    <p>שאלות אימון מותאמות לרמה שלך.</p>
+  </div>
+  <div class="tool-card">
+    <img src="{{ url_for('static', filename='images/avner_teaching.png') }}" alt="אבנר ה-CapyBuddy מלמד" class="sticker">
+    <h3>עוזר שיעורים</h3>
+    <p>הסברים ידידותיים וצעד־אצעד לשיעורי בית.</p>
+  </div>
+</div>
+{% endblock %}
+
