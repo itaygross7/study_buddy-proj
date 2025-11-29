@@ -13,26 +13,25 @@
 
 <div class="tools-grid">
   <!-- 4 cards; correct Avner stickers and alt text -->
-  <div class="tool-card">
+  <a href="/summarizer" class="tool-card tool-link">
     <img src="{{ url_for('static', filename='images/avner_thinking.png') }}" alt="אבנר ה-CapyBuddy חושב" class="sticker">
     <h3>מסכם</h3>
     <p>קבל סיכום ידידותי וממוקד לטקסטים וקבצים.</p>
-  </div>
-  <div class="tool-card">
+  </a>
+  <a href="/flashcards" class="tool-card tool-link">
     <img src="{{ url_for('static', filename='images/avner_book.png') }}" alt="אבנר ה-CapyBuddy עם ספר" class="sticker">
     <h3>כרטיסיות</h3>
     <p>ייצור כרטיסיות לזיכרון ותרגול ממוקד.</p>
-  </div>
-  <div class="tool-card">
+  </a>
+  <a href="/assess" class="tool-card tool-link">
     <img src="{{ url_for('static', filename='images/avner_celebrate.png') }}" alt="אבנר ה-CapyBuddy חוגג" class="sticker">
     <h3>בחן אותי</h3>
     <p>שאלות אימון מותאמות לרמה שלך.</p>
-  </div>
-  <div class="tool-card">
+  </a>
+  <a href="/homework" class="tool-card tool-link">
     <img src="{{ url_for('static', filename='images/avner_teaching.png') }}" alt="אבנר ה-CapyBuddy מלמד" class="sticker">
     <h3>עוזר שיעורים</h3>
     <p>הסברים ידידותיים וצעד־אצעד לשיעורי בית.</p>
-  </div>
+  </a>
 </div>
 {% endblock %}
-

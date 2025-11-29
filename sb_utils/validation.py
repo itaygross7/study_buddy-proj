@@ -13,11 +13,17 @@ HEBREW_ERRORS = {
 }
 
 def validate_upload(mime: Optional[str], size: int) -> Optional[str]:
+    """
+    Validate upload size and MIME type.
+    Returns a Hebrew error message if invalid, otherwise None.
+    """
     if size <= 0:
+        logger.debug("Validation failed: empty upload (size=%d)", size)
         return HEBREW_ERRORS["no_input"]
     if size > MAX_FILE_SIZE_BYTES:
+        logger.debug("Validation failed: too large (size=%d)", size)
         return HEBREW_ERRORS["too_large"]
     if not allowed_mimetype(mime):
+        logger.debug("Validation failed: bad MIME type (%s)", mime)
         return HEBREW_ERRORS["bad_type"]
     return None
-
