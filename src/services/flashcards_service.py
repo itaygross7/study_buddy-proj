@@ -38,7 +38,7 @@ def generate_flashcards(document_id: str, document_content: str, num_cards: int,
             document_id=document_id,
             cards=cards
         )
-        db.flashcards.insert_one(flashcard_set.dict(by_alias=True))
+        db.flashcards.insert_one(flashcard_set.to_dict())
         
         logger.info(f"Successfully created and saved flashcard set for document {document_id}")
         return flashcard_set.id

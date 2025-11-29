@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from pymongo.database import Database
 from src.infrastructure.database import db as flask_db
 from src.domain.models.db_models import Task, TaskStatus
@@ -13,13 +13,14 @@ def create_task(db_conn: Database = None) -> str:
     """Creates a new task in the database and returns its ID."""
     db = _get_db(db_conn)
     task_id = str(uuid.uuid4())
+    now = datetime.now(timezone.utc)
     task = Task(
         _id=task_id,
         status=TaskStatus.PENDING,
-        created_at=datetime.utcnow(),
-        updated_at=datetime.utcnow()
+        created_at=now,
+        updated_at=now
     )
-    db.tasks.insert_one(task.dict(by_alias=True))
+    db.tasks.insert_one(task.to_dict())
     logger.info(f"Created new task with ID: {task_id}")
     return task_id
 
@@ -35,7 +36,7 @@ def update_task_status(task_id: str, status: TaskStatus, result_id: str = None, 
     update_doc = {
         "$set": {
             "status": status.value,
-            "updated_at": datetime.utcnow()
+            "updated_at": datetime.now(timezone.utc)
         }
     }
     if result_id:

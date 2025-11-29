@@ -1,6 +1,6 @@
 import logging
 import sys
-from python_json_logger import jsonlogger
+from pythonjsonlogger import jsonlogger
 
 # This function can be called from the app factory to get a configured logger
 def get_logger(name: str, log_level: str = "INFO"):

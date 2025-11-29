@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 from pymongo.database import Database
 
@@ -17,7 +17,7 @@ class MongoDocumentRepository(IDocumentRepository):
         return Document(**doc_data) if doc_data else None
 
     def create(self, document: Document) -> None:
-        self.db.documents.insert_one(document.dict(by_alias=True))
+        self.db.documents.insert_one(document.to_dict())
         logger.info(f"Created document '{document.filename}' with ID: {document.id}")
 
 class MongoTaskRepository(ITaskRepository):
@@ -30,13 +30,14 @@ class MongoTaskRepository(ITaskRepository):
         return Task(**task_data) if task_data else None
 
     def create(self) -> Task:
+        now = datetime.now(timezone.utc)
         task = Task(
             _id=str(uuid.uuid4()),
             status=TaskStatus.PENDING,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow()
+            created_at=now,
+            updated_at=now
         )
-        self.db.tasks.insert_one(task.dict(by_alias=True))
+        self.db.tasks.insert_one(task.to_dict())
         logger.info(f"Created new task with ID: {task.id}")
         return task
 
@@ -44,7 +45,7 @@ class MongoTaskRepository(ITaskRepository):
         update_doc = {
             "$set": {
                 "status": status.value,
-                "updated_at": datetime.utcnow()
+                "updated_at": datetime.now(timezone.utc)
             }
         }
         if result_id:

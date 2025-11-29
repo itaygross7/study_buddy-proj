@@ -14,6 +14,13 @@ class AIClient:
     """
     def __init__(self, provider: str = "gemini"):
         self.provider = provider
+        self._initialized = False
+        
+    def _ensure_initialized(self):
+        """Lazy initialization of AI provider."""
+        if self._initialized:
+            return
+            
         if self.provider == "openai":
             if not settings.OPENAI_API_KEY or "your_openai" in settings.OPENAI_API_KEY:
                 raise ValueError("OpenAI API key is not configured.")
@@ -24,12 +31,14 @@ class AIClient:
             genai.configure(api_key=settings.GEMINI_API_KEY)
         else:
             raise ValueError("Unsupported AI provider specified.")
+        self._initialized = True
 
     @retry(wait=wait_exponential(multiplier=1, min=2, max=10), stop=stop_after_attempt(3))
     def generate_text(self, prompt: str, context: str) -> str:
         """
         Generates text using the selected AI provider, with retries and safety.
         """
+        self._ensure_initialized()
         full_prompt = create_safety_guard_prompt(prompt, context)
         
         try:
@@ -57,5 +66,5 @@ class AIClient:
 
         raise AIClientError("The AI service returned an empty or invalid response.")
 
-# Default client instance
+# Default client instance (lazy initialization)
 ai_client = AIClient(provider="gemini")
