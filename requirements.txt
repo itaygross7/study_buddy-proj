@@ -1,0 +1,10 @@
+# Python dependencies for Study Buddy Project
+# Add project dependencies below
+
+# Testing
+pytest>=7.0.0
+
+# Development tools (optional)
+# black>=23.0.0
+# mypy>=1.0.0
+# flake8>=6.0.0
