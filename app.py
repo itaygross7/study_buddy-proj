@@ -1,5 +1,5 @@
 import os
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, jsonify, render_template, request, send_from_directory
 from flask_cors import CORS
 from werkzeug.exceptions import NotFound
 
@@ -21,6 +21,14 @@ from src.api.routes_pdf import pdf_bp
 def create_app():
     """Application factory for Flask."""
     app = Flask(__name__, template_folder='ui/templates', static_folder='ui/static')
+    
+    # Add Avner images folder as additional static path
+    avner_folder = os.path.join(os.path.dirname(__file__), 'ui', 'Avner')
+    
+    @app.route('/avner/<path:filename>')
+    def serve_avner(filename):
+        """Serve Avner mascot images from ui/Avner folder."""
+        return send_from_directory(avner_folder, filename)
     
     # Configure from settings
     app.config['MONGO_URI'] = settings.MONGO_URI

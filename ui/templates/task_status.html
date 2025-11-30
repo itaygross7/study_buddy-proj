@@ -6,10 +6,19 @@
     {% if task.status == 'PENDING' or task.status == 'PROCESSING' %}
     <div class="p-4 rounded-xl bg-cream border-2 border-warm-yellow">
         <div class="flex items-center gap-3">
-            <img src="{{ url_for('static', filename='img/avner_thinking.png') }}" 
+            {% if task.status == 'PENDING' %}
+            <!-- Use avner_yaning for pending/waiting -->
+            <img src="{{ url_for('serve_avner', filename='avner_yaning.jpeg') }}" 
+                 alt="אבנר ממתין"
+                 class="w-10 h-10 rounded-full object-cover border-2 border-golden-yellow animate-pulse"
+                 onerror="this.src='{{ url_for('static', filename='img/avner_thinking.png') }}';">
+            {% else %}
+            <!-- Use avner_studing for processing -->
+            <img src="{{ url_for('serve_avner', filename='avner_studing.jpeg') }}" 
                  alt="אבנר עובד"
                  class="w-10 h-10 rounded-full object-cover border-2 border-golden-yellow animate-pulse"
-                 onerror="this.style.display='none'">
+                 onerror="this.src='{{ url_for('static', filename='img/avner_thinking.png') }}';">
+            {% endif %}
             <div>
                 <p class="text-sm font-medium text-dark-brown">
                     {% if task.status == 'PENDING' %}
@@ -31,20 +40,22 @@
          hx-target="this"
          hx-swap="innerHTML">
         <div class="flex items-center gap-3">
-            <img src="{{ url_for('static', filename='img/avner_celebrate.png') }}" 
+            <!-- Use avner_celebrating for success -->
+            <img src="{{ url_for('serve_avner', filename='avner_celebrating.jpeg') }}" 
                  alt="אבנר חוגג"
                  class="w-10 h-10 rounded-full object-cover border-2 border-success"
-                 onerror="this.style.display='none'">
+                 onerror="this.src='{{ url_for('static', filename='img/avner_celebrate.png') }}';">
             <p class="text-success font-medium">הושלם! טוען תוצאות...</p>
         </div>
     </div>
     {% elif task.status == 'FAILED' %}
     <div class="p-4 rounded-xl bg-cream border-2 border-error">
         <div class="flex items-start gap-3">
-            <img src="{{ url_for('static', filename='img/avner_cry_laugh.png') }}" 
+            <!-- Use avner_dont_understand for error -->
+            <img src="{{ url_for('serve_avner', filename='avner_dont_understand.jpeg') }}" 
                  alt="אבנר מצטער"
                  class="w-10 h-10 rounded-full object-cover border-2 border-error flex-shrink-0"
-                 onerror="this.style.display='none'">
+                 onerror="this.src='{{ url_for('static', filename='img/avner_cry_laugh.png') }}';">
             <div>
                 <h3 class="text-sm font-medium text-error">משהו השתבש</h3>
                 <p class="mt-1 text-sm text-coffee">{{ task.error_message or 'אירעה שגיאה לא צפויה. נסו שוב.' }}</p>

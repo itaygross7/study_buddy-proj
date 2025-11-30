@@ -281,22 +281,22 @@
         scoreText.textContent = `${correct} מתוך ${total} תשובות נכונות (${percentage}%)`;
         
         if (percentage >= 70) {
-            // High score - Avner celebrating
+            // High score - Avner celebrating (use dancing from Avner folder)
             scoreAvner.innerHTML = `
-                <img src="{{ url_for('static', filename='img/avner_celebrate.png') }}" 
+                <img src="{{ url_for('serve_avner', filename='avner_dancing.jpeg') }}" 
                      alt="אבנר חוגג"
                      class="w-24 h-24 mx-auto rounded-xl object-cover border-2 border-golden-yellow shadow-md"
-                     onerror="this.style.display='none'">
+                     onerror="this.src='{{ url_for('static', filename='img/avner_celebrate.png') }}';">
             `;
             scoreText.className = 'text-2xl font-bold mb-4 text-success';
             scoreMessage.textContent = 'אלופים! המשיכו ככה.';
         } else {
-            // Low score - Avner supportive
+            // Low score - Avner supportive (use in_love from Avner folder)
             scoreAvner.innerHTML = `
-                <img src="{{ url_for('static', filename='img/avner_hearts.png') }}" 
+                <img src="{{ url_for('serve_avner', filename='avner_in_love.jpeg') }}" 
                      alt="אבנר מעודד"
                      class="w-24 h-24 mx-auto rounded-xl object-cover border-2 border-golden-yellow shadow-md"
-                     onerror="this.style.display='none'">
+                     onerror="this.src='{{ url_for('static', filename='img/avner_hearts.png') }}';">
             `;
             scoreText.className = 'text-2xl font-bold mb-4 text-warning';
             scoreMessage.textContent = 'זה רק תרגול. בואו נעבור שוב על החומר ביחד.';
