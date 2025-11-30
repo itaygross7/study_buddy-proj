@@ -26,7 +26,8 @@ def test_upload_wrong_type(client):
         "file": (io.BytesIO(b"dummy"), "test.exe")
     }
     r = client.post("/api/summarize", data=data, content_type="multipart/form-data")
-    # Should return 400 with friendly message or be blocked by max-size/MIME
+    # Should return 400 with friendly message
     assert r.status_code in (400, 413)
 
 # Additional tests (AI error / DB failure) should mock services similarly.
+
