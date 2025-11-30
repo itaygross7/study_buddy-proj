@@ -1,0 +1,69 @@
+# StudyBuddyAI Caddy Configuration
+# For deployment on Hostinger domain: studybuddyai.my
+#
+# Usage:
+# 1. Install Caddy on your Ubuntu server
+# 2. Copy this file to /etc/caddy/Caddyfile
+# 3. Update the domain name if needed
+# 4. Run: sudo systemctl reload caddy
+#
+# Prerequisites:
+# - Domain DNS A record pointing to server IP
+# - Optional: www CNAME pointing to studybuddyai.my
+# - Ports 80 and 443 open in firewall
+
+studybuddyai.my, www.studybuddyai.my {
+    # Reverse proxy to Flask application
+    reverse_proxy localhost:5000 {
+        # Health checks
+        health_uri /health
+        health_interval 30s
+        health_timeout 5s
+        
+        # Headers for proper proxying
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+    }
+    
+    # Enable gzip compression
+    encode gzip
+    
+    # Security headers
+    header {
+        # Prevent MIME type sniffing
+        X-Content-Type-Options nosniff
+        
+        # Prevent clickjacking
+        X-Frame-Options DENY
+        
+        # XSS protection
+        X-XSS-Protection "1; mode=block"
+        
+        # Referrer policy
+        Referrer-Policy strict-origin-when-cross-origin
+        
+        # Content Security Policy (adjust as needed)
+        # Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:;"
+        
+        # Remove server header
+        -Server
+    }
+    
+    # Access logging
+    log {
+        output file /var/log/caddy/studybuddyai.log {
+            roll_size 10mb
+            roll_keep 5
+        }
+        format json
+    }
+    
+    # Handle errors gracefully
+    handle_errors {
+        respond "{http.error.status_code} {http.error.status_text}"
+    }
+}
+
+# Optional: Redirect HTTP to HTTPS (Caddy does this automatically)
+# Optional: Handle additional subdomains if needed

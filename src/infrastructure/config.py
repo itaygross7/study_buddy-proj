@@ -29,9 +29,15 @@ class Settings(BaseSettings):
     MONGO_URI: str = Field(default='mongodb://localhost:27017/studybuddy')
     RABBITMQ_URI: str = Field(default='amqp://guest:guest@localhost:5672/')
 
-    # AI Services
+    # AI Services - API Keys
     OPENAI_API_KEY: str = Field(default='')
     GEMINI_API_KEY: str = Field(default='')
+    
+    # AI Services - Model Configuration (SB_* prefix for StudyBuddy)
+    SB_OPENAI_MODEL: str = Field(default='gpt-4o-mini')
+    SB_GEMINI_MODEL: str = Field(default='gemini-1.5-flash')
+    SB_DEFAULT_PROVIDER: str = Field(default='gemini')
+    SB_BASE_URL: str = Field(default='')  # Optional custom base URL for API
 
     # Logging
     LOG_LEVEL: str = Field(default='INFO')
