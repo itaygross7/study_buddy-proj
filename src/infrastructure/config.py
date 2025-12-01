@@ -24,6 +24,10 @@ class Settings(BaseSettings):
     # Flask
     FLASK_ENV: str = Field(default='development')
     SECRET_KEY: str = Field(default_factory=_generate_default_secret_key)
+    
+    # Domain Configuration
+    DOMAIN: str = Field(default='studybuddyai.my')  # Your domain
+    BASE_URL: str = Field(default='https://studybuddyai.my')  # Full base URL for links
 
     # Infrastructure
     MONGO_URI: str = Field(default='mongodb://localhost:27017/studybuddy')

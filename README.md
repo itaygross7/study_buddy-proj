@@ -1,6 +1,6 @@
 # StudyBuddyAI 🦫
 
-**לומדים יחד עם אבנר - Your AI-powered learning companion**
+**[studybuddyai.my](https://studybuddyai.my) - לומדים יחד עם אבנר**
 
 StudyBuddyAI is a comprehensive web application designed to help students with their learning journey using generative AI. Meet Avner, your friendly capybara study buddy who's always ready to help!
 
@@ -111,7 +111,7 @@ For production, we recommend using Nginx as a reverse proxy with SSL certificate
    ```nginx
    server {
        listen 80;
-       server_name your-domain.com;
+       server_name studybuddyai.my www.studybuddyai.my;
        
        location / {
            proxy_pass http://127.0.0.1:5000;
@@ -128,11 +128,13 @@ For production, we recommend using Nginx as a reverse proxy with SSL certificate
    sudo ln -s /etc/nginx/sites-available/studybuddy /etc/nginx/sites-enabled/
    sudo nginx -t
    sudo systemctl restart nginx
-   sudo certbot --nginx -d your-domain.com
+   sudo certbot --nginx -d studybuddyai.my -d www.studybuddyai.my
    ```
 
 4. **Update `.env` for HTTPS:**
    ```bash
+   DOMAIN="studybuddyai.my"
+   BASE_URL="https://studybuddyai.my"
    SESSION_COOKIE_SECURE=true
    ```
 

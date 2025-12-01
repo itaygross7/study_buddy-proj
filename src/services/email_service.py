@@ -39,9 +39,11 @@ def send_email(to_email: str, subject: str, html_body: str, text_body: Optional[
         return False
 
 
-def send_verification_email(to_email: str, verification_token: str, base_url: str) -> bool:
+def send_verification_email(to_email: str, verification_token: str, base_url: str = None) -> bool:
     """Send email verification link."""
-    verify_url = f"{base_url}/auth/verify/{verification_token}"
+    # Use configured BASE_URL if available, otherwise use provided base_url
+    url_base = settings.BASE_URL if hasattr(settings, 'BASE_URL') and settings.BASE_URL else base_url
+    verify_url = f"{url_base}/auth/verify/{verification_token}"
     
     html_body = f"""
     <!DOCTYPE html>
