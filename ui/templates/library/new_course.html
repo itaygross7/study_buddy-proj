@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block title %}קורס חדש - StudyBuddy{% endblock %}
+
+{% block content %}
+<div class="max-w-lg mx-auto">
+    <!-- Breadcrumb -->
+    <nav class="text-sm text-cozy-brown mb-4">
+        <a href="{{ url_for('library.index') }}" class="hover:text-golden-yellow transition-colors">📚 הספרייה</a>
+        <span class="mx-2">/</span>
+        <span class="text-dark-brown">קורס חדש</span>
+    </nav>
+    
+    <div class="bg-cream rounded-2xl p-8 shadow-md border-2 border-warm-yellow">
+        <div class="text-center mb-6">
+            <h1 class="text-2xl font-bold text-dark-brown">➕ צור קורס חדש</h1>
+            <p class="text-cozy-brown mt-2">הוסף קורס לספרייה שלך</p>
+        </div>
+        
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="mb-4 p-3 rounded-lg {% if category == 'error' %}bg-red-50 text-error{% else %}bg-warm-beige text-dark-brown{% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+        
+        <form method="POST" action="{{ url_for('library.new_course') }}">
+            <!-- Course Name -->
+            <div class="mb-4">
+                <label for="name" class="block text-sm font-medium text-dark-brown mb-2">
+                    שם הקורס <span class="text-error">*</span>
+                </label>
+                <input type="text" id="name" name="name" required maxlength="100"
+                    class="w-full p-3 border-2 border-warm-gray rounded-xl focus:border-golden-yellow focus:outline-none bg-warm-beige"
+                    placeholder="למשל: מבוא לפסיכולוגיה">
+            </div>
+            
+            <!-- Description -->
+            <div class="mb-4">
+                <label for="description" class="block text-sm font-medium text-dark-brown mb-2">
+                    תיאור (אופציונלי)
+                </label>
+                <textarea id="description" name="description" rows="2" maxlength="500"
+                    class="w-full p-3 border-2 border-warm-gray rounded-xl focus:border-golden-yellow focus:outline-none bg-warm-beige resize-none"
+                    placeholder="תיאור קצר של הקורס"></textarea>
+            </div>
+            
+            <!-- Language -->
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-dark-brown mb-2">
+                    שפת התשובות
+                </label>
+                <div class="flex gap-4">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="language" value="he" checked class="w-4 h-4 accent-golden-yellow">
+                        <span>🇮🇱 עברית</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="language" value="en" class="w-4 h-4 accent-golden-yellow">
+                        <span>🇺🇸 English</span>
+                    </label>
+                </div>
+                <p class="text-xs text-cozy-brown mt-1">אבנר יענה בשפה שתבחר</p>
+            </div>
+            
+            <!-- Icon Selection -->
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-dark-brown mb-2">
+                    בחר אייקון
+                </label>
+                <div class="flex flex-wrap gap-2">
+                    {% for icon in icons %}
+                    <label class="cursor-pointer">
+                        <input type="radio" name="icon" value="{{ icon }}" {% if loop.first %}checked{% endif %} class="sr-only peer">
+                        <span class="text-2xl p-2 rounded-lg border-2 border-transparent peer-checked:border-golden-yellow peer-checked:bg-warm-yellow inline-block hover:bg-warm-beige transition-colors">{{ icon }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- Color Selection -->
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-dark-brown mb-2">
+                    בחר צבע
+                </label>
+                <div class="flex flex-wrap gap-2">
+                    {% for color in colors %}
+                    <label class="cursor-pointer">
+                        <input type="radio" name="color" value="{{ color }}" {% if loop.first %}checked{% endif %} class="sr-only peer">
+                        <span class="w-8 h-8 rounded-full inline-block border-2 border-transparent peer-checked:border-dark-brown peer-checked:ring-2 peer-checked:ring-offset-2" style="background-color: {{ color }}"></span>
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- Submit -->
+            <button type="submit" 
+                class="w-full bg-golden-yellow text-dark-brown font-bold py-3 px-6 rounded-xl hover:bg-warm-yellow transition-colors shadow-md">
+                📚 צור קורס
+            </button>
+        </form>
+        
+        <!-- Cancel -->
+        <div class="mt-4 text-center">
+            <a href="{{ url_for('library.index') }}" class="text-cozy-brown hover:text-dark-brown transition-colors">
+                ביטול
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

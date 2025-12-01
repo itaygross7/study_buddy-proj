@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}הגדרות קורס - StudyBuddy{% endblock %}
+
+{% block content %}
+<div class="max-w-lg mx-auto">
+    <nav class="text-sm text-cozy-brown mb-4">
+        <a href="{{ url_for('library.index') }}" class="hover:text-golden-yellow">📚 הספרייה</a>
+        <span class="mx-2">/</span>
+        <a href="{{ url_for('library.course_page', course_id=course.id) }}" class="hover:text-golden-yellow">{{ course.icon }} {{ course.name }}</a>
+        <span class="mx-2">/</span>
+        <span class="text-dark-brown">הגדרות</span>
+    </nav>
+    
+    <div class="bg-cream rounded-2xl p-6 shadow-md border border-warm-yellow">
+        <h1 class="text-xl font-bold text-dark-brown mb-6">⚙️ הגדרות קורס</h1>
+        
+        <form method="POST">
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-dark-brown mb-1">שם הקורס</label>
+                <input type="text" name="name" value="{{ course.name }}" required class="w-full p-3 border-2 border-warm-gray rounded-xl bg-warm-beige focus:border-golden-yellow focus:outline-none">
+            </div>
+            
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-dark-brown mb-1">תיאור</label>
+                <textarea name="description" rows="2" class="w-full p-3 border-2 border-warm-gray rounded-xl bg-warm-beige focus:border-golden-yellow focus:outline-none resize-none">{{ course.description }}</textarea>
+            </div>
+            
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-dark-brown mb-2">שפה</label>
+                <div class="flex gap-4">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="language" value="he" {% if course.language.value == 'he' %}checked{% endif %} class="accent-golden-yellow">
+                        <span>עברית</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="language" value="en" {% if course.language.value == 'en' %}checked{% endif %} class="accent-golden-yellow">
+                        <span>English</span>
+                    </label>
+                </div>
+            </div>
+            
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-dark-brown mb-2">אייקון</label>
+                <div class="flex flex-wrap gap-2">
+                    {% for icon in icons %}
+                    <label class="cursor-pointer">
+                        <input type="radio" name="icon" value="{{ icon }}" {% if course.icon == icon %}checked{% endif %} class="sr-only peer">
+                        <span class="text-2xl p-2 rounded-lg border-2 border-transparent peer-checked:border-golden-yellow peer-checked:bg-warm-yellow inline-block">{{ icon }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <button type="submit" class="w-full bg-golden-yellow text-dark-brown font-bold py-3 rounded-xl hover:bg-warm-yellow transition-colors shadow-md mb-4">
+                💾 שמור
+            </button>
+        </form>
+        
+        <!-- Delete Course -->
+        <div class="border-t border-warm-gray pt-4 mt-4">
+            <h3 class="text-sm font-bold text-error mb-2">מחיקת קורס</h3>
+            <p class="text-xs text-cozy-brown mb-3">פעולה זו תמחק את הקורס וכל החומרים שבו לצמיתות.</p>
+            <form method="POST" action="{{ url_for('library.delete_course', course_id=course.id) }}" onsubmit="return confirm('האם אתה בטוח? פעולה זו לא ניתנת לביטול!')">
+                <button type="submit" class="px-4 py-2 bg-error text-white rounded-lg text-sm hover:bg-red-700 transition-colors">
+                    🗑️ מחק קורס
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

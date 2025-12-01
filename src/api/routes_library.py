@@ -223,6 +223,37 @@ def upload_to_course(course_id):
     return redirect(url_for('upload_bp.upload_file_route', course_id=course_id))
 
 
+@library_bp.route('/course/<course_id>/<tool>')
+@login_required
+def course_tool(course_id, tool):
+    """Use a specific tool within a course context."""
+    course = get_course_by_id(course_id, current_user.id)
+    if not course:
+        flash('הקורס לא נמצא', 'error')
+        return redirect(url_for('library.index'))
+    
+    # Check if course has content
+    doc_count = db.documents.count_documents({"course_id": course_id})
+    if doc_count == 0:
+        flash('יש להעלות חומר לימוד לפני השימוש בכלים', 'warning')
+        return redirect(url_for('library.course_page', course_id=course_id))
+    
+    # Valid tools
+    valid_tools = ['summary', 'flashcards', 'assess', 'homework']
+    if tool not in valid_tools:
+        flash('כלי לא קיים', 'error')
+        return redirect(url_for('library.course_page', course_id=course_id))
+    
+    # Get course context for the tool
+    context = get_course_context(course_id, current_user.id)
+    documents = get_course_documents(course_id)
+    
+    return render_template(f'library/tool_{tool}.html',
+                         course=course,
+                         documents=documents,
+                         context=context)
+
+
 # ============ User Profile Routes ============
 
 @library_bp.route('/profile', methods=['GET', 'POST'])
