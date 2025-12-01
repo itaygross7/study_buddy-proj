@@ -1,0 +1,234 @@
+{% extends "base.html" %}
+
+{% block title %}{{ course.name }} - StudyBuddy{% endblock %}
+
+{% block content %}
+<!-- Breadcrumb & Header -->
+<div class="mb-6">
+    <nav class="text-sm text-cozy-brown mb-2">
+        <a href="{{ url_for('library.index') }}" class="hover:text-golden-yellow transition-colors">📚 הספרייה</a>
+        <span class="mx-2">/</span>
+        <span class="text-dark-brown">{{ course.icon }} {{ course.name }}</span>
+    </nav>
+    
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div class="flex items-center gap-3">
+            <span class="text-4xl">{{ course.icon }}</span>
+            <div>
+                <h1 class="text-2xl md:text-3xl font-bold text-dark-brown">{{ course.name }}</h1>
+                {% if course.description %}
+                <p class="text-cozy-brown text-sm mt-1">{{ course.description }}</p>
+                {% endif %}
+            </div>
+        </div>
+        <div class="flex gap-2">
+            <span class="px-3 py-1 bg-warm-beige text-cozy-brown text-sm rounded-full">
+                {{ 'עברית' if course.language.value == 'he' else 'English' }}
+            </span>
+            <a href="{{ url_for('library.course_settings', course_id=course.id) }}" 
+               class="px-3 py-1 border border-cozy-brown text-cozy-brown text-sm rounded-full hover:bg-cozy-brown hover:text-cream transition-colors">
+                ⚙️ הגדרות
+            </a>
+        </div>
+    </div>
+</div>
+
+{% if not has_content %}
+<!-- Empty State - Upload First -->
+<div class="bg-cream rounded-2xl p-8 shadow-md border-2 border-golden-yellow text-center">
+    <img src="/avner/avner_looking_at_page_acratching_head.jpeg" 
+         alt="אבנר מחכה" 
+         class="w-24 h-24 rounded-full mx-auto mb-4 border-3 border-golden-yellow shadow-md">
+    <h2 class="text-xl font-bold text-dark-brown mb-3">הקורס ריק! 📭</h2>
+    <p class="text-cozy-brown mb-6 max-w-md mx-auto">
+        כדי להתחיל להשתמש בכלים, קודם צריך להעלות חומרי לימוד.<br>
+        אבנר יוכל לעזור לך רק אחרי שיכיר את החומר!
+    </p>
+    
+    <!-- Upload Form -->
+    <div class="bg-warm-beige rounded-xl p-6 max-w-lg mx-auto text-right">
+        <h3 class="font-bold text-dark-brown mb-4">📤 העלאת חומר לימוד</h3>
+        <form id="upload-form" enctype="multipart/form-data">
+            <input type="hidden" name="course_id" value="{{ course.id }}">
+            
+            <!-- Text Input -->
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-dark-brown mb-2">הדבק טקסט:</label>
+                <textarea name="text" rows="4" 
+                    class="w-full p-3 border-2 border-warm-gray rounded-xl bg-white focus:border-golden-yellow focus:outline-none"
+                    placeholder="העתק והדבק כאן סיכום, הערות, או כל טקסט מהקורס..."></textarea>
+            </div>
+            
+            <!-- OR -->
+            <div class="flex items-center gap-3 mb-4">
+                <div class="flex-1 border-t border-warm-gray"></div>
+                <span class="text-cozy-brown text-sm">או</span>
+                <div class="flex-1 border-t border-warm-gray"></div>
+            </div>
+            
+            <!-- File Upload -->
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-dark-brown mb-2">העלה קובץ:</label>
+                <input type="file" name="file" accept=".pdf,.doc,.docx,.txt,.pptx"
+                    class="w-full p-3 border-2 border-dashed border-warm-gray rounded-xl bg-white">
+                <p class="text-xs text-cozy-brown mt-1">PDF, Word, PowerPoint או טקסט (עד 10MB)</p>
+            </div>
+            
+            <button type="submit" 
+                class="w-full bg-golden-yellow text-dark-brown font-bold py-3 px-6 rounded-xl hover:bg-warm-yellow transition-colors shadow-md">
+                📤 העלה לקורס
+            </button>
+        </form>
+    </div>
+</div>
+
+{% else %}
+<!-- Course Has Content - Show Tools -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    
+    <!-- Main Content - Tools -->
+    <div class="lg:col-span-2 space-y-6">
+        
+        <!-- Tools Grid -->
+        <div class="grid grid-cols-2 gap-4">
+            <!-- Summary Tool -->
+            <a href="{{ url_for('library.course_tool', course_id=course.id, tool='summary') }}" 
+               class="bg-cream rounded-xl p-5 shadow-md border-2 border-warm-yellow hover:border-golden-yellow hover:shadow-lg transition-all group">
+                <div class="text-3xl mb-2">📝</div>
+                <h3 class="font-bold text-dark-brown group-hover:text-cozy-brown">מסכם</h3>
+                <p class="text-xs text-cozy-brown mt-1">סיכום החומר לנקודות</p>
+                {% if summaries|length > 0 %}
+                <span class="inline-block mt-2 px-2 py-1 bg-success/20 text-success text-xs rounded-full">{{ summaries|length }} סיכומים</span>
+                {% endif %}
+            </a>
+            
+            <!-- Flashcards Tool -->
+            <a href="{{ url_for('library.course_tool', course_id=course.id, tool='flashcards') }}" 
+               class="bg-cream rounded-xl p-5 shadow-md border-2 border-warm-yellow hover:border-golden-yellow hover:shadow-lg transition-all group">
+                <div class="text-3xl mb-2">🃏</div>
+                <h3 class="font-bold text-dark-brown group-hover:text-cozy-brown">כרטיסיות</h3>
+                <p class="text-xs text-cozy-brown mt-1">כרטיסיות לתרגול</p>
+                {% if flashcard_sets|length > 0 %}
+                <span class="inline-block mt-2 px-2 py-1 bg-success/20 text-success text-xs rounded-full">{{ flashcard_sets|length }} סטים</span>
+                {% endif %}
+            </a>
+            
+            <!-- Assess Tool -->
+            <a href="{{ url_for('library.course_tool', course_id=course.id, tool='assess') }}" 
+               class="bg-cream rounded-xl p-5 shadow-md border-2 border-warm-yellow hover:border-golden-yellow hover:shadow-lg transition-all group">
+                <div class="text-3xl mb-2">✅</div>
+                <h3 class="font-bold text-dark-brown group-hover:text-cozy-brown">בחן אותי</h3>
+                <p class="text-xs text-cozy-brown mt-1">שאלות בחירה</p>
+                {% if assessments|length > 0 %}
+                <span class="inline-block mt-2 px-2 py-1 bg-success/20 text-success text-xs rounded-full">{{ assessments|length }} מבחנים</span>
+                {% endif %}
+            </a>
+            
+            <!-- Homework Tool -->
+            <a href="{{ url_for('library.course_tool', course_id=course.id, tool='homework') }}" 
+               class="bg-cream rounded-xl p-5 shadow-md border-2 border-warm-yellow hover:border-golden-yellow hover:shadow-lg transition-all group">
+                <div class="text-3xl mb-2">📚</div>
+                <h3 class="font-bold text-dark-brown group-hover:text-cozy-brown">עזרה בשיעורים</h3>
+                <p class="text-xs text-cozy-brown mt-1">עזרה בפתרון</p>
+            </a>
+        </div>
+        
+        <!-- Ask Avner about this course -->
+        <div class="bg-cozy-brown rounded-xl p-5 flex items-center gap-4">
+            <img src="/avner/avner_signing_ok.jpeg" alt="אבנר" class="w-14 h-14 rounded-full border-2 border-golden-yellow">
+            <div class="flex-1">
+                <h3 class="font-bold text-cream">שאל את אבנר על הקורס הזה</h3>
+                <p class="text-warm-yellow text-sm">אבנר מכיר את כל החומר שהעלית ויכול לענות על שאלות!</p>
+            </div>
+            <button onclick="askAboutCourse()" class="bg-golden-yellow text-dark-brown font-bold px-4 py-2 rounded-xl hover:bg-warm-yellow transition-colors">
+                שאל
+            </button>
+        </div>
+    </div>
+    
+    <!-- Sidebar - Documents & Upload -->
+    <div class="space-y-6">
+        <!-- Upload More -->
+        <div class="bg-cream rounded-xl p-5 shadow-md border border-warm-yellow">
+            <h3 class="font-bold text-dark-brown mb-3">📤 הוסף חומר</h3>
+            <form id="upload-more-form" enctype="multipart/form-data">
+                <input type="hidden" name="course_id" value="{{ course.id }}">
+                <input type="file" name="file" accept=".pdf,.doc,.docx,.txt,.pptx"
+                    class="w-full p-2 border border-dashed border-warm-gray rounded-lg bg-warm-beige text-sm mb-2">
+                <button type="submit" class="w-full bg-golden-yellow text-dark-brown font-medium py-2 rounded-lg hover:bg-warm-yellow transition-colors text-sm">
+                    העלה
+                </button>
+            </form>
+        </div>
+        
+        <!-- Documents List -->
+        <div class="bg-cream rounded-xl p-5 shadow-md border border-warm-yellow">
+            <h3 class="font-bold text-dark-brown mb-3">📄 החומרים בקורס</h3>
+            <div class="space-y-2 max-h-64 overflow-y-auto">
+                {% for doc in documents %}
+                <div class="flex items-center justify-between p-2 bg-warm-beige rounded-lg text-sm">
+                    <span class="truncate flex-1" title="{{ doc.filename }}">{{ doc.original_filename or doc.filename }}</span>
+                    <span class="text-xs text-cozy-brown mr-2">{{ (doc.file_size / 1024)|round|int }}KB</span>
+                </div>
+                {% else %}
+                <p class="text-cozy-brown text-sm">אין מסמכים עדיין</p>
+                {% endfor %}
+            </div>
+            <p class="text-xs text-cozy-brown mt-3">{{ documents|length }} מסמכים בקורס</p>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Upload form handler
+    document.getElementById('upload-form')?.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        
+        try {
+            const res = await fetch('/api/upload/', {
+                method: 'POST',
+                body: formData
+            });
+            
+            if (res.ok) {
+                window.location.reload();
+            } else {
+                alert('שגיאה בהעלאה. נסה שוב.');
+            }
+        } catch (error) {
+            alert('שגיאה בהעלאה.');
+        }
+    });
+    
+    document.getElementById('upload-more-form')?.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        
+        try {
+            const res = await fetch('/api/upload/', {
+                method: 'POST',
+                body: formData
+            });
+            
+            if (res.ok) {
+                window.location.reload();
+            } else {
+                alert('שגיאה בהעלאה.');
+            }
+        } catch (error) {
+            alert('שגיאה בהעלאה.');
+        }
+    });
+    
+    function askAboutCourse() {
+        // Open Avner chat with course context
+        if (typeof toggleAvnerChat === 'function') {
+            toggleAvnerChat();
+        }
+    }
+</script>
+{% endblock %}

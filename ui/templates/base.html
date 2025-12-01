@@ -28,29 +28,19 @@
                         <span class="text-cream font-bold text-lg hidden sm:block">StudyBuddy</span>
                     </a>
                     
-                    <!-- Desktop nav links -->
+                    <!-- Desktop nav links - Simplified -->
                     <div class="hidden md:block mr-8">
                         <div class="flex items-baseline gap-1">
                             <a href="{{ url_for('index') }}" 
                                class="{% if request.endpoint == 'index' %}bg-caramel text-cream font-bold{% else %}text-cream hover:bg-caramel hover:text-white{% endif %} rounded-lg px-3 py-2 text-sm transition-all duration-150">
-                                בית
+                                🏠 בית
                             </a>
-                            <a href="{{ url_for('summary_tool') }}" 
-                               class="{% if request.endpoint == 'summary_tool' %}bg-caramel text-cream font-bold{% else %}text-cream hover:bg-caramel hover:text-white{% endif %} rounded-lg px-3 py-2 text-sm transition-all duration-150">
-                                מסכם
+                            {% if current_user.is_authenticated %}
+                            <a href="{{ url_for('library.index') }}" 
+                               class="{% if 'library' in request.endpoint|default('') %}bg-caramel text-cream font-bold{% else %}text-cream hover:bg-caramel hover:text-white{% endif %} rounded-lg px-3 py-2 text-sm transition-all duration-150">
+                                📚 הספרייה שלי
                             </a>
-                            <a href="{{ url_for('flashcards_tool') }}" 
-                               class="{% if request.endpoint == 'flashcards_tool' %}bg-caramel text-cream font-bold{% else %}text-cream hover:bg-caramel hover:text-white{% endif %} rounded-lg px-3 py-2 text-sm transition-all duration-150">
-                                כרטיסיות
-                            </a>
-                            <a href="{{ url_for('assess_tool') }}" 
-                               class="{% if request.endpoint == 'assess_tool' %}bg-caramel text-cream font-bold{% else %}text-cream hover:bg-caramel hover:text-white{% endif %} rounded-lg px-3 py-2 text-sm transition-all duration-150">
-                                בחן אותי
-                            </a>
-                            <a href="{{ url_for('homework_tool') }}" 
-                               class="{% if request.endpoint == 'homework_tool' %}bg-caramel text-cream font-bold{% else %}text-cream hover:bg-caramel hover:text-white{% endif %} rounded-lg px-3 py-2 text-sm transition-all duration-150">
-                                עוזר שיעורים
-                            </a>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -61,11 +51,12 @@
                         {% if current_user.user.role.value == 'admin' %}
                         <a href="{{ url_for('admin.dashboard') }}" 
                            class="text-cream hover:text-warm-yellow text-sm transition-colors">
-                            ניהול
+                            ⚙️ ניהול
                         </a>
                         {% endif %}
-                        <span class="inline-flex items-center gap-2 bg-warm-yellow text-dark-brown text-sm px-4 py-2 rounded-full font-medium shadow-md">
-                            <img src="{{ url_for('serve_avner', filename='avner_logo.jpeg') }}" 
+                        <a href="{{ url_for('library.profile') }}" 
+                           class="inline-flex items-center gap-2 bg-warm-yellow text-dark-brown text-sm px-4 py-2 rounded-full font-medium shadow-md hover:bg-golden-yellow transition-colors">
+                            <img src="/avner/avner_logo.jpeg" 
                                  alt="" class="h-6 w-6 rounded-full object-cover"
                                  onerror="this.textContent='🦫';">
                             {{ current_user.user.name or current_user.user.email.split('@')[0] }}
@@ -114,48 +105,39 @@
                    class="{% if request.endpoint == 'index' %}bg-caramel text-cream font-bold{% else %}text-cream hover:bg-caramel hover:text-white{% endif %} block rounded-lg px-3 py-2 text-base transition-all duration-150">
                     בית
                 </a>
-                <a href="{{ url_for('summary_tool') }}" 
-                   class="{% if request.endpoint == 'summary_tool' %}bg-caramel text-cream font-bold{% else %}text-cream hover:bg-caramel hover:text-white{% endif %} block rounded-lg px-3 py-2 text-base transition-all duration-150">
-                    מסכם
+                {% if current_user.is_authenticated %}
+                <a href="{{ url_for('library.index') }}" 
+                   class="{% if 'library' in request.endpoint|default('') %}bg-caramel text-cream font-bold{% else %}text-cream hover:bg-caramel hover:text-white{% endif %} block rounded-lg px-3 py-2 text-base transition-all duration-150">
+                    📚 הספרייה שלי
                 </a>
-                <a href="{{ url_for('flashcards_tool') }}" 
-                   class="{% if request.endpoint == 'flashcards_tool' %}bg-caramel text-cream font-bold{% else %}text-cream hover:bg-caramel hover:text-white{% endif %} block rounded-lg px-3 py-2 text-base transition-all duration-150">
-                    כרטיסיות
-                </a>
-                <a href="{{ url_for('assess_tool') }}" 
-                   class="{% if request.endpoint == 'assess_tool' %}bg-caramel text-cream font-bold{% else %}text-cream hover:bg-caramel hover:text-white{% endif %} block rounded-lg px-3 py-2 text-base transition-all duration-150">
-                    בחן אותי
-                </a>
-                <a href="{{ url_for('homework_tool') }}" 
-                   class="{% if request.endpoint == 'homework_tool' %}bg-caramel text-cream font-bold{% else %}text-cream hover:bg-caramel hover:text-white{% endif %} block rounded-lg px-3 py-2 text-base transition-all duration-150">
-                    עוזר שיעורים
-                </a>
+                {% endif %}
                 <div class="pt-2 border-t border-caramel">
                     {% if current_user.is_authenticated %}
-                        <span class="flex items-center gap-2 text-warm-yellow text-sm px-3 py-2">
-                            <img src="{{ url_for('serve_avner', filename='avner_logo.jpeg') }}" 
+                        <a href="{{ url_for('library.profile') }}" 
+                           class="flex items-center gap-2 text-warm-yellow text-sm px-3 py-2 hover:bg-caramel rounded-lg transition-all">
+                            <img src="/avner/avner_logo.jpeg" 
                                  alt="" class="h-6 w-6 rounded-full object-cover"
                                  onerror="this.textContent='🦫';">
-                            {{ current_user.user.name or current_user.user.email.split('@')[0] }}
-                        </span>
+                            👤 {{ current_user.user.name or current_user.user.email.split('@')[0] }}
+                        </a>
                         {% if current_user.user.role.value == 'admin' %}
                         <a href="{{ url_for('admin.dashboard') }}" 
                            class="text-cream hover:bg-caramel block rounded-lg px-3 py-2 text-base transition-all duration-150">
-                            ניהול
+                            ⚙️ ניהול
                         </a>
                         {% endif %}
                         <a href="{{ url_for('auth.logout') }}" 
                            class="text-cream hover:bg-caramel block rounded-lg px-3 py-2 text-base transition-all duration-150">
-                            התנתק
+                            🚪 התנתק
                         </a>
                     {% else %}
                         <a href="{{ url_for('auth.login') }}" 
                            class="text-cream hover:bg-caramel block rounded-lg px-3 py-2 text-base transition-all duration-150">
-                            התחבר
+                            🔑 התחבר
                         </a>
                         <a href="{{ url_for('auth.signup') }}" 
                            class="text-warm-yellow hover:bg-caramel block rounded-lg px-3 py-2 text-base font-bold transition-all duration-150">
-                            הרשמה
+                            ✨ הרשמה חינם
                         </a>
                     {% endif %}
                 </div>
@@ -190,8 +172,7 @@
         </div>
     </footer>
     
-    <!-- Avner Live Chat Widget (5th functionality - always visible for logged in users) -->
-    {% if current_user.is_authenticated %}
+    <!-- Avner Live Chat Widget - Available for EVERYONE -->
     <div class="avner-helper-floating" id="avner-helper">
         <!-- Animated Avatar Container -->
         <div id="floating-avner-avatar" class="cursor-pointer" onclick="toggleAvnerChat()"></div>
@@ -204,7 +185,7 @@
                 <div id="chat-header-avner"></div>
                 <div>
                     <span class="font-bold">צ'אט עם אבנר 🦫</span>
-                    <p class="text-xs text-cream/80">שאל אותי כל שאלה!</p>
+                    <p class="text-xs text-cream/80">שאל אותי על האפליקציה!</p>
                 </div>
             </div>
             <button onclick="toggleAvnerChat()" class="text-cream hover:text-warm-yellow p-1">
@@ -216,16 +197,20 @@
         <div class="avner-chat-body" id="avner-chat-body">
             <!-- Welcome message -->
             <div class="flex gap-2 mb-3">
-                <img src="{{ url_for('serve_avner', filename='avner_waving.jpeg') }}" 
+                <img src="/avner/avner_waving.jpeg" 
                      alt="אבנר" class="w-8 h-8 rounded-full object-cover flex-shrink-0 border-2 border-golden-yellow">
                 <div class="bg-warm-beige rounded-xl p-3 text-sm text-dark-brown max-w-[85%]">
                     <strong>שלום! אני אבנר 🦫</strong><br>
-                    אני כאן לעזור לך! אפשר לשאול אותי:
+                    אני כאן לעזור! אפשר לשאול אותי:
                     <ul class="mt-2 space-y-1 text-xs">
-                        <li>💡 טיפים ללמידה יעילה</li>
-                        <li>❓ שאלות על החומר שהעלית</li>
                         <li>🔧 איך להשתמש באפליקציה</li>
-                        <li>📚 עזרה כללית בלימודים</li>
+                        <li>📚 מה זה ספרייה/קורס</li>
+                        <li>💡 טיפים ללמידה</li>
+                        {% if current_user.is_authenticated %}
+                        <li>❓ שאלות על החומר שהעלית</li>
+                        {% else %}
+                        <li>🔐 התחבר כדי לשאול על חומר לימוד</li>
+                        {% endif %}
                     </ul>
                 </div>
             </div>
@@ -233,7 +218,7 @@
         <div class="avner-chat-input">
             <input type="text" 
                    id="avner-question" 
-                   placeholder="כתוב הודעה לאבנר..."
+                   placeholder="שאל את אבנר..."
                    onkeypress="if(event.key==='Enter' && !event.shiftKey){event.preventDefault();askAvner();}"
                    onfocus="onChatInputFocus()"
                    onblur="onChatInputBlur()">
@@ -244,7 +229,6 @@
             </button>
         </div>
     </div>
-    {% endif %}
 
     <!-- Reusable Modal Component - Cozy Theme -->
     <div id="help-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modal-title">

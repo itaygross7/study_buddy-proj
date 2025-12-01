@@ -33,6 +33,8 @@ weasyprint = "*"
 # Authentication
 bcrypt = "*"
 email-validator = "*"
+authlib = "*"
+httpx = "*"
 
 [dev-packages]
 pytest = "*"

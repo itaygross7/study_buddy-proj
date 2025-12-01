@@ -1,13 +1,27 @@
 """Authentication service for user management."""
 import uuid
 import secrets
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import Optional
 import bcrypt
 
 from src.domain.models.db_models import User, UserRole
 from src.infrastructure.config import settings
 from sb_utils.logger_utils import logger
+
+
+# Flask-Login User Wrapper
+class UserWrapper:
+    """Flask-Login compatible user wrapper."""
+    def __init__(self, user):
+        self.user = user
+        self.id = user.id
+        self.is_authenticated = True
+        self.is_active = user.is_active
+        self.is_anonymous = False
+        
+    def get_id(self):
+        return self.id
 
 
 def hash_password(password: str) -> str:
@@ -18,6 +32,8 @@ def hash_password(password: str) -> str:
 
 def verify_password(password: str, password_hash: str) -> bool:
     """Verify a password against a hash."""
+    if not password_hash:
+        return False
     return bcrypt.checkpw(password.encode('utf-8'), password_hash.encode('utf-8'))
 
 
@@ -59,6 +75,11 @@ def authenticate_user(db, email: str, password: str) -> Optional[User]:
         return None
     
     user = User(**user_data)
+    
+    # Check if user has a password (OAuth users don't)
+    if not user.password_hash:
+        return None
+    
     if not verify_password(password, user.password_hash):
         return None
     
@@ -129,6 +150,16 @@ def delete_user(db, user_id: str) -> bool:
 
 def increment_prompt_count(db, user_id: str) -> int:
     """Increment user's prompt count and return new count."""
+    # Check if we need to reset daily count
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    
+    # First, reset count if it's a new day
+    db.users.update_one(
+        {"_id": user_id, "prompt_count_date": {"$ne": today}},
+        {"$set": {"prompt_count": 0, "prompt_count_date": today}}
+    )
+    
+    # Then increment
     result = db.users.find_one_and_update(
         {"_id": user_id},
         {"$inc": {"prompt_count": 1}},
@@ -137,10 +168,75 @@ def increment_prompt_count(db, user_id: str) -> int:
     return result.get("prompt_count", 0) if result else 0
 
 
-def reset_password(db, email: str, new_password: str) -> bool:
-    """Reset a user's password."""
+# ============ Password Reset Functions ============
+
+def generate_password_reset_token(db, user_id: str) -> Optional[str]:
+    """Generate a password reset token for a user."""
+    token = secrets.token_urlsafe(32)
+    expires_at = datetime.now(timezone.utc) + timedelta(hours=1)  # Token valid for 1 hour
+    
     result = db.users.update_one(
-        {"email": email.lower()},
+        {"_id": user_id},
+        {"$set": {
+            "reset_token": token,
+            "reset_token_expires": expires_at
+        }}
+    )
+    
+    if result.modified_count > 0:
+        return token
+    return None
+
+
+def get_user_by_reset_token(db, token: str) -> Optional[User]:
+    """Get a user by their password reset token (if valid and not expired)."""
+    user_data = db.users.find_one({
+        "reset_token": token,
+        "reset_token_expires": {"$gt": datetime.now(timezone.utc)}
+    })
+    return User(**user_data) if user_data else None
+
+
+def reset_password(db, token: str, new_password: str) -> bool:
+    """Reset a user's password using a reset token."""
+    # Find user with valid token
+    user = get_user_by_reset_token(db, token)
+    if not user:
+        return False
+    
+    # Update password and clear reset token
+    result = db.users.update_one(
+        {"_id": user.id, "reset_token": token},
+        {"$set": {
+            "password_hash": hash_password(new_password),
+            "reset_token": None,
+            "reset_token_expires": None
+        }}
+    )
+    
+    if result.modified_count > 0:
+        logger.info(f"Password reset for user: {user.email}")
+        return True
+    return False
+
+
+def change_password(db, user_id: str, current_password: str, new_password: str) -> bool:
+    """Change a user's password (requires current password)."""
+    user = get_user_by_id(db, user_id)
+    if not user:
+        return False
+    
+    # Verify current password
+    if not verify_password(current_password, user.password_hash):
+        return False
+    
+    # Update to new password
+    result = db.users.update_one(
+        {"_id": user_id},
         {"$set": {"password_hash": hash_password(new_password)}}
     )
-    return result.modified_count > 0
+    
+    if result.modified_count > 0:
+        logger.info(f"Password changed for user: {user.email}")
+        return True
+    return False

@@ -53,6 +53,16 @@ class Settings(BaseSettings):
     MAIL_PASSWORD: str = Field(default='')
     MAIL_DEFAULT_SENDER: str = Field(default='')
     
+    # OAuth Configuration - Google
+    GOOGLE_CLIENT_ID: str = Field(default='')
+    GOOGLE_CLIENT_SECRET: str = Field(default='')
+    
+    # OAuth Configuration - Apple (optional)
+    APPLE_CLIENT_ID: str = Field(default='')  # Service ID
+    APPLE_TEAM_ID: str = Field(default='')
+    APPLE_KEY_ID: str = Field(default='')
+    APPLE_PRIVATE_KEY: str = Field(default='')  # Contents of .p8 file
+    
     # Security
     SESSION_COOKIE_SECURE: bool = Field(default=False)  # Set to True in production with HTTPS
     SESSION_COOKIE_HTTPONLY: bool = Field(default=True)

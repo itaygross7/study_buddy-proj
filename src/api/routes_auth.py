@@ -176,3 +176,75 @@ def resend_verification():
         flash('לא נמצא משתמש עם אימייל זה או שהאימייל כבר אומת', 'error')
     
     return redirect(url_for('auth.login'))
+
+
+@auth_bp.route('/forgot-password', methods=['GET', 'POST'])
+def forgot_password():
+    """Request password reset."""
+    if current_user.is_authenticated:
+        return redirect(url_for('library.index'))
+    
+    if request.method == 'POST':
+        email = request.form.get('email', '').strip().lower()
+        
+        if not email:
+            flash('יש להזין כתובת אימייל', 'error')
+            return render_template('auth/forgot_password.html')
+        
+        user = auth_service.get_user_by_email(db, email)
+        
+        # Always show success message to prevent email enumeration
+        if user:
+            # Generate reset token
+            reset_token = auth_service.generate_password_reset_token(db, user.id)
+            
+            if reset_token:
+                # Send reset email
+                base_url = request.url_root.rstrip('/')
+                email_service.send_password_reset_email(email, reset_token, base_url)
+                logger.info(f"Password reset requested for: {email}")
+        
+        flash('אם האימייל קיים במערכת, נשלח אליו קישור לאיפוס סיסמה', 'success')
+        return redirect(url_for('auth.login'))
+    
+    return render_template('auth/forgot_password.html')
+
+
+@auth_bp.route('/reset-password/<token>', methods=['GET', 'POST'])
+def reset_password(token):
+    """Reset password with token."""
+    if current_user.is_authenticated:
+        return redirect(url_for('library.index'))
+    
+    # Verify token is valid
+    user = auth_service.get_user_by_reset_token(db, token)
+    
+    if not user:
+        flash('קישור איפוס הסיסמה אינו תקף או שפג תוקפו', 'error')
+        return redirect(url_for('auth.forgot_password'))
+    
+    if request.method == 'POST':
+        password = request.form.get('password', '')
+        confirm_password = request.form.get('confirm_password', '')
+        
+        if not password:
+            flash('יש להזין סיסמה חדשה', 'error')
+            return render_template('auth/reset_password.html', token=token)
+        
+        if password != confirm_password:
+            flash('הסיסמאות אינן תואמות', 'error')
+            return render_template('auth/reset_password.html', token=token)
+        
+        if len(password) < 8:
+            flash('הסיסמה חייבת להכיל לפחות 8 תווים', 'error')
+            return render_template('auth/reset_password.html', token=token)
+        
+        # Reset the password
+        if auth_service.reset_password(db, token, password):
+            flash('הסיסמה שונתה בהצלחה! כעת ניתן להתחבר', 'success')
+            logger.info(f"Password reset completed for user: {user.email}")
+            return redirect(url_for('auth.login'))
+        else:
+            flash('אירעה שגיאה באיפוס הסיסמה', 'error')
+    
+    return render_template('auth/reset_password.html', token=token)

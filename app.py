@@ -22,6 +22,7 @@ from src.api.routes_auth import auth_bp, login_manager
 from src.api.routes_admin import admin_bp
 from src.api.routes_avner import avner_bp
 from src.api.routes_library import library_bp
+from src.api.routes_oauth import oauth_bp, init_oauth
 
 
 def create_app():
@@ -56,9 +57,13 @@ def create_app():
     login_manager.login_view = 'auth.login'
     login_manager.login_message = 'יש להתחבר כדי לגשת לעמוד זה'
     login_manager.login_message_category = 'warning'
+    
+    # Initialize OAuth (Google/Apple Sign-In)
+    init_oauth(app)
 
     # Register Blueprints
     app.register_blueprint(auth_bp, url_prefix='/auth')
+    app.register_blueprint(oauth_bp, url_prefix='/oauth')
     app.register_blueprint(admin_bp, url_prefix='/admin')
     app.register_blueprint(library_bp, url_prefix='/library')
     app.register_blueprint(avner_bp, url_prefix='/api/avner')

@@ -26,3 +26,6 @@ pytesseract
 Pillow
 bcrypt
 email-validator
+authlib
+httpx
+psutil

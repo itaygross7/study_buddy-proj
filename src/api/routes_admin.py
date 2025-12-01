@@ -1,4 +1,7 @@
 """Admin routes for system management."""
+import os
+import platform
+import psutil
 from datetime import datetime, timezone
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_required, current_user
@@ -34,27 +37,147 @@ def update_system_config(updates: dict) -> bool:
     return result.modified_count > 0 or result.upserted_id is not None
 
 
+def get_system_health():
+    """Get system health information."""
+    health = {
+        "status": "healthy",
+        "issues": [],
+        "metrics": {}
+    }
+    
+    try:
+        # CPU Usage
+        cpu_percent = psutil.cpu_percent(interval=1)
+        health["metrics"]["cpu"] = {
+            "percent": cpu_percent,
+            "cores": psutil.cpu_count(),
+            "status": "good" if cpu_percent < 80 else "warning" if cpu_percent < 95 else "critical"
+        }
+        if cpu_percent >= 80:
+            health["issues"].append(f"CPU usage high: {cpu_percent}%")
+        
+        # Memory Usage
+        memory = psutil.virtual_memory()
+        health["metrics"]["memory"] = {
+            "total_gb": round(memory.total / (1024**3), 2),
+            "used_gb": round(memory.used / (1024**3), 2),
+            "available_gb": round(memory.available / (1024**3), 2),
+            "percent": memory.percent,
+            "status": "good" if memory.percent < 80 else "warning" if memory.percent < 95 else "critical"
+        }
+        if memory.percent >= 80:
+            health["issues"].append(f"Memory usage high: {memory.percent}%")
+        
+        # Disk Usage
+        disk = psutil.disk_usage('/')
+        health["metrics"]["disk"] = {
+            "total_gb": round(disk.total / (1024**3), 2),
+            "used_gb": round(disk.used / (1024**3), 2),
+            "free_gb": round(disk.free / (1024**3), 2),
+            "percent": round(disk.percent, 1),
+            "status": "good" if disk.percent < 80 else "warning" if disk.percent < 95 else "critical"
+        }
+        if disk.percent >= 80:
+            health["issues"].append(f"Disk usage high: {disk.percent}%")
+        
+        # System Info
+        health["metrics"]["system"] = {
+            "platform": platform.system(),
+            "platform_version": platform.version(),
+            "python_version": platform.python_version(),
+            "hostname": platform.node(),
+            "uptime_hours": round((datetime.now().timestamp() - psutil.boot_time()) / 3600, 1)
+        }
+        
+        # Database Status
+        try:
+            db_stats = db.command("dbStats")
+            health["metrics"]["database"] = {
+                "status": "connected",
+                "size_mb": round(db_stats.get("dataSize", 0) / (1024**2), 2),
+                "storage_mb": round(db_stats.get("storageSize", 0) / (1024**2), 2),
+                "collections": db_stats.get("collections", 0),
+                "objects": db_stats.get("objects", 0)
+            }
+        except Exception as e:
+            health["metrics"]["database"] = {"status": "error", "error": str(e)}
+            health["issues"].append("Database connection issue")
+        
+        # Determine overall status
+        if any(m.get("status") == "critical" for m in health["metrics"].values() if isinstance(m, dict)):
+            health["status"] = "critical"
+        elif any(m.get("status") == "warning" for m in health["metrics"].values() if isinstance(m, dict)):
+            health["status"] = "warning"
+        elif health["issues"]:
+            health["status"] = "warning"
+            
+    except Exception as e:
+        logger.error(f"Error getting system health: {e}")
+        health["status"] = "error"
+        health["issues"].append(f"Error collecting metrics: {str(e)}")
+    
+    return health
+
+
+def get_app_statistics():
+    """Get application-specific statistics."""
+    try:
+        stats = {
+            "users": {
+                "total": db.users.count_documents({}),
+                "verified": db.users.count_documents({"is_verified": True}),
+                "active": db.users.count_documents({"is_active": True}),
+                "admins": db.users.count_documents({"role": "admin"}),
+                "today": db.users.count_documents({
+                    "created_at": {"$gte": datetime.now(timezone.utc).replace(hour=0, minute=0, second=0)}
+                })
+            },
+            "content": {
+                "documents": db.documents.count_documents({}),
+                "courses": db.courses.count_documents({}) if "courses" in db.list_collection_names() else 0,
+                "summaries": db.summaries.count_documents({}) if "summaries" in db.list_collection_names() else 0,
+                "flashcard_sets": db.flashcard_sets.count_documents({}),
+                "assessments": db.assessments.count_documents({})
+            },
+            "tasks": {
+                "total": db.tasks.count_documents({}),
+                "pending": db.tasks.count_documents({"status": "PENDING"}),
+                "processing": db.tasks.count_documents({"status": "PROCESSING"}),
+                "completed": db.tasks.count_documents({"status": "COMPLETED"}),
+                "failed": db.tasks.count_documents({"status": "FAILED"})
+            }
+        }
+        return stats
+    except Exception as e:
+        logger.error(f"Error getting app statistics: {e}")
+        return {}
+
+
 @admin_bp.route('/')
 @login_required
 @admin_required
 def dashboard():
-    """Admin dashboard."""
-    # Get statistics
-    user_count = auth_service.get_user_count(db)
-    doc_count = db.documents.count_documents({})
-    task_count = db.tasks.count_documents({})
+    """Admin dashboard with system status."""
+    # Get system health
+    health = get_system_health()
+    
+    # Get app statistics
+    stats = get_app_statistics()
     
     # Get recent users
     recent_users = list(db.users.find().sort("created_at", -1).limit(10))
+    
+    # Get recent errors/warnings from tasks
+    recent_failures = list(db.tasks.find({"status": "FAILED"}).sort("updated_at", -1).limit(5))
     
     # Get system config
     config = get_system_config()
     
     return render_template('admin/dashboard.html',
-                         user_count=user_count,
-                         doc_count=doc_count,
-                         task_count=task_count,
+                         health=health,
+                         stats=stats,
                          recent_users=recent_users,
+                         recent_failures=recent_failures,
                          config=config)
 
 
@@ -161,22 +284,29 @@ def config():
 @admin_required
 def api_stats():
     """Get system statistics as JSON."""
-    user_count = auth_service.get_user_count(db)
-    doc_count = db.documents.count_documents({})
-    task_count = db.tasks.count_documents({})
+    stats = get_app_statistics()
+    return jsonify(stats)
+
+
+@admin_bp.route('/api/health')
+@login_required
+@admin_required
+def api_health():
+    """Get system health as JSON (for real-time updates)."""
+    health = get_system_health()
+    return jsonify(health)
+
+
+@admin_bp.route('/system')
+@login_required
+@admin_required
+def system_status():
+    """Detailed system status page."""
+    health = get_system_health()
+    stats = get_app_statistics()
+    config = get_system_config()
     
-    # Tasks by status
-    pending_tasks = db.tasks.count_documents({"status": "PENDING"})
-    completed_tasks = db.tasks.count_documents({"status": "COMPLETED"})
-    failed_tasks = db.tasks.count_documents({"status": "FAILED"})
-    
-    return jsonify({
-        "users": user_count,
-        "documents": doc_count,
-        "tasks": {
-            "total": task_count,
-            "pending": pending_tasks,
-            "completed": completed_tasks,
-            "failed": failed_tasks
-        }
-    })
+    return render_template('admin/system.html',
+                         health=health,
+                         stats=stats,
+                         config=config)
