@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}הספרייה שלי - StudyBuddy{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+            <h1 class="text-2xl md:text-3xl font-bold text-dark-brown">📚 הספרייה שלי</h1>
+            <p class="text-cozy-brown mt-1">כאן נמצאים כל הקורסים והחומרים שלך</p>
+        </div>
+        <div class="flex gap-3">
+            <a href="{{ url_for('library.profile') }}" 
+               class="px-4 py-2 border-2 border-cozy-brown text-cozy-brown rounded-xl font-medium hover:bg-cozy-brown hover:text-cream transition-colors">
+                👤 הפרופיל שלי
+            </a>
+            {% if courses|length < max_courses %}
+            <a href="{{ url_for('library.new_course') }}" 
+               class="px-4 py-2 bg-golden-yellow text-dark-brown rounded-xl font-bold hover:bg-warm-yellow transition-colors shadow-md">
+                ➕ קורס חדש
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Quick Start Guide (shown if no courses) -->
+{% if courses|length == 0 %}
+<div class="bg-cream rounded-2xl p-8 shadow-md border-2 border-golden-yellow text-center mb-8">
+    <div id="welcome-avner" class="mb-4"></div>
+    <h2 class="text-xl font-bold text-dark-brown mb-3">ברוכים הבאים! 🦫</h2>
+    <p class="text-cozy-brown mb-6 max-w-lg mx-auto">
+        זה המקום לארגן את כל חומרי הלימוד שלך.<br>
+        צור קורס חדש והעלה אליו את החומרים - ואבנר יעזור לך ללמוד!
+    </p>
+    
+    <div class="bg-warm-beige rounded-xl p-6 max-w-md mx-auto text-right mb-6">
+        <h3 class="font-bold text-dark-brown mb-3">איך זה עובד?</h3>
+        <ol class="space-y-2 text-sm text-coffee">
+            <li><span class="font-bold">1.</span> צור קורס חדש (למשל: "מבוא לפסיכולוגיה")</li>
+            <li><span class="font-bold">2.</span> העלה חומרי לימוד - סיכומים, מצגות, PDF</li>
+            <li><span class="font-bold">3.</span> השתמש בכלים: סיכום, כרטיסיות, בחינות</li>
+            <li><span class="font-bold">4.</span> שאל את אבנר שאלות על החומר!</li>
+        </ol>
+    </div>
+    
+    <a href="{{ url_for('library.new_course') }}" 
+       class="inline-flex items-center gap-2 px-6 py-3 bg-golden-yellow text-dark-brown rounded-xl font-bold hover:bg-warm-yellow transition-colors shadow-md text-lg">
+        ➕ צור את הקורס הראשון שלך
+    </a>
+</div>
+{% else %}
+
+<!-- Courses Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    {% for course in courses %}
+    <a href="{{ url_for('library.course_page', course_id=course.id) }}" 
+       class="bg-cream rounded-2xl p-6 shadow-md border-2 hover:shadow-lg transition-all card-hover"
+       style="border-color: {{ course.color }}">
+        
+        <div class="flex items-start justify-between mb-4">
+            <div class="text-4xl">{{ course.icon }}</div>
+            {% if course.has_content() %}
+            <span class="px-2 py-1 bg-success text-white text-xs rounded-full">פעיל</span>
+            {% else %}
+            <span class="px-2 py-1 bg-warning text-dark-brown text-xs rounded-full">ריק</span>
+            {% endif %}
+        </div>
+        
+        <h3 class="text-lg font-bold text-dark-brown mb-2 line-clamp-2">{{ course.name }}</h3>
+        
+        {% if course.description %}
+        <p class="text-sm text-cozy-brown mb-3 line-clamp-2">{{ course.description }}</p>
+        {% endif %}
+        
+        <div class="flex items-center gap-4 text-xs text-warm-gray">
+            <span>📄 {{ course.document_count }} מסמכים</span>
+            <span>{{ 'עברית' if course.language.value == 'he' else 'English' }}</span>
+        </div>
+        
+        {% if not course.has_content() %}
+        <div class="mt-4 p-3 bg-warm-beige rounded-lg text-center">
+            <p class="text-sm text-cozy-brown">📤 העלה חומרים כדי להתחיל</p>
+        </div>
+        {% endif %}
+    </a>
+    {% endfor %}
+    
+    <!-- Add Course Card -->
+    {% if courses|length < max_courses %}
+    <a href="{{ url_for('library.new_course') }}" 
+       class="bg-warm-beige rounded-2xl p-6 border-2 border-dashed border-warm-gray hover:border-golden-yellow transition-all flex flex-col items-center justify-center min-h-[200px] group">
+        <div class="text-4xl mb-2 group-hover:scale-110 transition-transform">➕</div>
+        <span class="text-cozy-brown font-medium group-hover:text-dark-brown">הוסף קורס חדש</span>
+        <span class="text-xs text-warm-gray mt-1">{{ courses|length }}/{{ max_courses }}</span>
+    </a>
+    {% endif %}
+</div>
+
+{% endif %}
+
+<!-- Usage Tips -->
+<div class="mt-8 bg-warm-beige rounded-xl p-4 border border-warm-gray">
+    <div class="flex items-center gap-3">
+        <span class="text-2xl">💡</span>
+        <p class="text-sm text-cozy-brown">
+            <strong>טיפ:</strong> העלה את כל החומרים של קורס לתיקייה אחת. ככה אבנר יוכל לענות על שאלות מכל החומר!
+        </p>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Initialize welcome Avner
+    document.addEventListener('DOMContentLoaded', function() {
+        const welcomeContainer = document.getElementById('welcome-avner');
+        if (welcomeContainer && typeof AvnerAvatar !== 'undefined') {
+            new AvnerAvatar('welcome-avner', { size: 'large', showBubble: false });
+        }
+    });
+</script>
+{% endblock %}

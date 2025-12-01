@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block title %}הרשמה - StudyBuddy{% endblock %}
+
+{% block content %}
+<div class="min-h-[70vh] flex items-center justify-center py-12">
+    <div class="bg-cream rounded-2xl shadow-lg p-8 w-full max-w-md border-2 border-warm-yellow">
+        <!-- Header with Avner -->
+        <div class="text-center mb-8">
+            <img src="{{ url_for('serve_avner', filename='avner_horay.jpeg') }}" 
+                 alt="אבנר שמח"
+                 class="w-20 h-20 rounded-full mx-auto mb-4 object-cover border-4 border-golden-yellow shadow-md"
+                 onerror="this.style.display='none';">
+            <h1 class="text-2xl font-bold text-dark-brown">הצטרפו למשפחה!</h1>
+            <p class="text-cozy-brown mt-2">צרו חשבון והתחילו ללמוד עם אבנר</p>
+        </div>
+        
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="mb-4 p-4 rounded-xl border-2 
+                        {% if category == 'error' %}bg-red-50 border-error text-error
+                        {% elif category == 'success' %}bg-green-50 border-success text-success
+                        {% else %}bg-yellow-50 border-warning text-cozy-brown{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <!-- Signup Form -->
+        <form method="POST" class="space-y-5">
+            <div>
+                <label for="name" class="block text-sm font-medium text-dark-brown mb-2">
+                    שם (אופציונלי)
+                </label>
+                <input type="text" 
+                       id="name" 
+                       name="name" 
+                       autocomplete="name"
+                       class="w-full px-4 py-3 rounded-xl border-2 border-warm-gray bg-warm-beige text-dark-brown placeholder-cozy-brown focus:border-golden-yellow focus:outline-none focus:ring-2 focus:ring-golden-yellow transition-all"
+                       placeholder="השם שלך">
+            </div>
+            
+            <div>
+                <label for="email" class="block text-sm font-medium text-dark-brown mb-2">
+                    אימייל
+                </label>
+                <input type="email" 
+                       id="email" 
+                       name="email" 
+                       required
+                       autocomplete="email"
+                       class="w-full px-4 py-3 rounded-xl border-2 border-warm-gray bg-warm-beige text-dark-brown placeholder-cozy-brown focus:border-golden-yellow focus:outline-none focus:ring-2 focus:ring-golden-yellow transition-all"
+                       placeholder="your@email.com">
+            </div>
+            
+            <div>
+                <label for="password" class="block text-sm font-medium text-dark-brown mb-2">
+                    סיסמה
+                </label>
+                <input type="password" 
+                       id="password" 
+                       name="password" 
+                       required
+                       minlength="8"
+                       autocomplete="new-password"
+                       class="w-full px-4 py-3 rounded-xl border-2 border-warm-gray bg-warm-beige text-dark-brown placeholder-cozy-brown focus:border-golden-yellow focus:outline-none focus:ring-2 focus:ring-golden-yellow transition-all"
+                       placeholder="לפחות 8 תווים">
+                <p class="mt-1 text-xs text-cozy-brown">הסיסמה חייבת להכיל לפחות 8 תווים</p>
+            </div>
+            
+            <div>
+                <label for="confirm_password" class="block text-sm font-medium text-dark-brown mb-2">
+                    אימות סיסמה
+                </label>
+                <input type="password" 
+                       id="confirm_password" 
+                       name="confirm_password" 
+                       required
+                       autocomplete="new-password"
+                       class="w-full px-4 py-3 rounded-xl border-2 border-warm-gray bg-warm-beige text-dark-brown placeholder-cozy-brown focus:border-golden-yellow focus:outline-none focus:ring-2 focus:ring-golden-yellow transition-all"
+                       placeholder="הזן שוב את הסיסמה">
+            </div>
+            
+            <button type="submit" 
+                    class="w-full bg-golden-yellow text-dark-brown font-bold py-3 px-6 rounded-xl btn-hover-lift transition-all shadow-md hover:bg-warm-yellow">
+                צור חשבון
+            </button>
+        </form>
+        
+        <!-- Login Link -->
+        <div class="mt-6 text-center">
+            <p class="text-cozy-brown">
+                כבר יש לך חשבון?
+                <a href="{{ url_for('auth.login') }}" class="text-dark-brown font-bold hover:text-golden-yellow transition-colors">
+                    התחבר כאן
+                </a>
+            </p>
+        </div>
+        
+        <!-- Terms Note -->
+        <p class="mt-4 text-xs text-center text-warm-gray">
+            בהרשמה אתה מסכים לתנאי השימוש ומדיניות הפרטיות שלנו
+        </p>
+    </div>
+</div>
+{% endblock %}

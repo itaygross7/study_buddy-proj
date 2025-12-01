@@ -41,5 +41,21 @@ class Settings(BaseSettings):
 
     # Logging
     LOG_LEVEL: str = Field(default='INFO')
+    
+    # Admin Configuration
+    ADMIN_EMAIL: str = Field(default='')  # Admin email address
+    
+    # Email Configuration (SMTP)
+    MAIL_SERVER: str = Field(default='smtp.gmail.com')
+    MAIL_PORT: int = Field(default=587)
+    MAIL_USE_TLS: bool = Field(default=True)
+    MAIL_USERNAME: str = Field(default='')
+    MAIL_PASSWORD: str = Field(default='')
+    MAIL_DEFAULT_SENDER: str = Field(default='')
+    
+    # Security
+    SESSION_COOKIE_SECURE: bool = Field(default=False)  # Set to True in production with HTTPS
+    SESSION_COOKIE_HTTPONLY: bool = Field(default=True)
+    SESSION_COOKIE_SAMESITE: str = Field(default='Lax')
 
 settings = Settings()
