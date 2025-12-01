@@ -142,6 +142,42 @@ def update_user_status(db, user_id: str, is_active: bool) -> bool:
     return result.modified_count > 0
 
 
+def create_admin_if_not_exists(db) -> Optional[User]:
+    """Create admin user from environment variables if not exists."""
+    if not settings.ADMIN_EMAIL:
+        return None
+    
+    # Check if admin already exists
+    existing = db.users.find_one({"email": settings.ADMIN_EMAIL.lower()})
+    if existing:
+        logger.info(f"Admin user already exists: {settings.ADMIN_EMAIL}")
+        return User(**existing)
+    
+    # Create admin if password is provided
+    if not settings.ADMIN_PASSWORD:
+        logger.info("Admin password not configured, admin will be created on signup")
+        return None
+    
+    try:
+        user = User(
+            _id=str(uuid.uuid4()),
+            email=settings.ADMIN_EMAIL.lower(),
+            password_hash=hash_password(settings.ADMIN_PASSWORD),
+            name="Administrator",
+            role=UserRole.ADMIN,
+            is_verified=True,  # Admin is pre-verified
+            verification_token=None,
+            created_at=datetime.now(timezone.utc)
+        )
+        
+        db.users.insert_one(user.to_dict())
+        logger.info(f"Created admin user: {settings.ADMIN_EMAIL}")
+        return user
+    except Exception as e:
+        logger.error(f"Failed to create admin user: {e}", exc_info=True)
+        return None
+
+
 def delete_user(db, user_id: str) -> bool:
     """Delete a user."""
     result = db.users.delete_one({"_id": user_id})

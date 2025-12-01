@@ -23,6 +23,7 @@ from src.api.routes_admin import admin_bp
 from src.api.routes_avner import avner_bp
 from src.api.routes_library import library_bp
 from src.api.routes_oauth import oauth_bp, init_oauth
+from src.services import auth_service
 
 
 def create_app():
@@ -60,6 +61,11 @@ def create_app():
     
     # Initialize OAuth (Google/Apple Sign-In)
     init_oauth(app)
+    
+    # Create admin user if configured
+    with app.app_context():
+        from src.infrastructure.database import db
+        auth_service.create_admin_if_not_exists(db)
 
     # Register Blueprints
     app.register_blueprint(auth_bp, url_prefix='/auth')

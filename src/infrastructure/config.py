@@ -48,6 +48,7 @@ class Settings(BaseSettings):
     
     # Admin Configuration
     ADMIN_EMAIL: str = Field(default='')  # Admin email address
+    ADMIN_PASSWORD: str = Field(default='')  # Initial admin password (optional, for first-time setup)
     
     # Email Configuration (SMTP)
     MAIL_SERVER: str = Field(default='smtp.gmail.com')

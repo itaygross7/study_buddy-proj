@@ -81,6 +81,10 @@ StudyBuddyAI is a comprehensive web application designed to help students with t
    
    # Your admin email (you'll have full admin access)
    ADMIN_EMAIL="your_email@example.com"
+   
+   # Optional: Set initial admin password (admin will be created on startup)
+   # If not set, you need to sign up with ADMIN_EMAIL to become admin
+   ADMIN_PASSWORD="your_secure_admin_password"
    ```
    
    **Generate a secure secret key:**
