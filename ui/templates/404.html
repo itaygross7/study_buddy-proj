@@ -5,10 +5,11 @@
 {% block content %}
 <div class="text-center py-16">
     <div class="bg-cream rounded-2xl p-8 shadow-md max-w-md mx-auto border border-warm-yellow">
-        <img src="{{ url_for('static', filename='img/avner_cry_laugh.png') }}" 
+        <!-- Use avner_cluless from Avner folder for 404 -->
+        <img src="{{ url_for('serve_avner', filename='avner_cluless.jpeg') }}" 
              alt="אבנר מבולבל"
              class="w-24 h-24 mx-auto mb-6 rounded-xl object-cover border-2 border-golden-yellow shadow-md"
-             onerror="this.style.display='none'">
+             onerror="this.src='{{ url_for('static', filename='img/avner_cry_laugh.png') }}';">
         
         <h2 class="text-2xl font-bold text-dark-brown mb-4">אופס! העמוד לא נמצא</h2>
         <p class="text-coffee mb-8">

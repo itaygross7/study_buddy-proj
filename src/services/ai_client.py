@@ -11,9 +11,15 @@ class AIClient:
     """
     A unified client for interacting with different AI models (OpenAI, Gemini).
     Includes built-in retry logic and safety guards.
+    
+    Model selection is configurable via environment variables:
+    - SB_OPENAI_MODEL: OpenAI model to use (default: gpt-4o-mini)
+    - SB_GEMINI_MODEL: Gemini model to use (default: gemini-1.5-flash)
+    - SB_DEFAULT_PROVIDER: Default AI provider (default: gemini)
+    - SB_BASE_URL: Optional custom base URL for API
     """
-    def __init__(self, provider: str = "gemini"):
-        self.provider = provider
+    def __init__(self, provider: str = None):
+        self.provider = provider or settings.SB_DEFAULT_PROVIDER
         self._initialized = False
         
     def _ensure_initialized(self):
@@ -25,6 +31,9 @@ class AIClient:
             if not settings.OPENAI_API_KEY or "your_openai" in settings.OPENAI_API_KEY:
                 raise ValueError("OpenAI API key is not configured.")
             openai.api_key = settings.OPENAI_API_KEY
+            # Set custom base URL if provided
+            if settings.SB_BASE_URL:
+                openai.api_base = settings.SB_BASE_URL
         elif self.provider == "gemini":
             if not settings.GEMINI_API_KEY or "your_google" in settings.GEMINI_API_KEY:
                 raise ValueError("Gemini API key is not configured.")
@@ -37,26 +46,37 @@ class AIClient:
     def generate_text(self, prompt: str, context: str) -> str:
         """
         Generates text using the selected AI provider, with retries and safety.
+        Uses configurable model names from SB_* environment variables.
         """
         self._ensure_initialized()
         full_prompt = create_safety_guard_prompt(prompt, context)
         
         try:
             if self.provider == "openai":
-                response = openai.Completion.create(
-                    engine="text-davinci-003",
-                    prompt=full_prompt,
+                model_name = settings.SB_OPENAI_MODEL
+                logger.debug(f"Using OpenAI model: {model_name}")
+                
+                client = openai.OpenAI(
+                    api_key=settings.OPENAI_API_KEY,
+                    base_url=settings.SB_BASE_URL if settings.SB_BASE_URL else None,
+                    timeout=30.0
+                )
+                response = client.chat.completions.create(
+                    model=model_name,
+                    messages=[{"role": "user", "content": full_prompt}],
                     max_tokens=1500,
                     temperature=0.7,
-                    timeout=30.0,  # Added timeout
                 )
-                return response.choices[0].text.strip()
+                return response.choices[0].message.content.strip()
             
             elif self.provider == "gemini":
-                model = genai.GenerativeModel('gemini-pro')
+                model_name = settings.SB_GEMINI_MODEL
+                logger.debug(f"Using Gemini model: {model_name}")
+                
+                model = genai.GenerativeModel(model_name)
                 response = model.generate_content(
                     full_prompt,
-                    request_options={"timeout": 45.0} # Added timeout
+                    request_options={"timeout": 45.0}
                 )
                 return response.text.strip()
 
@@ -67,4 +87,4 @@ class AIClient:
         raise AIClientError("The AI service returned an empty or invalid response.")
 
 # Default client instance (lazy initialization)
-ai_client = AIClient(provider="gemini")
+ai_client = AIClient(provider=settings.SB_DEFAULT_PROVIDER)

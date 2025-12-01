@@ -35,10 +35,11 @@
         <!-- Left column: Big Avner illustration -->
         <div class="flex-1 flex justify-center">
             <div class="bg-cream rounded-3xl p-6 shadow-lg max-w-sm border-2 border-warm-yellow">
-                <img src="{{ url_for('static', filename='img/avner_wave.png') }}" 
+                <!-- Use avner_waving from Avner folder -->
+                <img src="{{ url_for('serve_avner', filename='avner_waving.jpeg') }}" 
                      alt="אבנר מנופף לשלום"
                      class="w-full h-auto rounded-2xl shadow-md"
-                     onerror="this.style.display='none'">
+                     onerror="this.src='{{ url_for('static', filename='img/avner_wave.png') }}';">
             </div>
         </div>
     </div>
@@ -54,10 +55,11 @@
         <!-- Summarizer Card -->
         <div class="bg-cream rounded-2xl p-6 shadow-md card-hover border border-warm-yellow">
             <div class="flex items-start gap-4 mb-4">
-                <img src="{{ url_for('static', filename='img/avner_book.png') }}" 
+                <!-- Use avner_reading from Avner folder -->
+                <img src="{{ url_for('serve_avner', filename='avner_reading.jpeg') }}" 
                      alt="אבנר קורא ספר"
                      class="w-16 h-16 rounded-xl object-cover shadow-md border-2 border-golden-yellow"
-                     onerror="this.style.display='none'">
+                     onerror="this.src='{{ url_for('static', filename='img/avner_book.png') }}';">
                 <h3 class="text-xl font-bold text-dark-brown">מסכם</h3>
             </div>
             <ul class="text-coffee mb-6 space-y-2 list-disc list-inside">
@@ -77,7 +79,8 @@
         <!-- Flashcards Card -->
         <div class="bg-cream rounded-2xl p-6 shadow-md card-hover border border-warm-yellow">
             <div class="flex items-start gap-4 mb-4">
-                <img src="{{ url_for('static', filename='img/avner_pencil.png') }}" 
+                <!-- Use avner_angry_holding_pencile from Avner folder -->
+                <img src="{{ url_for('serve_avner', filename='avner_angry_holding_pencile.jpeg') }}" 
                      alt="אבנר כותב"
                      class="w-16 h-16 rounded-xl object-cover shadow-md border-2 border-golden-yellow"
                      onerror="this.style.display='none'">
@@ -100,10 +103,11 @@
         <!-- Assess Me Card -->
         <div class="bg-cream rounded-2xl p-6 shadow-md card-hover border border-warm-yellow">
             <div class="flex items-start gap-4 mb-4">
-                <img src="{{ url_for('static', filename='img/avner_thinking.png') }}" 
+                <!-- Use avner_thinking from Avner folder -->
+                <img src="{{ url_for('serve_avner', filename='avner_thinking.jpeg') }}" 
                      alt="אבנר חושב"
                      class="w-16 h-16 rounded-xl object-cover shadow-md border-2 border-golden-yellow"
-                     onerror="this.style.display='none'">
+                     onerror="this.src='{{ url_for('static', filename='img/avner_thinking.png') }}';">
                 <h3 class="text-xl font-bold text-dark-brown">בחן אותי</h3>
             </div>
             <ul class="text-coffee mb-6 space-y-2 list-disc list-inside">
@@ -123,10 +127,11 @@
         <!-- Homework Helper Card -->
         <div class="bg-cream rounded-2xl p-6 shadow-md card-hover border border-warm-yellow">
             <div class="flex items-start gap-4 mb-4">
-                <img src="{{ url_for('static', filename='img/avner_laptop.png') }}" 
+                <!-- Use avner_with_laptop from Avner folder -->
+                <img src="{{ url_for('serve_avner', filename='avner_with_laptop.jpeg') }}" 
                      alt="אבנר עובד על מחשב"
                      class="w-16 h-16 rounded-xl object-cover shadow-md border-2 border-golden-yellow"
-                     onerror="this.style.display='none'">
+                     onerror="this.src='{{ url_for('static', filename='img/avner_laptop.png') }}';">
                 <h3 class="text-xl font-bold text-dark-brown">עוזר שיעורים</h3>
             </div>
             <ul class="text-coffee mb-6 space-y-2 list-disc list-inside">
@@ -157,10 +162,11 @@
             <div class="w-16 h-16 bg-golden-yellow rounded-full flex items-center justify-center mx-auto mb-4 shadow-md">
                 <span class="text-dark-brown text-2xl font-bold">1</span>
             </div>
-            <img src="{{ url_for('static', filename='img/avner_teaching.png') }}" 
+            <!-- Use avner_holding_backbak from Avner folder -->
+            <img src="{{ url_for('serve_avner', filename='avner_holding_backbak.jpeg') }}" 
                  alt="אבנר מלמד"
                  class="w-12 h-12 rounded-full mx-auto mb-4 object-cover border-2 border-golden-yellow"
-                 onerror="this.style.display='none';">
+                 onerror="this.src='{{ url_for('static', filename='img/avner_teaching.png') }}';">
             <h3 class="text-lg font-bold text-dark-brown mb-2">מעלים חומר לימוד</h3>
             <p class="text-coffee">מעלים חומר לימוד מהמחשב או מדביקים טקסט</p>
         </div>
@@ -170,10 +176,11 @@
             <div class="w-16 h-16 bg-golden-yellow rounded-full flex items-center justify-center mx-auto mb-4 shadow-md">
                 <span class="text-dark-brown text-2xl font-bold">2</span>
             </div>
-            <img src="{{ url_for('static', filename='img/avner_thinking.png') }}" 
+            <!-- Use avner_looking_at_page from Avner folder -->
+            <img src="{{ url_for('serve_avner', filename='avner_looking_at_page_acratching_head.jpeg') }}" 
                  alt="אבנר חושב"
                  class="w-12 h-12 rounded-full mx-auto mb-4 object-cover border-2 border-golden-yellow"
-                 onerror="this.style.display='none';">
+                 onerror="this.src='{{ url_for('static', filename='img/avner_thinking.png') }}';">
             <h3 class="text-lg font-bold text-dark-brown mb-2">בוחרים כלי</h3>
             <p class="text-coffee">בוחרים כלי – סיכום, כרטיסיות, בחן אותי או עזרה בשיעורים</p>
         </div>
@@ -183,10 +190,11 @@
             <div class="w-16 h-16 bg-golden-yellow rounded-full flex items-center justify-center mx-auto mb-4 shadow-md">
                 <span class="text-dark-brown text-2xl font-bold">3</span>
             </div>
-            <img src="{{ url_for('static', filename='img/avner_celebrate.png') }}" 
+            <!-- Use avner_horay from Avner folder -->
+            <img src="{{ url_for('serve_avner', filename='avner_horay.jpeg') }}" 
                  alt="אבנר חוגג"
                  class="w-12 h-12 rounded-full mx-auto mb-4 object-cover border-2 border-golden-yellow"
-                 onerror="this.style.display='none';">
+                 onerror="this.src='{{ url_for('static', filename='img/avner_celebrate.png') }}';">
             <h3 class="text-lg font-bold text-dark-brown mb-2">לומדים יחד</h3>
             <p class="text-coffee">לומדים יחד עם אבנר בקצב שלכם</p>
         </div>
