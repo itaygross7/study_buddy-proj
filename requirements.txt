@@ -1,5 +1,6 @@
 flask
 flask-cors
+flask-login
 celery
 pymongo
 pika
@@ -23,3 +24,8 @@ python-docx
 python-pptx
 pytesseract
 Pillow
+bcrypt
+email-validator
+authlib
+httpx
+psutil

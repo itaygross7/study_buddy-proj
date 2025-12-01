@@ -24,6 +24,10 @@ class Settings(BaseSettings):
     # Flask
     FLASK_ENV: str = Field(default='development')
     SECRET_KEY: str = Field(default_factory=_generate_default_secret_key)
+    
+    # Domain Configuration
+    DOMAIN: str = Field(default='studybuddyai.my')  # Your domain
+    BASE_URL: str = Field(default='https://studybuddyai.my')  # Full base URL for links
 
     # Infrastructure
     MONGO_URI: str = Field(default='mongodb://localhost:27017/studybuddy')
@@ -41,5 +45,32 @@ class Settings(BaseSettings):
 
     # Logging
     LOG_LEVEL: str = Field(default='INFO')
+    
+    # Admin Configuration
+    ADMIN_EMAIL: str = Field(default='')  # Admin email address
+    ADMIN_PASSWORD: str = Field(default='')  # Initial admin password (optional, for first-time setup)
+    
+    # Email Configuration (SMTP)
+    MAIL_SERVER: str = Field(default='smtp.gmail.com')
+    MAIL_PORT: int = Field(default=587)
+    MAIL_USE_TLS: bool = Field(default=True)
+    MAIL_USERNAME: str = Field(default='')
+    MAIL_PASSWORD: str = Field(default='')
+    MAIL_DEFAULT_SENDER: str = Field(default='')
+    
+    # OAuth Configuration - Google
+    GOOGLE_CLIENT_ID: str = Field(default='')
+    GOOGLE_CLIENT_SECRET: str = Field(default='')
+    
+    # OAuth Configuration - Apple (optional)
+    APPLE_CLIENT_ID: str = Field(default='')  # Service ID
+    APPLE_TEAM_ID: str = Field(default='')
+    APPLE_KEY_ID: str = Field(default='')
+    APPLE_PRIVATE_KEY: str = Field(default='')  # Contents of .p8 file
+    
+    # Security
+    SESSION_COOKIE_SECURE: bool = Field(default=False)  # Set to True in production with HTTPS
+    SESSION_COOKIE_HTTPONLY: bool = Field(default=True)
+    SESSION_COOKIE_SAMESITE: str = Field(default='Lax')
 
 settings = Settings()

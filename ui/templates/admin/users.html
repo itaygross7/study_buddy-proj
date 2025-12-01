@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+
+{% block title %}ניהול משתמשים - StudyBuddy{% endblock %}
+
+{% block content %}
+<div class="py-6">
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+        <div>
+            <h1 class="text-3xl font-bold text-dark-brown">ניהול משתמשים</h1>
+            <p class="text-cozy-brown mt-1">סה"כ {{ total_users }} משתמשים רשומים</p>
+        </div>
+        <a href="{{ url_for('admin.dashboard') }}" 
+           class="px-4 py-2 border-2 border-cozy-brown text-cozy-brown rounded-xl font-medium hover:bg-cozy-brown hover:text-cream transition-colors">
+            ← חזרה ללוח הבקרה
+        </a>
+    </div>
+    
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="mb-4 p-4 rounded-xl border-2 
+                    {% if category == 'error' %}bg-red-50 border-error text-error
+                    {% elif category == 'success' %}bg-green-50 border-success text-success
+                    {% else %}bg-yellow-50 border-warning text-cozy-brown{% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
+    <!-- Users Table -->
+    <div class="bg-cream rounded-2xl shadow-md border border-warm-yellow overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead class="bg-cozy-brown text-cream">
+                    <tr>
+                        <th class="px-6 py-4 text-right font-medium">משתמש</th>
+                        <th class="px-6 py-4 text-right font-medium">תפקיד</th>
+                        <th class="px-6 py-4 text-right font-medium">סטטוס</th>
+                        <th class="px-6 py-4 text-right font-medium">שימוש</th>
+                        <th class="px-6 py-4 text-right font-medium">תאריך הרשמה</th>
+                        <th class="px-6 py-4 text-right font-medium">פעולות</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-warm-gray">
+                    {% for user in users %}
+                    <tr class="hover:bg-warm-beige transition-colors">
+                        <td class="px-6 py-4">
+                            <div>
+                                <p class="font-medium text-dark-brown">{{ user.name or '-' }}</p>
+                                <p class="text-sm text-cozy-brown">{{ user.email }}</p>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="px-3 py-1 rounded-full text-sm font-medium
+                                {% if user.role.value == 'admin' %}bg-golden-yellow text-dark-brown{% else %}bg-warm-gray text-dark-brown{% endif %}">
+                                {% if user.role.value == 'admin' %}מנהל{% else %}משתמש{% endif %}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="flex flex-col gap-1">
+                                <span class="px-2 py-1 rounded text-xs w-fit
+                                    {% if user.is_verified %}bg-success text-white{% else %}bg-warning text-dark-brown{% endif %}">
+                                    {% if user.is_verified %}מאומת{% else %}לא מאומת{% endif %}
+                                </span>
+                                <span class="px-2 py-1 rounded text-xs w-fit
+                                    {% if user.is_active %}bg-success text-white{% else %}bg-error text-white{% endif %}">
+                                    {% if user.is_active %}פעיל{% else %}מושבת{% endif %}
+                                </span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="text-dark-brown font-medium">{{ user.prompt_count }}</span>
+                            <span class="text-cozy-brown text-sm">שאלות</span>
+                        </td>
+                        <td class="px-6 py-4 text-cozy-brown text-sm">
+                            {{ user.created_at.strftime('%d/%m/%Y') if user.created_at else '-' }}
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="flex gap-2">
+                                {% if user.id != current_user.id %}
+                                <form method="POST" action="{{ url_for('admin.toggle_user_status', user_id=user.id) }}" class="inline">
+                                    <button type="submit" 
+                                            class="px-3 py-1 rounded-lg text-sm font-medium transition-colors
+                                                {% if user.is_active %}bg-warning text-dark-brown hover:bg-error hover:text-white{% else %}bg-success text-white hover:bg-green-600{% endif %}">
+                                        {% if user.is_active %}השבת{% else %}הפעל{% endif %}
+                                    </button>
+                                </form>
+                                <form method="POST" 
+                                      action="{{ url_for('admin.delete_user', user_id=user.id) }}" 
+                                      class="inline"
+                                      onsubmit="return confirm('האם אתה בטוח שברצונך למחוק את המשתמש הזה? פעולה זו אינה ניתנת לביטול.');">
+                                    <button type="submit" 
+                                            class="px-3 py-1 bg-error text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors">
+                                        מחק
+                                    </button>
+                                </form>
+                                {% else %}
+                                <span class="text-cozy-brown text-sm italic">אתה</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        {% if users|length == 0 %}
+        <div class="p-8 text-center">
+            <p class="text-cozy-brown">אין משתמשים להצגה</p>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Pagination -->
+    {% if total_pages > 1 %}
+    <div class="mt-6 flex justify-center gap-2">
+        {% if page > 1 %}
+        <a href="{{ url_for('admin.users', page=page-1) }}" 
+           class="px-4 py-2 bg-cozy-brown text-cream rounded-lg hover:bg-coffee transition-colors">
+            הקודם
+        </a>
+        {% endif %}
+        
+        <span class="px-4 py-2 bg-cream text-dark-brown rounded-lg border border-warm-gray">
+            עמוד {{ page }} מתוך {{ total_pages }}
+        </span>
+        
+        {% if page < total_pages %}
+        <a href="{{ url_for('admin.users', page=page+1) }}" 
+           class="px-4 py-2 bg-cozy-brown text-cream rounded-lg hover:bg-coffee transition-colors">
+            הבא
+        </a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
