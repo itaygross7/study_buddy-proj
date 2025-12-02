@@ -57,12 +57,17 @@ log_info "You need API credentials from your DNS provider (e.g., Hostinger)"
 read -p "Enter API KEY: " API_KEY
 read -p "Enter ZONE ID: " ZONE_ID
 
-# Update the script
+# Update the script with proper escaping
 log_info "Configuring update_dns.sh..."
 
-sed -i "s|API_KEY=\"YOUR_HOSTINGER_API_KEY\"|API_KEY=\"$API_KEY\"|g" scripts/update_dns.sh
-sed -i "s|ZONE_ID=\"YOUR_HOSTINGER_ZONE_ID\"|ZONE_ID=\"$ZONE_ID\"|g" scripts/update_dns.sh
-sed -i "s|DOMAIN=\"studybuddyai.my\"|DOMAIN=\"$DOMAIN\"|g" scripts/update_dns.sh
+# Escape special characters for sed
+API_KEY_ESCAPED=$(printf '%s\n' "$API_KEY" | sed 's/[[\.*^$/]/\\&/g')
+ZONE_ID_ESCAPED=$(printf '%s\n' "$ZONE_ID" | sed 's/[[\.*^$/]/\\&/g')
+DOMAIN_ESCAPED=$(printf '%s\n' "$DOMAIN" | sed 's/[[\.*^$/]/\\&/g')
+
+sed -i "s|API_KEY=\"YOUR_HOSTINGER_API_KEY\"|API_KEY=\"$API_KEY_ESCAPED\"|g" scripts/update_dns.sh
+sed -i "s|ZONE_ID=\"YOUR_HOSTINGER_ZONE_ID\"|ZONE_ID=\"$ZONE_ID_ESCAPED\"|g" scripts/update_dns.sh
+sed -i "s|DOMAIN=\"studybuddyai.my\"|DOMAIN=\"$DOMAIN_ESCAPED\"|g" scripts/update_dns.sh
 
 log_success "update_dns.sh configured"
 

@@ -551,8 +551,9 @@ fix_env() {
             NEW_SECRET=$(openssl rand -hex 32 2>/dev/null)
         fi
         
+        # Generate random key as fallback
         if [[ -z "$NEW_SECRET" ]]; then
-            NEW_SECRET=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 64 | head -n 1)
+            NEW_SECRET=$(tr -dc 'a-zA-Z0-9' < /dev/urandom | fold -w 64 | head -n 1)
         fi
         
         if [[ -n "$NEW_SECRET" ]]; then
@@ -874,7 +875,7 @@ EOF
 fix_disk_space() {
     log_info "Checking disk space..."
     
-    DISK_GB=$(df -BG . | awk 'NR==2 {print $4}' | sed 's/G//' 2>/dev/null || echo "10")
+    DISK_GB=$(df -BG . | awk 'NR==2 {print $4}' | sed 's/G//' 2>/dev/null || echo "1")
     
     if [[ $DISK_GB -lt 2 ]]; then
         log_warning "Low disk space: ${DISK_GB}GB available"
