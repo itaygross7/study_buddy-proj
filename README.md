@@ -32,9 +32,57 @@ StudyBuddyAI is a comprehensive web application designed to help students with t
 
 ---
 
-## 🚀 Quick Start (Ubuntu 22.04 Server)
+## 🚀 Quick Start (Ubuntu 22.04 / Ubuntu 20.04+ / Linux)
 
-### Prerequisites
+### One-Click Deployment (Recommended)
+
+**Ultra-Robust Auto-Fix Deployment** - Works no matter the server state!
+
+```bash
+# Clone the repository
+git clone https://github.com/itaygross7/study_buddy-proj.git
+cd study_buddy-proj
+
+# Run as root (or regular user with sudo access)
+./deploy.sh
+```
+
+**The script automatically:**
+- ✅ Detects and installs Docker if missing
+- ✅ Detects and installs Docker Compose if missing
+- ✅ Fixes Docker daemon if not running
+- ✅ Clears port conflicts automatically
+- ✅ Fixes network and DNS issues
+- ✅ Generates secure SECRET_KEY automatically
+- ✅ Cleans up disk space if needed
+- ✅ Creates .env from template
+- ✅ Builds and starts all services
+- ✅ Validates deployment is working
+
+**Can be run as:**
+- Root: `./deploy.sh` (full system access, installs missing dependencies)
+- User: `./deploy.sh` (uses sudo when needed)
+
+**Tested on**: Ubuntu 22.04 LTS (also works on Ubuntu 20.04+, Debian, and other Linux distributions with Docker)
+- ✅ Check Docker and system requirements
+- ✅ Verify ports are available
+- ✅ Test network and DNS connectivity
+- ✅ Validate your configuration
+- ✅ Build and start all services
+- ✅ Show you how to access your app
+
+**Script Options:**
+```bash
+./deploy.sh --check-only   # Only run system checks
+./deploy.sh --rebuild      # Force rebuild of images
+./deploy.sh --help         # Show all options
+```
+
+### Manual Installation
+
+If you prefer manual setup or need more control:
+
+#### Prerequisites
 
 1. **Install Docker and Docker Compose:**
    ```bash
@@ -57,7 +105,7 @@ StudyBuddyAI is a comprehensive web application designed to help students with t
    - [Google AI Studio](https://makersuite.google.com/app/apikey) for Gemini (recommended, free tier available)
    - OR [OpenAI API](https://platform.openai.com/api-keys) for GPT
 
-### Installation
+#### Installation Steps
 
 1. **Clone the repository:**
    ```bash
@@ -102,9 +150,54 @@ StudyBuddyAI is a comprehensive web application designed to help students with t
    - Sign up with your admin email to get admin access
    - Check your email to verify your account (if email is configured)
 
-### Production Setup with HTTPS
+## Dynamic DNS Support (for Home Servers)
 
-For production, we recommend using Nginx as a reverse proxy with SSL certificates:
+If you have a dynamic IP address (home server, residential connection), the deployment works seamlessly with the included DNS updater script.
+
+### Your Existing Cron Job
+
+The deployment script **does NOT interfere** with your existing `update_dns.sh` cron job. They work together:
+
+- **`update_dns.sh`** (cron job) - Keeps your DNS updated when IP changes
+- **`deploy.sh`** - Deploys the application and sets up HTTPS
+
+### Setup DNS Updater (if not already done)
+
+```bash
+# Easy setup helper
+./scripts/setup-dns-updater.sh
+```
+
+Or manually:
+
+```bash
+# 1. Edit the script with your credentials
+nano scripts/update_dns.sh
+# Set: API_KEY, ZONE_ID, DOMAIN
+
+# 2. Make it executable
+chmod +x scripts/update_dns.sh
+
+# 3. Add to crontab (runs every 5 minutes)
+crontab -e
+# Add: */5 * * * * /path/to/study_buddy-proj/scripts/update_dns.sh
+```
+
+### How They Work Together
+
+1. **DNS Updater** runs every 5 minutes via cron
+   - Detects if your public IP changed
+   - Updates DNS A/AAAA records automatically
+   - Works with Hostinger API (or modify for other providers)
+
+2. **Deployment** uses the domain from your `.env`
+   - Verifies DNS points to your server
+   - Sets up HTTPS with Caddy
+   - Configures Let's Encrypt SSL
+
+**Result**: Your site is always accessible at your domain, even when IP changes!
+
+---
 
 1. **Install Nginx and Certbot:**
    ```bash

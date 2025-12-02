@@ -1,6 +1,66 @@
 # StudyBuddyAI Server Deployment Guide
 
-Complete guide for deploying StudyBuddyAI on Ubuntu 22.04 with Docker, Caddy reverse proxy, and dynamic DNS.
+Complete guide for deploying StudyBuddyAI on Ubuntu 22.04 (or Ubuntu 20.04+, Debian, and other Linux distributions) with Docker, Caddy reverse proxy, and dynamic DNS.
+
+## 🚀 Quick Start (Recommended)
+
+**NEW: One-Click Deployment Script!**
+
+The easiest way to deploy StudyBuddyAI is using our automated deployment script:
+
+```bash
+# Clone the repository
+git clone https://github.com/itaygross7/study_buddy-proj.git
+cd study_buddy-proj
+
+# Configure environment
+cp .env.example .env
+nano .env  # Edit with your settings (SECRET_KEY, ADMIN_EMAIL, API keys)
+
+# Run deployment with automatic checks
+./deploy.sh
+```
+
+**Tested on**: Ubuntu 22.04 LTS, Ubuntu 20.04 LTS, and compatible Linux distributions with Docker.
+
+The deployment script will:
+- ✅ Check all system requirements (Docker, Docker Compose, ports, network, DNS)
+- ✅ Validate your .env configuration
+- ✅ Check disk space, memory, and CPU
+- ✅ Build and start all Docker services
+- ✅ Verify the deployment is working
+- ✅ Show you how to access your application
+
+### Deployment Script Options
+
+```bash
+./deploy.sh                    # Normal deployment with all checks
+./deploy.sh --check-only       # Only run system checks, don't deploy
+./deploy.sh --rebuild          # Force rebuild all images
+./deploy.sh --clean            # Fresh start (removes all data!)
+./deploy.sh --skip-checks      # Skip checks (not recommended)
+./deploy.sh --help             # Show help
+```
+
+### Pre-Deployment Check Script
+
+You can also run the pre-deployment checks separately:
+
+```bash
+./scripts/pre-deploy-check.sh
+```
+
+This will check:
+- Operating system compatibility
+- Docker and Docker Compose installation
+- Port availability (5000, 27017, 5672, 15672)
+- Network connectivity and DNS resolution
+- .env file configuration
+- System resources (disk, memory, CPU)
+- Docker daemon and network health
+- Firewall status
+
+---
 
 ## Table of Contents
 
@@ -410,7 +470,153 @@ Caddy will automatically:
 
 ## Troubleshooting
 
-### Docker Build Fails
+### Using the Deployment Script to Diagnose Issues
+
+If something isn't working, run the diagnostic checks:
+
+```bash
+# Run all checks without deploying
+./deploy.sh --check-only
+
+# Or run the check script directly
+./scripts/pre-deploy-check.sh
+```
+
+This will identify common issues like:
+- Missing Docker or Docker Compose
+- Ports already in use
+- Network/DNS problems
+- Missing or invalid .env configuration
+- Insufficient disk space or memory
+- Docker daemon issues
+
+### Common Issues from Deployment Checks
+
+#### 1. Port Already in Use
+
+**Detected by:** Port Availability Check
+
+**Problem**: Port 5000, 27017, 5672, or 15672 is already in use.
+
+**Solution**:
+```bash
+# Check what's using the port
+sudo lsof -i :5000
+
+# Stop the conflicting service
+sudo systemctl stop <service-name>
+
+# OR kill the process
+kill <PID>
+
+# OR change the port in docker-compose.yml
+```
+
+#### 2. Docker Daemon Not Running
+
+**Detected by:** Docker Installation Check
+
+**Problem**: Docker daemon is not accessible.
+
+**Solution**:
+```bash
+# Start Docker service
+sudo systemctl start docker
+
+# Enable Docker on boot
+sudo systemctl enable docker
+
+# Add user to docker group (then logout and login)
+sudo usermod -aG docker $USER
+newgrp docker
+```
+
+#### 3. DNS Resolution Failures
+
+**Detected by:** Network Connectivity Check
+
+**Problem**: Cannot resolve domain names (google.com, github.com, pypi.org, hub.docker.com).
+
+**Solution**:
+```bash
+# Check current DNS settings
+cat /etc/resolv.conf
+
+# Test DNS manually
+nslookup google.com
+dig github.com
+
+# Fix by adding DNS servers (already in docker-compose.yml)
+# Restart Docker to apply
+sudo systemctl restart docker
+```
+
+#### 4. Missing .env File
+
+**Detected by:** Environment Configuration Check
+
+**Problem**: .env file doesn't exist or variables not set.
+
+**Solution**:
+```bash
+# Copy from example
+cp .env.example .env
+
+# Edit with required values
+nano .env
+
+# Required variables:
+# - SECRET_KEY (generate: python3 -c "import secrets; print(secrets.token_hex(32))")
+# - ADMIN_EMAIL
+# - At least one AI API key (GEMINI_API_KEY or OPENAI_API_KEY)
+```
+
+#### 5. Out of Disk Space
+
+**Detected by:** System Resources Check
+
+**Problem**: Less than 2GB disk space available.
+
+**Solution**:
+```bash
+# Check disk usage
+df -h
+
+# Clean up Docker resources
+docker system prune -a --volumes
+
+# Or use deployment script
+./deploy.sh --clean  # WARNING: This removes all data!
+
+# Remove old system packages
+sudo apt autoremove
+sudo apt clean
+```
+
+#### 6. Low Memory
+
+**Detected by:** System Resources Check
+
+**Problem**: Less than 1GB memory available.
+
+**Solution**:
+```bash
+# Check memory usage
+free -h
+
+# Check what's using memory
+top
+
+# Stop unnecessary services
+sudo systemctl stop <service-name>
+
+# Restart to free memory
+sudo reboot
+```
+
+### Manual Troubleshooting
+
+#### Docker Build Fails
 
 **DNS Resolution Issues:**
 ```bash
