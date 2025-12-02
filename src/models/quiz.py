@@ -2,6 +2,7 @@ from pydantic import BaseModel, Field
 from typing import Optional, List
 from datetime import datetime
 
+
 class Question(BaseModel):
     """
     Represents a single question in a quiz.
@@ -9,6 +10,7 @@ class Question(BaseModel):
     question: str
     options: List[str]
     answer: str
+
 
 class Quiz(BaseModel):
     """

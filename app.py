@@ -1,7 +1,7 @@
 import os
-from flask import Flask, jsonify, render_template, request, send_from_directory, g
+from flask import Flask, jsonify, render_template, request, send_from_directory
 from flask_cors import CORS
-from flask_login import LoginManager, current_user, login_required
+from flask_login import current_user, login_required
 from werkzeug.exceptions import NotFound
 
 from src.infrastructure.config import settings
@@ -29,39 +29,39 @@ from src.services import auth_service
 def create_app():
     """Application factory for Flask."""
     app = Flask(__name__, template_folder='ui/templates', static_folder='ui/static')
-    
+
     # Add Avner images folder as additional static path
     avner_folder = os.path.join(os.path.dirname(__file__), 'ui', 'Avner')
-    
+
     @app.route('/avner/<path:filename>')
     def serve_avner(filename):
         """Serve Avner mascot images from ui/Avner folder."""
         return send_from_directory(avner_folder, filename)
-    
+
     # Configure from settings
     app.config['MONGO_URI'] = settings.MONGO_URI
     app.config['SECRET_KEY'] = settings.SECRET_KEY
     app.config['FLASK_ENV'] = settings.FLASK_ENV
-    
+
     # Security settings
     app.config['SESSION_COOKIE_SECURE'] = settings.SESSION_COOKIE_SECURE
     app.config['SESSION_COOKIE_HTTPONLY'] = settings.SESSION_COOKIE_HTTPONLY
     app.config['SESSION_COOKIE_SAMESITE'] = settings.SESSION_COOKIE_SAMESITE
-    
+
     CORS(app, resources={r"/api/*": {"origins": "*"}}, supports_credentials=True)
 
     # Initialize extensions
     init_db(app)
-    
+
     # Initialize Flask-Login
     login_manager.init_app(app)
     login_manager.login_view = 'auth.login'
     login_manager.login_message = 'יש להתחבר כדי לגשת לעמוד זה'
     login_manager.login_message_category = 'warning'
-    
+
     # Initialize OAuth (Google/Apple Sign-In)
     init_oauth(app)
-    
+
     # Create admin user if configured
     with app.app_context():
         from src.infrastructure.database import db
@@ -81,7 +81,7 @@ def create_app():
     app.register_blueprint(task_bp, url_prefix='/api/tasks')
     app.register_blueprint(results_bp, url_prefix='/results')
     app.register_blueprint(pdf_bp, url_prefix='/export/pdf')
-    
+
     # Context processor to make current_user available in templates
     @app.context_processor
     def inject_user():

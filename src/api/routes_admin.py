@@ -1,5 +1,4 @@
 """Admin routes for system management."""
-import os
 import platform
 import psutil
 from datetime import datetime, timezone
@@ -8,7 +7,7 @@ from flask_login import login_required, current_user
 
 from src.infrastructure.database import db
 from src.services import auth_service
-from src.domain.models.db_models import UserRole, SystemConfig
+from src.domain.models.db_models import SystemConfig
 from src.api.routes_auth import admin_required
 from sb_utils.logger_utils import logger
 
@@ -44,7 +43,7 @@ def get_system_health():
         "issues": [],
         "metrics": {}
     }
-    
+
     try:
         # CPU Usage
         cpu_percent = psutil.cpu_percent(interval=1)
@@ -55,7 +54,7 @@ def get_system_health():
         }
         if cpu_percent >= 80:
             health["issues"].append(f"CPU usage high: {cpu_percent}%")
-        
+
         # Memory Usage
         memory = psutil.virtual_memory()
         health["metrics"]["memory"] = {
@@ -67,7 +66,7 @@ def get_system_health():
         }
         if memory.percent >= 80:
             health["issues"].append(f"Memory usage high: {memory.percent}%")
-        
+
         # Disk Usage
         disk = psutil.disk_usage('/')
         health["metrics"]["disk"] = {
@@ -79,7 +78,7 @@ def get_system_health():
         }
         if disk.percent >= 80:
             health["issues"].append(f"Disk usage high: {disk.percent}%")
-        
+
         # System Info
         health["metrics"]["system"] = {
             "platform": platform.system(),
@@ -88,7 +87,7 @@ def get_system_health():
             "hostname": platform.node(),
             "uptime_hours": round((datetime.now().timestamp() - psutil.boot_time()) / 3600, 1)
         }
-        
+
         # Database Status
         try:
             db_stats = db.command("dbStats")
@@ -102,7 +101,7 @@ def get_system_health():
         except Exception as e:
             health["metrics"]["database"] = {"status": "error", "error": str(e)}
             health["issues"].append("Database connection issue")
-        
+
         # Determine overall status
         if any(m.get("status") == "critical" for m in health["metrics"].values() if isinstance(m, dict)):
             health["status"] = "critical"
@@ -110,12 +109,12 @@ def get_system_health():
             health["status"] = "warning"
         elif health["issues"]:
             health["status"] = "warning"
-            
+
     except Exception as e:
         logger.error(f"Error getting system health: {e}")
         health["status"] = "error"
         health["issues"].append(f"Error collecting metrics: {str(e)}")
-    
+
     return health
 
 
@@ -160,25 +159,25 @@ def dashboard():
     """Admin dashboard with system status."""
     # Get system health
     health = get_system_health()
-    
+
     # Get app statistics
     stats = get_app_statistics()
-    
+
     # Get recent users
     recent_users = list(db.users.find().sort("created_at", -1).limit(10))
-    
+
     # Get recent errors/warnings from tasks
     recent_failures = list(db.tasks.find({"status": "FAILED"}).sort("updated_at", -1).limit(5))
-    
+
     # Get system config
     config = get_system_config()
-    
+
     return render_template('admin/dashboard.html',
-                         health=health,
-                         stats=stats,
-                         recent_users=recent_users,
-                         recent_failures=recent_failures,
-                         config=config)
+                           health=health,
+                           stats=stats,
+                           recent_users=recent_users,
+                           recent_failures=recent_failures,
+                           config=config)
 
 
 @admin_bp.route('/users')
@@ -189,16 +188,16 @@ def users():
     page = request.args.get('page', 1, type=int)
     per_page = 20
     skip = (page - 1) * per_page
-    
+
     users_list = auth_service.get_all_users(db, skip=skip, limit=per_page)
     total_users = auth_service.get_user_count(db)
     total_pages = (total_users + per_page - 1) // per_page
-    
+
     return render_template('admin/users.html',
-                         users=users_list,
-                         page=page,
-                         total_pages=total_pages,
-                         total_users=total_users)
+                           users=users_list,
+                           page=page,
+                           total_pages=total_pages,
+                           total_users=total_users)
 
 
 @admin_bp.route('/users/<user_id>/toggle-status', methods=['POST'])
@@ -210,19 +209,19 @@ def toggle_user_status(user_id):
     if not user:
         flash('משתמש לא נמצא', 'error')
         return redirect(url_for('admin.users'))
-    
+
     # Don't allow deactivating yourself
     if user_id == current_user.id:
         flash('לא ניתן לשנות את הסטטוס של עצמך', 'error')
         return redirect(url_for('admin.users'))
-    
+
     new_status = not user.is_active
     auth_service.update_user_status(db, user_id, new_status)
-    
+
     status_text = 'הופעל' if new_status else 'הושבת'
     flash(f'המשתמש {status_text} בהצלחה', 'success')
     logger.info(f"Admin toggled user {user_id} status to {new_status}")
-    
+
     return redirect(url_for('admin.users'))
 
 
@@ -235,13 +234,13 @@ def delete_user(user_id):
     if user_id == current_user.id:
         flash('לא ניתן למחוק את עצמך', 'error')
         return redirect(url_for('admin.users'))
-    
+
     if auth_service.delete_user(db, user_id):
         flash('המשתמש נמחק בהצלחה', 'success')
         logger.info(f"Admin deleted user {user_id}")
     else:
         flash('שגיאה במחיקת המשתמש', 'error')
-    
+
     return redirect(url_for('admin.users'))
 
 
@@ -259,22 +258,22 @@ def config():
                 "default_questions_count": int(request.form.get('default_questions_count', 5)),
                 "maintenance_mode": request.form.get('maintenance_mode') == 'on',
             }
-            
+
             # Handle enabled modules
             enabled_modules = request.form.getlist('enabled_modules')
             if enabled_modules:
                 updates["enabled_modules"] = enabled_modules
-            
+
             update_system_config(updates)
             flash('ההגדרות עודכנו בהצלחה', 'success')
             logger.info("Admin updated system configuration")
-            
+
         except Exception as e:
             logger.error(f"Config update error: {e}", exc_info=True)
             flash('שגיאה בעדכון ההגדרות', 'error')
-        
+
         return redirect(url_for('admin.config'))
-    
+
     system_config = get_system_config()
     return render_template('admin/config.html', config=system_config)
 
@@ -305,8 +304,8 @@ def system_status():
     health = get_system_health()
     stats = get_app_statistics()
     config = get_system_config()
-    
+
     return render_template('admin/system.html',
-                         health=health,
-                         stats=stats,
-                         config=config)
+                           health=health,
+                           stats=stats,
+                           config=config)

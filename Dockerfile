@@ -7,18 +7,6 @@ ENV PYTHONUNBUFFERED=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1
 
 # =============================================================================
-# DNS and Network Configuration for Ubuntu 22.04 / Build Environments
-# =============================================================================
-# Configure DNS fallbacks to prevent resolution issues in various network environments
-# This helps with:
-# - Corporate proxies
-# - Docker build environments with restricted networking
-# - Ubuntu 22.04 systemd-resolved quirks
-RUN echo "nameserver 8.8.8.8" >> /etc/resolv.conf && \
-    echo "nameserver 8.8.4.4" >> /etc/resolv.conf && \
-    echo "nameserver 1.1.1.1" >> /etc/resolv.conf
-
-# =============================================================================
 # System Dependencies Installation
 # =============================================================================
 # Install system packages with retry mechanism for network reliability
@@ -27,6 +15,8 @@ RUN echo "nameserver 8.8.8.8" >> /etc/resolv.conf && \
 # - libmagic*: for python-magic file type detection
 # - libgobject / libglib / pango / cairo / harfbuzz / fontconfig / gdk-pixbuf: for WeasyPrint/Pango stack (PDF generation)
 # - libffi-dev + gcc: for bcrypt compilation
+#
+# Note: DNS configuration is handled at runtime via docker-compose.yml
 RUN set -eux; \
     # Update CA certificates first to fix potential SSL issues
     apt-get update && apt-get install -y --no-install-recommends ca-certificates; \

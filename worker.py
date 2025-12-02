@@ -21,9 +21,11 @@ try:
     logger.info("Worker successfully connected to MongoDB.")
 except Exception as e:
     logger.critical(f"Worker failed to connect to MongoDB on startup: {e}", exc_info=True)
-    exit(1) # Exit if we can't connect to the DB
+    exit(1)  # Exit if we can't connect to the DB
 
 # --- Task Processing Logic with Retry ---
+
+
 @retry(wait=wait_fixed(5), stop=stop_after_attempt(3))
 def process_task(body: bytes):
     """
@@ -32,28 +34,32 @@ def process_task(body: bytes):
     data = json.loads(body)
     task_id = data['task_id']
     queue_name = data['queue_name']
-    
+
     logger.info(f"[Worker] Starting processing for task {task_id} from queue '{queue_name}'")
     task_repo.update_status(task_id, TaskStatus.PROCESSING)
 
     if queue_name == 'summarize':
         doc = doc_repo.get_by_id(data['document_id'])
-        if not doc: raise DocumentNotFoundError(f"Document {data['document_id']} not found.")
+        if not doc:
+            raise DocumentNotFoundError(f"Document {data['document_id']} not found.")
         result_id = summary_service.generate_summary(doc.id, doc.content_text, db_conn)
-        
+
     elif queue_name == 'flashcards':
         doc = doc_repo.get_by_id(data['document_id'])
-        if not doc: raise DocumentNotFoundError(f"Document {data['document_id']} not found.")
+        if not doc:
+            raise DocumentNotFoundError(f"Document {data['document_id']} not found.")
         result_id = flashcards_service.generate_flashcards(doc.id, doc.content_text, data['num_cards'], db_conn)
 
     elif queue_name == 'assess':
         doc = doc_repo.get_by_id(data['document_id'])
-        if not doc: raise DocumentNotFoundError(f"Document {data['document_id']} not found.")
-        result_id = assess_service.generate_assessment(doc.id, doc.content_text, data['num_questions'], data['question_type'], db_conn)
+        if not doc:
+            raise DocumentNotFoundError(f"Document {data['document_id']} not found.")
+        result_id = assess_service.generate_assessment(
+            doc.id, doc.content_text, data['num_questions'], data['question_type'], db_conn)
 
     elif queue_name == 'homework':
         result_id = homework_service.solve_homework_problem(data['problem_statement'])
-    
+
     else:
         raise ValueError(f"Unknown queue: {queue_name}")
 
@@ -61,6 +67,8 @@ def process_task(body: bytes):
     logger.info(f"[Worker] Successfully completed task {task_id}")
 
 # --- RabbitMQ Consumer ---
+
+
 def main_callback(ch, method, properties, body):
     """
     Main callback that wraps task processing in a final try/except block.
@@ -77,6 +85,7 @@ def main_callback(ch, method, properties, body):
         task_repo.update_status(task_id, TaskStatus.FAILED, error_message=safe_error_msg)
     finally:
         ch.basic_ack(delivery_tag=method.delivery_tag)
+
 
 def main():
     """Connects to RabbitMQ and starts consuming tasks."""
@@ -101,6 +110,7 @@ def main():
         except Exception as e:
             logger.critical(f"An unrecoverable error occurred in the worker: {e}", exc_info=True)
             break
+
 
 if __name__ == '__main__':
     main()

@@ -13,25 +13,25 @@ def send_email(to_email: str, subject: str, html_body: str, text_body: Optional[
     if not settings.MAIL_USERNAME or not settings.MAIL_PASSWORD:
         logger.warning("Email not configured, skipping email send")
         return False
-    
+
     try:
         msg = MIMEMultipart('alternative')
         msg['Subject'] = subject
         msg['From'] = settings.MAIL_DEFAULT_SENDER or settings.MAIL_USERNAME
         msg['To'] = to_email
-        
+
         # Attach text and HTML parts
         if text_body:
             msg.attach(MIMEText(text_body, 'plain', 'utf-8'))
         msg.attach(MIMEText(html_body, 'html', 'utf-8'))
-        
+
         # Connect and send
         with smtplib.SMTP(settings.MAIL_SERVER, settings.MAIL_PORT) as server:
             if settings.MAIL_USE_TLS:
                 server.starttls()
             server.login(settings.MAIL_USERNAME, settings.MAIL_PASSWORD)
             server.sendmail(msg['From'], to_email, msg.as_string())
-        
+
         logger.info(f"Email sent successfully to {to_email}")
         return True
     except Exception as e:
@@ -44,7 +44,7 @@ def send_verification_email(to_email: str, verification_token: str, base_url: st
     # Use configured BASE_URL if available, otherwise use provided base_url
     url_base = settings.BASE_URL if hasattr(settings, 'BASE_URL') and settings.BASE_URL else base_url
     verify_url = f"{url_base}/auth/verify/{verification_token}"
-    
+
     html_body = f"""
     <!DOCTYPE html>
     <html dir="rtl" lang="he">
@@ -81,18 +81,18 @@ def send_verification_email(to_email: str, verification_token: str, base_url: st
     </body>
     </html>
     """
-    
+
     text_body = f"""
     שלום!
-    
+
     תודה שנרשמת ל-StudyBuddy.
     כדי להשלים את ההרשמה, אנא אמת את כתובת האימייל שלך בקישור הבא:
-    
+
     {verify_url}
-    
+
     לומדים יחד עם אבנר!
     """
-    
+
     return send_email(to_email, "אמת את האימייל שלך - StudyBuddy", html_body, text_body)
 
 
@@ -100,7 +100,7 @@ def send_new_user_notification(user_email: str, user_name: str) -> bool:
     """Send notification to admin about new user signup."""
     if not settings.ADMIN_EMAIL:
         return False
-    
+
     html_body = f"""
     <!DOCTYPE html>
     <html dir="rtl" lang="he">
@@ -131,7 +131,7 @@ def send_new_user_notification(user_email: str, user_name: str) -> bool:
     </body>
     </html>
     """
-    
+
     return send_email(settings.ADMIN_EMAIL, f"משתמש חדש נרשם: {user_email}", html_body)
 
 
@@ -139,7 +139,7 @@ def send_error_notification(error_type: str, error_message: str, details: str = 
     """Send error notification to admin."""
     if not settings.ADMIN_EMAIL:
         return False
-    
+
     html_body = f"""
     <!DOCTYPE html>
     <html dir="ltr" lang="en">
@@ -170,5 +170,5 @@ def send_error_notification(error_type: str, error_message: str, details: str = 
     </body>
     </html>
     """
-    
+
     return send_email(settings.ADMIN_EMAIL, f"[StudyBuddy Alert] {error_type}", html_body)

@@ -2,6 +2,7 @@ from pydantic import BaseModel, Field
 from typing import Optional
 from datetime import datetime
 
+
 class Document(BaseModel):
     """
     Represents a document uploaded by a user.

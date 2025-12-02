@@ -1,5 +1,6 @@
 import uuid
 from flask import Blueprint, request, jsonify
+from flask_login import current_user
 
 from werkzeug.utils import secure_filename
 
@@ -12,6 +13,7 @@ from sb_utils.logger_utils import logger
 
 upload_bp = Blueprint('upload_bp', __name__)
 
+
 @upload_bp.route('/', methods=['POST'])
 def upload_file_route():
     """
@@ -19,23 +21,34 @@ def upload_file_route():
     """
     if 'file' not in request.files:
         return jsonify({"error": "No file part in request"}), 400
-    
+
     file = request.files['file']
     if not file or not file.filename:
         return jsonify({"error": "No file selected"}), 400
 
+    # Determine user_id: prioritize authenticated user, then form value, then default
+    if current_user.is_authenticated:
+        user_id = current_user.id
+    else:
+        user_id = request.form.get('user_id', '') or 'anonymous'
+
+    # Get course_id from form or use default
+    course_id = request.form.get('course_id', '') or 'default'
+
     filename = secure_filename(file.filename)
     try:
         text_content = process_uploaded_file(file)
-        
+
         doc_repo = MongoDocumentRepository(db)
         document = Document(
             _id=str(uuid.uuid4()),
+            user_id=user_id,
+            course_id=course_id,
             filename=filename,
             content_text=text_content
         )
         doc_repo.create(document)
-        
+
         return jsonify({"document_id": document.id, "filename": filename}), 201
 
     except InvalidFileTypeError as e:

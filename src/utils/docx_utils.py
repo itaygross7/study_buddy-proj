@@ -2,6 +2,7 @@ import io
 from docx import Document
 from sb_utils.logger_utils import logger
 
+
 def extract_text_from_docx(file_stream: io.BytesIO) -> str:
     """
     Extracts text from a .docx file stream.

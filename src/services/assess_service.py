@@ -5,10 +5,13 @@ from src.infrastructure.database import db as flask_db
 from src.domain.models.db_models import Assessment, AssessmentQuestion
 from sb_utils.logger_utils import logger
 
+
 def _get_db(db_conn: Database = None) -> Database:
     return db_conn or flask_db
 
-def generate_assessment(document_id: str, document_content: str, num_questions: int, question_type: str, db_conn: Database = None) -> str:
+
+def generate_assessment(document_id: str, document_content: str, num_questions: int,
+                        question_type: str, db_conn: Database = None) -> str:
     """
     Uses the AI client to generate an assessment.
     Saves the result to the database.

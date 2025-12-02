@@ -1,7 +1,7 @@
 """OAuth routes for Google and Apple Sign-In."""
 import uuid
 from datetime import datetime, timezone
-from flask import Blueprint, redirect, url_for, flash, session, request
+from flask import Blueprint, redirect, url_for, flash, request
 from flask_login import login_user
 from authlib.integrations.flask_client import OAuth
 
@@ -16,10 +16,11 @@ oauth_bp = Blueprint('oauth', __name__)
 # Initialize OAuth
 oauth = OAuth()
 
+
 def init_oauth(app):
     """Initialize OAuth with the Flask app."""
     oauth.init_app(app)
-    
+
     # Register Google OAuth
     if settings.GOOGLE_CLIENT_ID and settings.GOOGLE_CLIENT_SECRET:
         oauth.register(
@@ -32,7 +33,7 @@ def init_oauth(app):
             }
         )
         logger.info("Google OAuth configured")
-    
+
     # Register Apple OAuth (if configured)
     if settings.APPLE_CLIENT_ID and settings.APPLE_TEAM_ID:
         oauth.register(
@@ -53,15 +54,15 @@ def _generate_apple_client_secret():
     """Generate Apple client secret JWT (required for Apple Sign-In)."""
     if not settings.APPLE_PRIVATE_KEY:
         return ''
-    
+
     import jwt
     import time
-    
+
     headers = {
         'kid': settings.APPLE_KEY_ID,
         'alg': 'ES256'
     }
-    
+
     payload = {
         'iss': settings.APPLE_TEAM_ID,
         'iat': int(time.time()),
@@ -69,15 +70,34 @@ def _generate_apple_client_secret():
         'aud': 'https://appleid.apple.com',
         'sub': settings.APPLE_CLIENT_ID
     }
-    
+
     return jwt.encode(payload, settings.APPLE_PRIVATE_KEY, algorithm='ES256', headers=headers)
+
+
+def _extract_apple_user_name(form_data) -> str:
+    """Extract user name from Apple OAuth form data.
+
+    Apple only sends user name on first login in a 'user' JSON field.
+    Returns empty string if not available.
+    """
+    if 'user' not in form_data:
+        return ''
+    try:
+        import json
+        user_data = json.loads(form_data['user'])
+        name_data = user_data.get('name', {})
+        first_name = name_data.get('firstName', '')
+        last_name = name_data.get('lastName', '')
+        return f"{first_name} {last_name}".strip()
+    except (json.JSONDecodeError, TypeError, KeyError):
+        return ''
 
 
 def _get_or_create_oauth_user(email: str, name: str, provider: str):
     """Get existing user or create new one from OAuth data."""
     # Check if user exists
     existing_user = db.users.find_one({"email": email.lower()})
-    
+
     if existing_user:
         # Update last login
         db.users.update_one(
@@ -87,11 +107,11 @@ def _get_or_create_oauth_user(email: str, name: str, provider: str):
         user = User(**existing_user)
         logger.info(f"OAuth login: {email} via {provider}")
         return user
-    
+
     # Create new user (auto-verified since OAuth verified email)
     user_id = str(uuid.uuid4())
     is_admin = email.lower() == settings.ADMIN_EMAIL.lower() if settings.ADMIN_EMAIL else False
-    
+
     user = User(
         _id=user_id,
         email=email.lower(),
@@ -102,17 +122,17 @@ def _get_or_create_oauth_user(email: str, name: str, provider: str):
         created_at=datetime.now(timezone.utc),
         last_login=datetime.now(timezone.utc)
     )
-    
+
     db.users.insert_one(user.to_dict())
     logger.info(f"New OAuth user created: {email} via {provider}")
-    
+
     # Send notification to admin
     if settings.ADMIN_EMAIL and not is_admin:
         try:
             email_service.send_new_user_notification(user)
         except Exception as e:
             logger.warning(f"Failed to send new user notification: {e}")
-    
+
     return user
 
 
@@ -124,7 +144,7 @@ def google_login():
     if not settings.GOOGLE_CLIENT_ID:
         flash('התחברות עם Google לא מוגדרת', 'error')
         return redirect(url_for('auth.login'))
-    
+
     redirect_uri = url_for('oauth.google_callback', _external=True)
     return oauth.google.authorize_redirect(redirect_uri)
 
@@ -135,29 +155,29 @@ def google_callback():
     try:
         token = oauth.google.authorize_access_token()
         user_info = token.get('userinfo')
-        
+
         if not user_info or not user_info.get('email'):
             flash('לא הצלחנו לקבל מידע מ-Google', 'error')
             return redirect(url_for('auth.login'))
-        
+
         email = user_info['email']
         name = user_info.get('name', '')
-        
+
         # Get or create user
         user = _get_or_create_oauth_user(email, name, 'google')
-        
+
         # Check if user is active
         if not user.is_active:
             flash('החשבון שלך מושהה. פנה למנהל.', 'error')
             return redirect(url_for('auth.login'))
-        
+
         # Create user wrapper and login
         user_wrapper = auth_service.UserWrapper(user)
         login_user(user_wrapper, remember=True)
-        
+
         flash(f'שלום {user.name}! התחברת בהצלחה 🦫', 'success')
         return redirect(url_for('library.index'))
-        
+
     except Exception as e:
         logger.error(f"Google OAuth error: {e}", exc_info=True)
         flash('שגיאה בהתחברות עם Google. נסה שוב.', 'error')
@@ -172,7 +192,7 @@ def apple_login():
     if not settings.APPLE_CLIENT_ID:
         flash('התחברות עם Apple לא מוגדרת', 'error')
         return redirect(url_for('auth.login'))
-    
+
     redirect_uri = url_for('oauth.apple_callback', _external=True)
     return oauth.apple.authorize_redirect(redirect_uri)
 
@@ -182,45 +202,41 @@ def apple_callback():
     """Handle Apple Sign-In callback."""
     try:
         token = oauth.apple.authorize_access_token()
-        
+
         # Apple returns user info in id_token
         id_token = token.get('id_token')
         if not id_token:
             flash('לא הצלחנו לקבל מידע מ-Apple', 'error')
             return redirect(url_for('auth.login'))
-        
+
         # Decode the id_token (Apple uses JWT)
         import jwt
         # Note: In production, verify the token signature
         user_info = jwt.decode(id_token, options={"verify_signature": False})
-        
+
         email = user_info.get('email')
         if not email:
             flash('לא הצלחנו לקבל את האימייל מ-Apple', 'error')
             return redirect(url_for('auth.login'))
-        
+
         # Apple only sends name on first login
-        name = ''
-        if 'user' in request.form:
-            import json
-            user_data = json.loads(request.form['user'])
-            name = f"{user_data.get('name', {}).get('firstName', '')} {user_data.get('name', {}).get('lastName', '')}".strip()
-        
+        name = _extract_apple_user_name(request.form)
+
         # Get or create user
         user = _get_or_create_oauth_user(email, name, 'apple')
-        
+
         # Check if user is active
         if not user.is_active:
             flash('החשבון שלך מושהה. פנה למנהל.', 'error')
             return redirect(url_for('auth.login'))
-        
+
         # Create user wrapper and login
         user_wrapper = auth_service.UserWrapper(user)
         login_user(user_wrapper, remember=True)
-        
+
         flash(f'שלום {user.name}! התחברת בהצלחה 🦫', 'success')
         return redirect(url_for('library.index'))
-        
+
     except Exception as e:
         logger.error(f"Apple OAuth error: {e}", exc_info=True)
         flash('שגיאה בהתחברות עם Apple. נסה שוב.', 'error')

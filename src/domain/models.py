@@ -5,17 +5,20 @@ from typing import List, Optional, Dict
 
 # --- Enums ---
 
+
 class TaskStatus(str, Enum):
     PENDING = "PENDING"
     PROCESSING = "PROCESSING"
     COMPLETED = "COMPLETED"
     FAILED = "FAILED"
 
+
 class AIProvider(str, Enum):
     OPENAI = "openai"
     GEMINI = "gemini"
 
 # --- Core Domain Objects ---
+
 
 @dataclass
 class Document:
@@ -24,10 +27,12 @@ class Document:
     content_text: str
     created_at: datetime = field(default_factory=datetime.utcnow)
 
+
 @dataclass
 class Flashcard:
     question: str
     answer: str
+
 
 @dataclass
 class FlashcardSet:
@@ -35,6 +40,7 @@ class FlashcardSet:
     document_id: str
     cards: List[Flashcard]
     created_at: datetime = field(default_factory=datetime.utcnow)
+
 
 @dataclass
 class Summary:
@@ -46,6 +52,7 @@ class Summary:
 
 # --- Task & Job Models ---
 
+
 @dataclass
 class Task:
     id: str
@@ -54,6 +61,7 @@ class Task:
     error_message: Optional[str] = None
     created_at: datetime = field(default_factory=datetime.utcnow)
     updated_at: datetime = field(default_factory=datetime.utcnow)
+
 
 @dataclass
 class Job:

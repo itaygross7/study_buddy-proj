@@ -3,11 +3,13 @@ from typing import Optional, Any
 from datetime import datetime
 from enum import Enum
 
+
 class JobStatus(str, Enum):
     PENDING = "PENDING"
     PROCESSING = "PROCESSING"
     COMPLETED = "COMPLETED"
     FAILED = "FAILED"
+
 
 class Job(BaseModel):
     """

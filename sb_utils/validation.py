@@ -12,6 +12,7 @@ HEBREW_ERRORS = {
     "server_error": "אירעה שגיאה בשרת. נסה שוב מאוחר יותר.",
 }
 
+
 def validate_upload(mime: Optional[str], size: int) -> Optional[str]:
     """
     Validate upload size and MIME type.

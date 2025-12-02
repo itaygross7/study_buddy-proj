@@ -2,6 +2,7 @@ import io
 from PyPDF2 import PdfReader, errors
 from sb_utils.logger_utils import logger
 
+
 def extract_text_from_pdf(file_stream: io.BytesIO) -> str:
     """
     Extracts text from a PDF file stream using PyPDF2.

@@ -51,7 +51,7 @@ def get_course_context(course_id: str, user_id: str, max_chars: int = 5000) -> s
     documents = db.documents.find({"course_id": course_id, "user_id": user_id})
     context_parts = []
     total_chars = 0
-    
+
     for doc in documents:
         content = doc.get("content_text", "")
         if total_chars + len(content) > max_chars:
@@ -62,7 +62,7 @@ def get_course_context(course_id: str, user_id: str, max_chars: int = 5000) -> s
             break
         context_parts.append(content)
         total_chars += len(content)
-    
+
     return "\n\n---\n\n".join(context_parts)
 
 
@@ -73,13 +73,13 @@ def index():
     courses = get_user_courses(current_user.id)
     profile = get_user_profile(current_user.id)
     config = get_system_config()
-    
+
     return render_template('library/index.html',
-                         courses=courses,
-                         profile=profile,
-                         max_courses=config.max_courses_per_user,
-                         icons=COURSE_ICONS,
-                         colors=COURSE_COLORS)
+                           courses=courses,
+                           profile=profile,
+                           max_courses=config.max_courses_per_user,
+                           icons=COURSE_ICONS,
+                           colors=COURSE_COLORS)
 
 
 @library_bp.route('/course/new', methods=['GET', 'POST'])
@@ -88,26 +88,26 @@ def new_course():
     """Create a new course."""
     config = get_system_config()
     current_count = db.courses.count_documents({"user_id": current_user.id})
-    
+
     if current_count >= config.max_courses_per_user:
         flash(f'הגעת למקסימום {config.max_courses_per_user} קורסים', 'error')
         return redirect(url_for('library.index'))
-    
+
     if request.method == 'POST':
         name = request.form.get('name', '').strip()
         description = request.form.get('description', '').strip()
         language = request.form.get('language', 'he')
         icon = request.form.get('icon', '📚')
         color = request.form.get('color', '#F2C94C')
-        
+
         if not name:
             flash('יש להזין שם לקורס', 'error')
             return render_template('library/new_course.html', icons=COURSE_ICONS, colors=COURSE_COLORS)
-        
+
         if len(name) > 100:
             flash('שם הקורס ארוך מדי (מקסימום 100 תווים)', 'error')
             return render_template('library/new_course.html', icons=COURSE_ICONS, colors=COURSE_COLORS)
-        
+
         course = Course(
             _id=str(uuid.uuid4()),
             user_id=current_user.id,
@@ -117,12 +117,12 @@ def new_course():
             icon=icon,
             color=color
         )
-        
+
         db.courses.insert_one(course.to_dict())
         logger.info(f"User {current_user.id} created course: {name}")
         flash('הקורס נוצר בהצלחה! 📚', 'success')
         return redirect(url_for('library.course_page', course_id=course.id))
-    
+
     return render_template('library/new_course.html', icons=COURSE_ICONS, colors=COURSE_COLORS)
 
 
@@ -134,21 +134,21 @@ def course_page(course_id):
     if not course:
         flash('הקורס לא נמצא', 'error')
         return redirect(url_for('library.index'))
-    
+
     documents = get_course_documents(course_id)
-    
+
     # Get summaries, flashcards, assessments for this course
     summaries = list(db.summaries.find({"course_id": course_id}).sort("created_at", -1).limit(10))
     flashcard_sets = list(db.flashcard_sets.find({"course_id": course_id}).sort("created_at", -1).limit(10))
     assessments = list(db.assessments.find({"course_id": course_id}).sort("created_at", -1).limit(10))
-    
+
     return render_template('library/course.html',
-                         course=course,
-                         documents=documents,
-                         summaries=summaries,
-                         flashcard_sets=flashcard_sets,
-                         assessments=assessments,
-                         has_content=len(documents) > 0)
+                           course=course,
+                           documents=documents,
+                           summaries=summaries,
+                           flashcard_sets=flashcard_sets,
+                           assessments=assessments,
+                           has_content=len(documents) > 0)
 
 
 @library_bp.route('/course/<course_id>/settings', methods=['GET', 'POST'])
@@ -159,18 +159,19 @@ def course_settings(course_id):
     if not course:
         flash('הקורס לא נמצא', 'error')
         return redirect(url_for('library.index'))
-    
+
     if request.method == 'POST':
         name = request.form.get('name', '').strip()
         description = request.form.get('description', '').strip()
         language = request.form.get('language', 'he')
         icon = request.form.get('icon', course.icon)
         color = request.form.get('color', course.color)
-        
+
         if not name:
             flash('יש להזין שם לקורס', 'error')
-            return render_template('library/course_settings.html', course=course, icons=COURSE_ICONS, colors=COURSE_COLORS)
-        
+            return render_template('library/course_settings.html', course=course,
+                                   icons=COURSE_ICONS, colors=COURSE_COLORS)
+
         db.courses.update_one(
             {"_id": course_id, "user_id": current_user.id},
             {"$set": {
@@ -182,10 +183,10 @@ def course_settings(course_id):
                 "updated_at": datetime.now(timezone.utc)
             }}
         )
-        
+
         flash('הקורס עודכן בהצלחה', 'success')
         return redirect(url_for('library.course_page', course_id=course_id))
-    
+
     return render_template('library/course_settings.html', course=course, icons=COURSE_ICONS, colors=COURSE_COLORS)
 
 
@@ -197,14 +198,14 @@ def delete_course(course_id):
     if not course:
         flash('הקורס לא נמצא', 'error')
         return redirect(url_for('library.index'))
-    
+
     # Delete all related data
     db.documents.delete_many({"course_id": course_id, "user_id": current_user.id})
     db.summaries.delete_many({"course_id": course_id, "user_id": current_user.id})
     db.flashcard_sets.delete_many({"course_id": course_id, "user_id": current_user.id})
     db.assessments.delete_many({"course_id": course_id, "user_id": current_user.id})
     db.courses.delete_one({"_id": course_id, "user_id": current_user.id})
-    
+
     logger.info(f"User {current_user.id} deleted course: {course.name}")
     flash('הקורס נמחק בהצלחה', 'success')
     return redirect(url_for('library.index'))
@@ -217,7 +218,7 @@ def upload_to_course(course_id):
     course = get_course_by_id(course_id, current_user.id)
     if not course:
         return jsonify({"error": "Course not found"}), 404
-    
+
     # This will be handled by the existing upload route with course_id parameter
     # Redirect to the upload API
     return redirect(url_for('upload_bp.upload_file_route', course_id=course_id))
@@ -231,27 +232,27 @@ def course_tool(course_id, tool):
     if not course:
         flash('הקורס לא נמצא', 'error')
         return redirect(url_for('library.index'))
-    
+
     # Check if course has content
     doc_count = db.documents.count_documents({"course_id": course_id})
     if doc_count == 0:
         flash('יש להעלות חומר לימוד לפני השימוש בכלים', 'warning')
         return redirect(url_for('library.course_page', course_id=course_id))
-    
+
     # Valid tools
     valid_tools = ['summary', 'flashcards', 'assess', 'homework']
     if tool not in valid_tools:
         flash('כלי לא קיים', 'error')
         return redirect(url_for('library.course_page', course_id=course_id))
-    
+
     # Get course context for the tool
     context = get_course_context(course_id, current_user.id)
     documents = get_course_documents(course_id)
-    
+
     return render_template(f'library/tool_{tool}.html',
-                         course=course,
-                         documents=documents,
-                         context=context)
+                           course=course,
+                           documents=documents,
+                           context=context)
 
 
 # ============ User Profile Routes ============
@@ -261,7 +262,7 @@ def course_tool(course_id, tool):
 def profile():
     """User profile page."""
     user_profile = get_user_profile(current_user.id)
-    
+
     if request.method == 'POST':
         full_name = request.form.get('full_name', '').strip()
         phone = request.form.get('phone', '').strip()
@@ -270,7 +271,7 @@ def profile():
         year_of_study = request.form.get('year_of_study', '').strip()
         general_context = request.form.get('general_context', '').strip()
         preferred_language = request.form.get('preferred_language', 'he')
-        
+
         db.user_profiles.update_one(
             {"_id": current_user.id},
             {"$set": {
@@ -285,23 +286,23 @@ def profile():
             }},
             upsert=True
         )
-        
+
         # Also update user name
         db.users.update_one(
             {"_id": current_user.id},
             {"$set": {"name": full_name}}
         )
-        
+
         flash('הפרופיל עודכן בהצלחה', 'success')
         return redirect(url_for('library.profile'))
-    
+
     courses_count = db.courses.count_documents({"user_id": current_user.id})
     documents_count = db.documents.count_documents({"user_id": current_user.id})
-    
+
     return render_template('library/profile.html',
-                         profile=user_profile,
-                         courses_count=courses_count,
-                         documents_count=documents_count)
+                           profile=user_profile,
+                           courses_count=courses_count,
+                           documents_count=documents_count)
 
 
 # ============ API Endpoints ============
@@ -329,10 +330,10 @@ def api_course_context(course_id):
     course = get_course_by_id(course_id, current_user.id)
     if not course:
         return jsonify({"error": "Course not found"}), 404
-    
+
     context = get_course_context(course_id, current_user.id)
     profile = get_user_profile(current_user.id)
-    
+
     return jsonify({
         "course_name": course.name,
         "language": course.language.value,
