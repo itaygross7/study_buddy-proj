@@ -34,7 +34,43 @@ StudyBuddyAI is a comprehensive web application designed to help students with t
 
 ## 🚀 Quick Start (Ubuntu 22.04 Server)
 
-### Prerequisites
+### One-Click Deployment (Recommended)
+
+**NEW!** Use our automated deployment script with built-in system checks:
+
+```bash
+# Clone the repository
+git clone https://github.com/itaygross7/study_buddy-proj.git
+cd study_buddy-proj
+
+# Configure your environment
+cp .env.example .env
+nano .env  # Set SECRET_KEY, ADMIN_EMAIL, and API keys
+
+# Deploy with automatic checks
+./deploy.sh
+```
+
+The script will automatically:
+- ✅ Check Docker and system requirements
+- ✅ Verify ports are available
+- ✅ Test network and DNS connectivity
+- ✅ Validate your configuration
+- ✅ Build and start all services
+- ✅ Show you how to access your app
+
+**Script Options:**
+```bash
+./deploy.sh --check-only   # Only run system checks
+./deploy.sh --rebuild      # Force rebuild of images
+./deploy.sh --help         # Show all options
+```
+
+### Manual Installation
+
+If you prefer manual setup or need more control:
+
+#### Prerequisites
 
 1. **Install Docker and Docker Compose:**
    ```bash
@@ -57,7 +93,7 @@ StudyBuddyAI is a comprehensive web application designed to help students with t
    - [Google AI Studio](https://makersuite.google.com/app/apikey) for Gemini (recommended, free tier available)
    - OR [OpenAI API](https://platform.openai.com/api-keys) for GPT
 
-### Installation
+#### Installation Steps
 
 1. **Clone the repository:**
    ```bash
