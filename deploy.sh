@@ -275,40 +275,166 @@ fix_ports() {
     REQUIRED_PORTS=(5000 27017 5672 15672)
     PORT_NAMES=("Flask" "MongoDB" "RabbitMQ" "RabbitMQ-UI")
     
-    # First, try to stop any existing StudyBuddy containers
+    # First, check for ALL containers using these ports (not just StudyBuddy)
+    log_info "Checking for ANY containers using required ports..."
+    
+    for i in "${!REQUIRED_PORTS[@]}"; do
+        PORT=${REQUIRED_PORTS[$i]}
+        
+        # Find ALL containers exposing this port
+        local all_containers=$(docker ps -a --format '{{.Names}}:{{.Ports}}' 2>/dev/null | grep ":$PORT->" | cut -d: -f1)
+        
+        if [[ -n "$all_containers" ]]; then
+            log_warning "Found container(s) using port $PORT:"
+            echo "$all_containers" | while read container; do
+                log_info "  - $container"
+            done
+        fi
+    done
+    
+    # Stop StudyBuddy containers first
     log_fix "Stopping any existing StudyBuddy containers..."
     docker compose down 2>/dev/null || docker-compose down 2>/dev/null || true
     docker stop $(docker ps -aq --filter "name=studybuddy") 2>/dev/null || true
     docker rm $(docker ps -aq --filter "name=studybuddy") 2>/dev/null || true
     sleep 2
     
+    # Now check each port individually
     for i in "${!REQUIRED_PORTS[@]}"; do
         PORT=${REQUIRED_PORTS[$i]}
         NAME=${PORT_NAMES[$i]}
         
         # Check if port is still in use
         if netstat -tuln 2>/dev/null | grep -q ":$PORT " || ss -tuln 2>/dev/null | grep -q ":$PORT "; then
-            log_warning "Port $PORT ($NAME) is in use"
+            log_warning "Port $PORT ($NAME) is still in use"
             
-            # Try to kill the process using it
-            if kill_port $PORT; then
-                log_success "Port $PORT freed"
+            # Try to identify what's using the port
+            local blocking_container=""
+            local blocking_process=""
+            local pid=""
+            
+            # Method 1: Check Docker containers by inspecting their ports
+            blocking_container=$(docker ps --format '{{.Names}}:{{.Ports}}' 2>/dev/null | grep ":$PORT->" | cut -d: -f1 | head -1)
+            
+            # Method 2: If not found, try docker port inspection
+            if [[ -z "$blocking_container" ]]; then
+                for cid in $(docker ps -q 2>/dev/null); do
+                    if docker port $cid 2>/dev/null | grep -q ":$PORT"; then
+                        blocking_container=$(docker inspect --format '{{.Name}}' $cid 2>/dev/null | sed 's/^\/*//')
+                        break
+                    fi
+                done
+            fi
+            
+            if [[ -n "$blocking_container" ]]; then
+                log_warning "Port $PORT blocked by container: $blocking_container"
+                
+                # Check if it's a known service that should be preserved
+                if [[ "$blocking_container" == *"tailscale"* ]] || [[ "$blocking_container" == *"vpn"* ]]; then
+                    log_warning "Found important service: $blocking_container"
+                    if [[ -t 0 ]]; then
+                        echo ""
+                        log_info "This appears to be a networking service (Tailscale/VPN)"
+                        read -p "Stop this container temporarily? (y/N): " -n 1 -r
+                        echo
+                        if [[ $REPLY =~ ^[Yy]$ ]]; then
+                            log_fix "Stopping $blocking_container (you can restart it later)"
+                            docker stop "$blocking_container" 2>/dev/null || true
+                            sleep 2
+                        else
+                            log_warning "Keeping $blocking_container running - deployment may conflict"
+                        fi
+                    else
+                        log_warning "Non-interactive mode: keeping $blocking_container running"
+                    fi
+                else
+                    # Other containers - auto-stop them
+                    log_fix "Stopping container: $blocking_container"
+                    docker stop "$blocking_container" 2>/dev/null || true
+                    sleep 2
+                fi
             else
-                # If lsof/fuser not available, try ss
-                local pid=$(ss -tlnp 2>/dev/null | grep ":$PORT " | grep -oP 'pid=\K[0-9]+' | head -1)
+                # Not a container, check for regular process
+                pid=$(lsof -ti:$PORT 2>/dev/null | head -1)
+                if [[ -z "$pid" ]]; then
+                    pid=$(fuser $PORT/tcp 2>/dev/null | awk '{print $1}')
+                fi
+                if [[ -z "$pid" ]]; then
+                    pid=$(ss -tlnp 2>/dev/null | grep ":$PORT " | grep -oP 'pid=\K[0-9]+' | head -1)
+                fi
+                
                 if [[ -n "$pid" ]]; then
-                    log_fix "Killing process $pid on port $PORT"
-                    kill -9 $pid 2>/dev/null || $SUDO kill -9 $pid 2>/dev/null || true
-                    sleep 1
+                    blocking_process=$(ps -p $pid -o comm= 2>/dev/null || echo "unknown")
+                    local process_cmd=$(ps -p $pid -o args= 2>/dev/null || echo "")
+                    
+                    log_warning "Port $PORT blocked by process: $blocking_process (PID: $pid)"
+                    log_info "  Command: $process_cmd"
+                    
+                    # Check for known safe-to-kill processes
+                    if [[ "$blocking_process" == "mongo"* ]] || [[ "$blocking_process" == "mongod"* ]] || \
+                       [[ "$blocking_process" == "rabbitmq"* ]] || [[ "$blocking_process" == "beam.smp"* ]] || \
+                       [[ "$blocking_process" == "python"* ]] || [[ "$blocking_process" == "node"* ]] || \
+                       [[ "$blocking_process" == "flask"* ]]; then
+                        log_fix "Auto-killing $blocking_process (PID: $pid) - likely old deployment"
+                        kill -15 $pid 2>/dev/null || $SUDO kill -15 $pid 2>/dev/null || true
+                        sleep 2
+                        # If still running, force kill
+                        if ps -p $pid > /dev/null 2>&1; then
+                            kill -9 $pid 2>/dev/null || $SUDO kill -9 $pid 2>/dev/null || true
+                            sleep 1
+                        fi
+                    # Check for Tailscale or VPN processes
+                    elif [[ "$blocking_process" == *"tailscale"* ]] || [[ "$blocking_process" == *"vpn"* ]] || \
+                         [[ "$process_cmd" == *"tailscale"* ]] || [[ "$process_cmd" == *"vpn"* ]]; then
+                        log_warning "Found networking service: $blocking_process"
+                        if [[ -t 0 ]]; then
+                            echo ""
+                            read -p "Kill this process? (y/N): " -n 1 -r
+                            echo
+                            if [[ $REPLY =~ ^[Yy]$ ]]; then
+                                log_fix "Killing $blocking_process (PID: $pid)"
+                                kill -15 $pid 2>/dev/null || $SUDO kill -15 $pid 2>/dev/null || true
+                                sleep 1
+                            fi
+                        else
+                            log_warning "Keeping $blocking_process running - may cause conflicts"
+                        fi
+                    else
+                        # Unknown process - ask user
+                        log_warning "Unknown process '$blocking_process' using port $PORT"
+                        if [[ -t 0 ]]; then
+                            read -p "Kill this process to free the port? (Y/n): " -n 1 -r
+                            echo
+                            if [[ ! $REPLY =~ ^[Nn]$ ]]; then
+                                log_fix "Killing process $pid"
+                                kill -15 $pid 2>/dev/null || $SUDO kill -15 $pid 2>/dev/null || true
+                                sleep 2
+                                if ps -p $pid > /dev/null 2>&1; then
+                                    kill -9 $pid 2>/dev/null || $SUDO kill -9 $pid 2>/dev/null || true
+                                    sleep 1
+                                fi
+                            fi
+                        else
+                            # Non-interactive mode - kill it anyway
+                            log_fix "Non-interactive mode: killing process $pid"
+                            kill -15 $pid 2>/dev/null || $SUDO kill -15 $pid 2>/dev/null || true
+                            sleep 2
+                            if ps -p $pid > /dev/null 2>&1; then
+                                kill -9 $pid 2>/dev/null || $SUDO kill -9 $pid 2>/dev/null || true
+                                sleep 1
+                            fi
+                        fi
+                    fi
                 fi
             fi
         fi
         
         # Verify port is now free
+        sleep 1
         if ! netstat -tuln 2>/dev/null | grep -q ":$PORT " && ! ss -tuln 2>/dev/null | grep -q ":$PORT "; then
             log_success "Port $PORT ($NAME) is available"
         else
-            log_warning "Port $PORT still in use - deployment may conflict"
+            log_warning "Port $PORT still in use - deployment may have conflicts"
         fi
     done
     
@@ -479,6 +605,261 @@ fix_env() {
     fi
     
     log_success "Environment configuration OK"
+    
+    # Configure HTTPS with domain if DOMAIN is set
+    if grep -q "^DOMAIN=" .env && ! grep -q '^DOMAIN=""' .env && ! grep -q "^DOMAIN=\"studybuddyai.my\"" .env; then
+        DOMAIN=$(grep "^DOMAIN=" .env | cut -d= -f2 | tr -d '"' | tr -d "'")
+        
+        if [[ -n "$DOMAIN" ]] && [[ "$DOMAIN" != "localhost" ]]; then
+            log_info "Domain configured: $DOMAIN"
+            
+            # Check if Caddy should be enabled for HTTPS
+            if [[ -t 0 ]]; then
+                echo ""
+                log_info "Your domain is set to: $DOMAIN"
+                read -p "Enable automatic HTTPS with Let's Encrypt? (Y/n): " -n 1 -r
+                echo
+                if [[ ! $REPLY =~ ^[Nn]$ ]]; then
+                    setup_https_caddy "$DOMAIN"
+                fi
+            else
+                log_info "Non-interactive mode: HTTPS setup skipped"
+                log_info "To enable HTTPS, run: sudo ./scripts/setup-https.sh $DOMAIN"
+            fi
+        fi
+    fi
+    
+    return 0
+}
+
+setup_https_caddy() {
+    local domain=$1
+    
+    log_info "Setting up HTTPS with Caddy for $domain..."
+    
+    # First, verify domain DNS points to this server
+    log_info "Verifying domain DNS configuration..."
+    
+    local server_ip=$(hostname -I | awk '{print $1}' 2>/dev/null)
+    local public_ip=$(curl -s -4 ifconfig.me 2>/dev/null || curl -s -4 icanhazip.com 2>/dev/null || curl -s -4 ipinfo.io/ip 2>/dev/null)
+    
+    log_info "Server local IP: $server_ip"
+    log_info "Server public IP: $public_ip"
+    
+    # Resolve domain to IP
+    local domain_ip=$(dig +short $domain 2>/dev/null | tail -1)
+    if [[ -z "$domain_ip" ]]; then
+        domain_ip=$(nslookup $domain 2>/dev/null | grep -A1 "Name:" | tail -1 | awk '{print $2}')
+    fi
+    if [[ -z "$domain_ip" ]]; then
+        domain_ip=$(host $domain 2>/dev/null | grep "has address" | awk '{print $4}' | head -1)
+    fi
+    
+    if [[ -n "$domain_ip" ]]; then
+        log_info "Domain $domain resolves to: $domain_ip"
+        
+        # Check if domain points to this server
+        if [[ "$domain_ip" == "$public_ip" ]] || [[ "$domain_ip" == "$server_ip" ]]; then
+            log_success "Domain DNS correctly points to this server"
+        else
+            log_warning "Domain $domain points to $domain_ip but server is at $public_ip"
+            echo ""
+            log_warning "DNS Issues Detected!"
+            log_info "Your domain does NOT point to this server"
+            log_info "To fix:"
+            log_info "  1. Update DNS A record for $domain to: $public_ip"
+            log_info "  2. Wait 5-10 minutes for DNS propagation"
+            log_info "  3. Run this script again"
+            echo ""
+            
+            if [[ -t 0 ]]; then
+                read -p "Continue anyway? (HTTPS may fail) (y/N): " -n 1 -r
+                echo
+                if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+                    log_info "Skipping HTTPS setup until DNS is fixed"
+                    return 1
+                fi
+            else
+                log_warning "Non-interactive mode: skipping HTTPS due to DNS mismatch"
+                return 1
+            fi
+        fi
+    else
+        log_error "Cannot resolve domain $domain"
+        log_info "Make sure:"
+        log_info "  1. Domain exists and is registered"
+        log_info "  2. DNS A record points to: $public_ip"
+        log_info "  3. DNS has propagated (wait 5-10 minutes after changes)"
+        echo ""
+        
+        if [[ -t 0 ]]; then
+            read -p "Continue anyway? (HTTPS will likely fail) (y/N): " -n 1 -r
+            echo
+            if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+                log_info "Skipping HTTPS setup"
+                return 1
+            fi
+        else
+            log_error "Non-interactive mode: cannot proceed without DNS"
+            return 1
+        fi
+    fi
+    
+    # Check if ports 80 and 443 are available for Caddy
+    log_info "Checking HTTPS ports (80, 443)..."
+    
+    for https_port in 80 443; do
+        if netstat -tuln 2>/dev/null | grep -q ":$https_port " || ss -tuln 2>/dev/null | grep -q ":$https_port "; then
+            log_warning "Port $https_port is in use"
+            
+            # Find what's using it
+            local pid=$(lsof -ti:$https_port 2>/dev/null | head -1)
+            if [[ -z "$pid" ]]; then
+                pid=$(ss -tlnp 2>/dev/null | grep ":$https_port " | grep -oP 'pid=\K[0-9]+' | head -1)
+            fi
+            
+            if [[ -n "$pid" ]]; then
+                local process=$(ps -p $pid -o comm= 2>/dev/null || echo "unknown")
+                log_warning "Port $https_port used by: $process (PID: $pid)"
+                
+                # If it's nginx or apache, offer to stop
+                if [[ "$process" == "nginx"* ]] || [[ "$process" == "apache"* ]] || [[ "$process" == "httpd"* ]]; then
+                    log_warning "Found existing web server: $process"
+                    
+                    if [[ -t 0 ]]; then
+                        read -p "Stop $process to use Caddy? (Y/n): " -n 1 -r
+                        echo
+                        if [[ ! $REPLY =~ ^[Nn]$ ]]; then
+                            log_fix "Stopping $process..."
+                            $SUDO systemctl stop nginx 2>/dev/null || true
+                            $SUDO systemctl stop apache2 2>/dev/null || true
+                            $SUDO systemctl stop httpd 2>/dev/null || true
+                            sleep 2
+                        fi
+                    fi
+                fi
+            fi
+        else
+            log_success "Port $https_port available"
+        fi
+    done
+    
+    # Check if Caddy is installed
+    if ! command -v caddy &> /dev/null; then
+        log_fix "Installing Caddy..."
+        
+        $SUDO apt-get update -qq 2>/dev/null || true
+        $SUDO apt-get install -y debian-keyring debian-archive-keyring apt-transport-https 2>/dev/null || true
+        
+        # Add Caddy repo
+        curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' 2>/dev/null | $SUDO gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg 2>/dev/null || true
+        curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' 2>/dev/null | $SUDO tee /etc/apt/sources.list.d/caddy-stable.list >/dev/null || true
+        
+        $SUDO apt-get update -qq 2>/dev/null || true
+        $SUDO apt-get install -y caddy 2>/dev/null || true
+        
+        if command -v caddy &> /dev/null; then
+            log_success "Caddy installed"
+        else
+            log_warning "Failed to install Caddy - skipping HTTPS setup"
+            return 1
+        fi
+    else
+        log_success "Caddy already installed"
+    fi
+    
+    # Create Caddyfile
+    log_fix "Configuring Caddy for $domain..."
+    
+    $SUDO tee /etc/caddy/Caddyfile > /dev/null <<EOF
+# StudyBuddyAI - Automatic HTTPS with Let's Encrypt
+$domain {
+    reverse_proxy localhost:5000 {
+        health_uri /health
+        health_interval 30s
+        health_timeout 5s
+        
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+        header_up Host {host}
+    }
+    
+    # Enable compression
+    encode gzip
+    
+    # Security headers
+    header {
+        X-Content-Type-Options nosniff
+        X-Frame-Options DENY
+        X-XSS-Protection "1; mode=block"
+        Referrer-Policy strict-origin-when-cross-origin
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        -Server
+    }
+    
+    # Logging
+    log {
+        output file /var/log/caddy/studybuddyai.log {
+            roll_size 10mb
+            roll_keep 5
+        }
+    }
+}
+
+# Redirect www to non-www (optional)
+www.$domain {
+    redir https://$domain{uri} permanent
+}
+EOF
+    
+    # Create log directory
+    $SUDO mkdir -p /var/log/caddy
+    $SUDO chown caddy:caddy /var/log/caddy 2>/dev/null || true
+    
+    # Validate Caddyfile
+    if $SUDO caddy validate --config /etc/caddy/Caddyfile 2>/dev/null; then
+        log_success "Caddyfile validated"
+    else
+        log_error "Caddyfile validation failed"
+        return 1
+    fi
+    
+    # Enable and restart Caddy
+    $SUDO systemctl enable caddy 2>/dev/null || true
+    $SUDO systemctl restart caddy
+    
+    sleep 3
+    
+    if $SUDO systemctl is-active --quiet caddy; then
+        log_success "Caddy started successfully"
+        
+        # Update .env for HTTPS
+        sed -i "s|BASE_URL=.*|BASE_URL=\"https://$domain\"|g" .env
+        sed -i "s|SESSION_COOKIE_SECURE=.*|SESSION_COOKIE_SECURE=true|g" .env
+        
+        echo ""
+        log_success "HTTPS configured for $domain"
+        log_info "Certificate acquisition may take a few moments..."
+        echo ""
+        log_info "Important checklist:"
+        log_info "  ✓ DNS points $domain to $public_ip"
+        log_info "  ✓ Caddy is running"
+        log_info "  ☐ Firewall allows ports 80 and 443"
+        log_info "  ☐ Router forwards ports 80 and 443 (if behind NAT)"
+        echo ""
+        log_info "Caddy will automatically obtain SSL certificate from Let's Encrypt"
+        log_info "This may take 30-60 seconds on first run"
+        echo ""
+        log_info "Access your site at: https://$domain"
+        log_info "Check Caddy logs: sudo journalctl -u caddy -f"
+        echo ""
+    else
+        log_error "Failed to start Caddy"
+        log_info "Check logs: sudo journalctl -u caddy -n 50"
+        return 1
+    fi
+    
     return 0
 }
 
