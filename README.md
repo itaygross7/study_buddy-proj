@@ -32,26 +32,38 @@ StudyBuddyAI is a comprehensive web application designed to help students with t
 
 ---
 
-## 🚀 Quick Start (Ubuntu 22.04 Server)
+## 🚀 Quick Start (Ubuntu 22.04 / Ubuntu 20.04+ / Linux)
 
 ### One-Click Deployment (Recommended)
 
-**NEW!** Use our automated deployment script with built-in system checks:
+**Ultra-Robust Auto-Fix Deployment** - Works no matter the server state!
 
 ```bash
 # Clone the repository
 git clone https://github.com/itaygross7/study_buddy-proj.git
 cd study_buddy-proj
 
-# Configure your environment
-cp .env.example .env
-nano .env  # Set SECRET_KEY, ADMIN_EMAIL, and API keys
-
-# Deploy with automatic checks
+# Run as root (or regular user with sudo access)
 ./deploy.sh
 ```
 
-The script will automatically:
+**The script automatically:**
+- ✅ Detects and installs Docker if missing
+- ✅ Detects and installs Docker Compose if missing
+- ✅ Fixes Docker daemon if not running
+- ✅ Clears port conflicts automatically
+- ✅ Fixes network and DNS issues
+- ✅ Generates secure SECRET_KEY automatically
+- ✅ Cleans up disk space if needed
+- ✅ Creates .env from template
+- ✅ Builds and starts all services
+- ✅ Validates deployment is working
+
+**Can be run as:**
+- Root: `./deploy.sh` (full system access, installs missing dependencies)
+- User: `./deploy.sh` (uses sudo when needed)
+
+**Tested on**: Ubuntu 22.04 LTS (also works on Ubuntu 20.04+, Debian, and other Linux distributions with Docker)
 - ✅ Check Docker and system requirements
 - ✅ Verify ports are available
 - ✅ Test network and DNS connectivity

@@ -2,6 +2,8 @@
 # =============================================================================
 # StudyBuddyAI Pre-Deployment Check Script
 # =============================================================================
+# Tested on: Ubuntu 22.04 LTS (also works on Ubuntu 20.04+, Debian, and other Linux distributions)
+#
 # This script performs comprehensive checks before deploying with Docker Compose:
 # - System requirements (Docker, Docker Compose)
 # - Port availability (5000, 27017, 5672, 15672)

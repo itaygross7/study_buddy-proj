@@ -1,6 +1,6 @@
 # StudyBuddyAI Server Deployment Guide
 
-Complete guide for deploying StudyBuddyAI on Ubuntu 22.04 with Docker, Caddy reverse proxy, and dynamic DNS.
+Complete guide for deploying StudyBuddyAI on Ubuntu 22.04 (or Ubuntu 20.04+, Debian, and other Linux distributions) with Docker, Caddy reverse proxy, and dynamic DNS.
 
 ## 🚀 Quick Start (Recommended)
 
@@ -20,6 +20,8 @@ nano .env  # Edit with your settings (SECRET_KEY, ADMIN_EMAIL, API keys)
 # Run deployment with automatic checks
 ./deploy.sh
 ```
+
+**Tested on**: Ubuntu 22.04 LTS, Ubuntu 20.04 LTS, and compatible Linux distributions with Docker.
 
 The deployment script will:
 - ✅ Check all system requirements (Docker, Docker Compose, ports, network, DNS)
