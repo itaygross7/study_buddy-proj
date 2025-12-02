@@ -13,13 +13,14 @@ from sb_utils.logger_utils import logger
 # Flask-Login User Wrapper
 class UserWrapper:
     """Flask-Login compatible user wrapper."""
+
     def __init__(self, user):
         self.user = user
         self.id = user.id
         self.is_authenticated = True
         self.is_active = user.is_active
         self.is_anonymous = False
-        
+
     def get_id(self):
         return self.id
 
@@ -48,10 +49,10 @@ def create_user(db, email: str, password: str, name: str = "") -> User:
     existing = db.users.find_one({"email": email.lower()})
     if existing:
         raise ValueError("Email already registered")
-    
+
     # Determine role (admin if email matches ADMIN_EMAIL)
     role = UserRole.ADMIN if email.lower() == settings.ADMIN_EMAIL.lower() and settings.ADMIN_EMAIL else UserRole.USER
-    
+
     user = User(
         _id=str(uuid.uuid4()),
         email=email.lower(),
@@ -62,7 +63,7 @@ def create_user(db, email: str, password: str, name: str = "") -> User:
         verification_token=generate_verification_token(),
         created_at=datetime.now(timezone.utc)
     )
-    
+
     db.users.insert_one(user.to_dict())
     logger.info(f"Created new user: {email} with role: {role.value}")
     return user
@@ -73,25 +74,25 @@ def authenticate_user(db, email: str, password: str) -> Optional[User]:
     user_data = db.users.find_one({"email": email.lower()})
     if not user_data:
         return None
-    
+
     user = User(**user_data)
-    
+
     # Check if user has a password (OAuth users don't)
     if not user.password_hash:
         return None
-    
+
     if not verify_password(password, user.password_hash):
         return None
-    
+
     if not user.is_active:
         return None
-    
+
     # Update last login
     db.users.update_one(
         {"_id": user.id},
         {"$set": {"last_login": datetime.now(timezone.utc)}}
     )
-    
+
     logger.info(f"User authenticated: {email}")
     return user
 
@@ -146,18 +147,18 @@ def create_admin_if_not_exists(db) -> Optional[User]:
     """Create admin user from environment variables if not exists."""
     if not settings.ADMIN_EMAIL:
         return None
-    
+
     # Check if admin already exists
     existing = db.users.find_one({"email": settings.ADMIN_EMAIL.lower()})
     if existing:
         logger.info(f"Admin user already exists: {settings.ADMIN_EMAIL}")
         return User(**existing)
-    
+
     # Create admin if password is provided
     if not settings.ADMIN_PASSWORD:
         logger.info("Admin password not configured, admin will be created on signup")
         return None
-    
+
     try:
         user = User(
             _id=str(uuid.uuid4()),
@@ -169,7 +170,7 @@ def create_admin_if_not_exists(db) -> Optional[User]:
             verification_token=None,
             created_at=datetime.now(timezone.utc)
         )
-        
+
         db.users.insert_one(user.to_dict())
         logger.info(f"Created admin user: {settings.ADMIN_EMAIL}")
         return user
@@ -188,13 +189,13 @@ def increment_prompt_count(db, user_id: str) -> int:
     """Increment user's prompt count and return new count."""
     # Check if we need to reset daily count
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    
+
     # First, reset count if it's a new day
     db.users.update_one(
         {"_id": user_id, "prompt_count_date": {"$ne": today}},
         {"$set": {"prompt_count": 0, "prompt_count_date": today}}
     )
-    
+
     # Then increment
     result = db.users.find_one_and_update(
         {"_id": user_id},
@@ -210,7 +211,7 @@ def generate_password_reset_token(db, user_id: str) -> Optional[str]:
     """Generate a password reset token for a user."""
     token = secrets.token_urlsafe(32)
     expires_at = datetime.now(timezone.utc) + timedelta(hours=1)  # Token valid for 1 hour
-    
+
     result = db.users.update_one(
         {"_id": user_id},
         {"$set": {
@@ -218,7 +219,7 @@ def generate_password_reset_token(db, user_id: str) -> Optional[str]:
             "reset_token_expires": expires_at
         }}
     )
-    
+
     if result.modified_count > 0:
         return token
     return None
@@ -239,7 +240,7 @@ def reset_password(db, token: str, new_password: str) -> bool:
     user = get_user_by_reset_token(db, token)
     if not user:
         return False
-    
+
     # Update password and clear reset token
     result = db.users.update_one(
         {"_id": user.id, "reset_token": token},
@@ -249,7 +250,7 @@ def reset_password(db, token: str, new_password: str) -> bool:
             "reset_token_expires": None
         }}
     )
-    
+
     if result.modified_count > 0:
         logger.info(f"Password reset for user: {user.email}")
         return True
@@ -261,17 +262,17 @@ def change_password(db, user_id: str, current_password: str, new_password: str) 
     user = get_user_by_id(db, user_id)
     if not user:
         return False
-    
+
     # Verify current password
     if not verify_password(current_password, user.password_hash):
         return False
-    
+
     # Update to new password
     result = db.users.update_one(
         {"_id": user_id},
         {"$set": {"password_hash": hash_password(new_password)}}
     )
-    
+
     if result.modified_count > 0:
         logger.info(f"Password changed for user: {user.email}")
         return True

@@ -2,6 +2,7 @@ import io
 from pptx import Presentation
 from sb_utils.logger_utils import logger
 
+
 def extract_text_from_pptx(file_stream: io.BytesIO) -> str:
     """
     Extracts text from a .pptx file stream.
@@ -13,7 +14,7 @@ def extract_text_from_pptx(file_stream: io.BytesIO) -> str:
             for shape in slide.shapes:
                 if hasattr(shape, "text"):
                     full_text.append(shape.text)
-        
+
         logger.info("Successfully extracted text from PPTX file.")
         return '\\n'.join(full_text)
     except Exception as e:

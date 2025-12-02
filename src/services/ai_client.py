@@ -7,26 +7,28 @@ from sb_utils.logger_utils import logger
 from sb_utils.ai_safety import create_safety_guard_prompt
 from src.domain.errors import AIClientError
 
+
 class AIClient:
     """
     A unified client for interacting with different AI models (OpenAI, Gemini).
     Includes built-in retry logic and safety guards.
-    
+
     Model selection is configurable via environment variables:
     - SB_OPENAI_MODEL: OpenAI model to use (default: gpt-4o-mini)
     - SB_GEMINI_MODEL: Gemini model to use (default: gemini-1.5-flash)
     - SB_DEFAULT_PROVIDER: Default AI provider (default: gemini)
     - SB_BASE_URL: Optional custom base URL for API
     """
+
     def __init__(self, provider: str = None):
         self.provider = provider or settings.SB_DEFAULT_PROVIDER
         self._initialized = False
-        
+
     def _ensure_initialized(self):
         """Lazy initialization of AI provider."""
         if self._initialized:
             return
-            
+
         if self.provider == "openai":
             if not settings.OPENAI_API_KEY or "your_openai" in settings.OPENAI_API_KEY:
                 raise ValueError("OpenAI API key is not configured.")
@@ -50,12 +52,12 @@ class AIClient:
         """
         self._ensure_initialized()
         full_prompt = create_safety_guard_prompt(prompt, context)
-        
+
         try:
             if self.provider == "openai":
                 model_name = settings.SB_OPENAI_MODEL
                 logger.debug(f"Using OpenAI model: {model_name}")
-                
+
                 client = openai.OpenAI(
                     api_key=settings.OPENAI_API_KEY,
                     base_url=settings.SB_BASE_URL if settings.SB_BASE_URL else None,
@@ -68,11 +70,11 @@ class AIClient:
                     temperature=0.7,
                 )
                 return response.choices[0].message.content.strip()
-            
+
             elif self.provider == "gemini":
                 model_name = settings.SB_GEMINI_MODEL
                 logger.debug(f"Using Gemini model: {model_name}")
-                
+
                 model = genai.GenerativeModel(model_name)
                 response = model.generate_content(
                     full_prompt,
@@ -85,6 +87,7 @@ class AIClient:
             raise AIClientError(f"The AI service failed to process the request: {e}") from e
 
         raise AIClientError("The AI service returned an empty or invalid response.")
+
 
 # Default client instance (lazy initialization)
 ai_client = AIClient(provider=settings.SB_DEFAULT_PROVIDER)

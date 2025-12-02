@@ -5,10 +5,13 @@ from src.infrastructure.database import db as flask_db
 from src.domain.models.db_models import Assessment, AssessmentQuestion
 from sb_utils.logger_utils import logger
 
+
 def _get_db(db_conn: Database = None) -> Database:
     return db_conn or flask_db
 
-def generate_assessment(document_id: str, document_content: str, num_questions: int, question_type: str, db_conn: Database = None) -> str:
+
+def generate_assessment(document_id: str, document_content: str, num_questions: int,
+                        question_type: str, db_conn: Database = None) -> str:
     """
     Uses the AI client to generate an assessment.
     Saves the result to the database.
@@ -18,7 +21,8 @@ def generate_assessment(document_id: str, document_content: str, num_questions: 
 
     prompt = f"""
     Based on the provided text, generate exactly {num_questions} quiz questions of type '{question_type}'.
-    For 'mcq' (multiple choice), each question must have 'options' (a list of 4 strings) and a 'correct_answer'.
+    For 'mcq' (multiple choice), each question must have 'options' (a list of 4 strings) and
+    a 'correct_answer'.
     Return the output as a valid JSON array of objects, like this:
     [
       {{"question": "What is the capital of France?", "options": ["Berlin", "Paris", "London", "Madrid"], "correct_answer": "Paris"}},

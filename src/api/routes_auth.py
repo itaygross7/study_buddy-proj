@@ -16,13 +16,14 @@ login_manager = LoginManager()
 
 class FlaskUser:
     """Flask-Login compatible user wrapper."""
+
     def __init__(self, user):
         self.user = user
         self.id = user.id
         self.is_authenticated = True
         self.is_active = user.is_active
         self.is_anonymous = False
-        
+
     def get_id(self):
         return self.id
 
@@ -63,32 +64,32 @@ def login():
     """Login page and handler."""
     if current_user.is_authenticated:
         return redirect(url_for('index'))
-    
+
     if request.method == 'POST':
         email = request.form.get('email', '').strip()
         password = request.form.get('password', '')
         remember = request.form.get('remember', False)
-        
+
         if not email or not password:
             flash('יש למלא את כל השדות', 'error')
             return render_template('auth/login.html')
-        
+
         user = auth_service.authenticate_user(db, email, password)
         if user:
             if not user.is_verified:
                 flash('יש לאמת את האימייל לפני ההתחברות', 'warning')
                 return render_template('auth/login.html')
-            
+
             login_user(FlaskUser(user), remember=bool(remember))
             logger.info(f"User logged in: {email}")
-            
+
             next_page = request.args.get('next')
             if next_page and next_page.startswith('/'):
                 return redirect(next_page)
             return redirect(url_for('index'))
         else:
             flash('אימייל או סיסמה שגויים', 'error')
-    
+
     return render_template('auth/login.html')
 
 
@@ -97,46 +98,46 @@ def signup():
     """Signup page and handler."""
     if current_user.is_authenticated:
         return redirect(url_for('index'))
-    
+
     if request.method == 'POST':
         email = request.form.get('email', '').strip()
         password = request.form.get('password', '')
         confirm_password = request.form.get('confirm_password', '')
         name = request.form.get('name', '').strip()
-        
+
         # Validation
         if not email or not password:
             flash('יש למלא את כל השדות', 'error')
             return render_template('auth/signup.html')
-        
+
         if password != confirm_password:
             flash('הסיסמאות אינן תואמות', 'error')
             return render_template('auth/signup.html')
-        
+
         if len(password) < 8:
             flash('הסיסמה חייבת להכיל לפחות 8 תווים', 'error')
             return render_template('auth/signup.html')
-        
+
         try:
             user = auth_service.create_user(db, email, password, name)
-            
+
             # Send verification email
             base_url = request.url_root.rstrip('/')
             email_service.send_verification_email(email, user.verification_token, base_url)
-            
+
             # Notify admin of new user
             email_service.send_new_user_notification(email, name)
-            
+
             flash('נרשמת בהצלחה! בדוק את האימייל שלך לאימות', 'success')
             return redirect(url_for('auth.login'))
-            
+
         except ValueError as e:
             flash(str(e), 'error')
         except Exception as e:
             logger.error(f"Signup error: {e}", exc_info=True)
             email_service.send_error_notification("Signup Error", str(e))
             flash('אירעה שגיאה, נסה שוב מאוחר יותר', 'error')
-    
+
     return render_template('auth/signup.html')
 
 
@@ -166,7 +167,7 @@ def resend_verification():
     if not email:
         flash('יש להזין כתובת אימייל', 'error')
         return redirect(url_for('auth.login'))
-    
+
     user = auth_service.get_user_by_email(db, email)
     if user and not user.is_verified and user.verification_token:
         base_url = request.url_root.rstrip('/')
@@ -174,7 +175,7 @@ def resend_verification():
         flash('אימייל אימות נשלח מחדש', 'success')
     else:
         flash('לא נמצא משתמש עם אימייל זה או שהאימייל כבר אומת', 'error')
-    
+
     return redirect(url_for('auth.login'))
 
 
@@ -183,30 +184,30 @@ def forgot_password():
     """Request password reset."""
     if current_user.is_authenticated:
         return redirect(url_for('library.index'))
-    
+
     if request.method == 'POST':
         email = request.form.get('email', '').strip().lower()
-        
+
         if not email:
             flash('יש להזין כתובת אימייל', 'error')
             return render_template('auth/forgot_password.html')
-        
+
         user = auth_service.get_user_by_email(db, email)
-        
+
         # Always show success message to prevent email enumeration
         if user:
             # Generate reset token
             reset_token = auth_service.generate_password_reset_token(db, user.id)
-            
+
             if reset_token:
                 # Send reset email
                 base_url = request.url_root.rstrip('/')
                 email_service.send_password_reset_email(email, reset_token, base_url)
                 logger.info(f"Password reset requested for: {email}")
-        
+
         flash('אם האימייל קיים במערכת, נשלח אליו קישור לאיפוס סיסמה', 'success')
         return redirect(url_for('auth.login'))
-    
+
     return render_template('auth/forgot_password.html')
 
 
@@ -215,30 +216,30 @@ def reset_password(token):
     """Reset password with token."""
     if current_user.is_authenticated:
         return redirect(url_for('library.index'))
-    
+
     # Verify token is valid
     user = auth_service.get_user_by_reset_token(db, token)
-    
+
     if not user:
         flash('קישור איפוס הסיסמה אינו תקף או שפג תוקפו', 'error')
         return redirect(url_for('auth.forgot_password'))
-    
+
     if request.method == 'POST':
         password = request.form.get('password', '')
         confirm_password = request.form.get('confirm_password', '')
-        
+
         if not password:
             flash('יש להזין סיסמה חדשה', 'error')
             return render_template('auth/reset_password.html', token=token)
-        
+
         if password != confirm_password:
             flash('הסיסמאות אינן תואמות', 'error')
             return render_template('auth/reset_password.html', token=token)
-        
+
         if len(password) < 8:
             flash('הסיסמה חייבת להכיל לפחות 8 תווים', 'error')
             return render_template('auth/reset_password.html', token=token)
-        
+
         # Reset the password
         if auth_service.reset_password(db, token, password):
             flash('הסיסמה שונתה בהצלחה! כעת ניתן להתחבר', 'success')
@@ -246,5 +247,5 @@ def reset_password(token):
             return redirect(url_for('auth.login'))
         else:
             flash('אירעה שגיאה באיפוס הסיסמה', 'error')
-    
+
     return render_template('auth/reset_password.html', token=token)

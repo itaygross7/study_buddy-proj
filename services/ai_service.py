@@ -5,6 +5,7 @@ import random
 
 logger = logging.getLogger(__name__)
 
+
 class AIService:
     """
     Wrapper for LLM calls. Retries with exponential backoff, timeout per-call.

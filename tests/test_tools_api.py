@@ -1,33 +1,42 @@
+"""
+Legacy test file for tools API.
+These tests are deprecated as the API structure has changed.
+The tests use the new app factory pattern via conftest.py fixtures.
+"""
 import io
-import pytest
 from unittest.mock import patch, MagicMock
-from src.api import app
 
-@pytest.fixture
-def client():
-    app.testing = True
-    with app.test_client() as c:
-        yield c
 
-def test_summarize_empty(client):
-    r = client.post("/api/summarize", data={})
-    assert r.status_code == 400
-    assert "לא הוזן טקסט" in r.get_json().get("error", "")
+def test_upload_file_success_returns_document_id(client):
+    """
+    Test upload endpoint processes a valid text file.
+    """
+    with patch('src.api.routes_upload.MongoDocumentRepository') as mock_repo_class:
+        mock_repo = MagicMock()
+        mock_repo_class.return_value = mock_repo
 
-@patch("src.api.ai_service")
-def test_summarize_text(mock_ai_service, client):
-    mock_ai_service.call = MagicMock(return_value="תקציר לבדיקה")
-    r = client.post("/api/summarize", data={"text": "זה טקסט לבדיקה"})
-    assert r.status_code == 200
-    assert r.get_json()["summary"] == "תקציר לבדיקה"
+        data = {
+            "file": (io.BytesIO(b"test file content"), "test.txt")
+        }
+        response = client.post(
+            "/api/upload/",
+            data=data,
+            content_type="multipart/form-data"
+        )
+        # Should return 201 with document_id
+        assert response.status_code == 201
+        assert 'document_id' in response.json
+        mock_repo.create.assert_called_once()
 
-def test_upload_wrong_type(client):
-    data = {
-        "file": (io.BytesIO(b"dummy"), "test.exe")
-    }
-    r = client.post("/api/summarize", data=data, content_type="multipart/form-data")
-    # Should return 400 with friendly message
-    assert r.status_code in (400, 413)
 
-# Additional tests (AI error / DB failure) should mock services similarly.
-
+def test_summary_api_requires_document_id(client):
+    """
+    Test that summary endpoint requires document_id.
+    """
+    response = client.post(
+        '/api/summary/',
+        json={},
+        content_type='application/json'
+    )
+    assert response.status_code == 400
+    assert 'error' in response.json

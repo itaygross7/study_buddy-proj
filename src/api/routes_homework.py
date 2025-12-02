@@ -9,6 +9,7 @@ from sb_utils.logger_utils import logger
 
 homework_bp = Blueprint('homework_bp', __name__)
 
+
 @homework_bp.route('/', methods=['POST'])
 def trigger_homework_helper():
     """Triggers the homework helper task."""
@@ -18,13 +19,13 @@ def trigger_homework_helper():
         return jsonify({"error": e.errors()}), 400
 
     task_id = create_task()
-    
+
     message_body = json.dumps({
         "task_id": task_id,
         "queue_name": "homework",
         "problem_statement": req_data.problem_statement
     })
-    
+
     publish_task(queue_name='homework', body=message_body)
     logger.info(f"Published homework task {task_id}")
 
@@ -33,5 +34,5 @@ def trigger_homework_helper():
         status="PENDING",
         polling_url=url_for('task_bp.get_task_status_route', task_id=task_id, _external=True)
     )
-    
+
     return jsonify(response.to_dict()), 202

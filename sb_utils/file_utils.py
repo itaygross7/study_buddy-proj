@@ -9,6 +9,7 @@ import hashlib
 
 logger = logging.getLogger(__name__)
 
+
 @dataclass
 class UploadedFile:
     """
@@ -18,6 +19,7 @@ class UploadedFile:
     content_type: str
     size: int
     temp_path: str
+
 
 ALLOWED_MIMETYPES = {
     "text/plain",
@@ -32,6 +34,7 @@ MAX_FILE_SIZE_BYTES: int = 10 * 1024 * 1024
 
 _CHUNK_SIZE_BYTES: int = 4096  # for streaming reads
 
+
 def secure_name(filename: str) -> str:
     """
     Minimal secure filename: remove path components and null bytes
@@ -42,6 +45,7 @@ def secure_name(filename: str) -> str:
     safe = "".join(c for c in name if c.isalnum() or c in " ._-")
     return safe[:200]
 
+
 def digest_name(filename: str) -> str:
     """
     Deterministic hashed filename to avoid collisions and leaking originals.
@@ -51,8 +55,10 @@ def digest_name(filename: str) -> str:
     base, ext = os.path.splitext(safe_original)
     return f"{base[:80]}-{h}{ext}"
 
+
 def allowed_mimetype(mime: Optional[str]) -> bool:
     return mime in ALLOWED_MIMETYPES
+
 
 def save_stream_to_temp(
     stream: IO[bytes],
@@ -96,6 +102,7 @@ def save_stream_to_temp(
     # do not log filename or content
     logger.debug("Saved upload to temp (size=%d, mime=%s)", total, uploaded.content_type)
     return uploaded
+
 
 def clean_temp_path(path: str) -> None:
     """
