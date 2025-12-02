@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <title>StudyBuddyAI - Demo 🦫</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        
+        :root {
+            --cream: #FAF3D7;
+            --warm-beige: #FFF8E6;
+            --golden-yellow: #F2C94C;
+            --warm-yellow: #F7D774;
+            --dark-brown: #4B2E16;
+            --cozy-brown: #8B5E34;
+            --coffee: #6F4E37;
+            --caramel: #A47148;
+        }
+        
+        body {
+            background: linear-gradient(135deg, var(--warm-beige) 0%, var(--cream) 100%);
+            min-height: 100vh;
+            color: var(--dark-brown);
+        }
+        
+        /* Navigation */
+        nav {
+            background: var(--cozy-brown);
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--cream);
+            font-weight: bold;
+            font-size: 18px;
+        }
+        
+        .logo-img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 2px solid var(--golden-yellow);
+        }
+        
+        .menu-btn {
+            background: none;
+            border: none;
+            color: var(--cream);
+            font-size: 24px;
+            cursor: pointer;
+        }
+        
+        /* Mobile Menu */
+        .mobile-menu {
+            display: none;
+            position: fixed;
+            top: 64px;
+            left: 0;
+            right: 0;
+            background: var(--cozy-brown);
+            padding: 16px;
+            z-index: 99;
+            animation: slideDown 0.2s ease-out;
+        }
+        
+        .mobile-menu.active {
+            display: block;
+        }
+        
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .mobile-menu a {
+            display: block;
+            color: var(--cream);
+            text-decoration: none;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+        
+        .mobile-menu a:hover, .mobile-menu a.active {
+            background: var(--caramel);
+        }
+        
+        /* Main Content */
+        main {
+            padding: 16px;
+            max-width: 100%;
+        }
+        
+        /* Pages */
+        .page {
+            display: none;
+        }
+        
+        .page.active {
+            display: block;
+            animation: fadeIn 0.3s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        /* Hero Section */
+        .hero {
+            text-align: center;
+            padding: 20px 0;
+        }
+        
+        .hero-img {
+            width: 200px;
+            height: 200px;
+            border-radius: 24px;
+            border: 3px solid var(--golden-yellow);
+            box-shadow: 0 8px 24px rgba(75, 46, 22, 0.2);
+            margin: 0 auto 20px;
+        }
+        
+        .hero h1 {
+            font-size: 24px;
+            margin-bottom: 12px;
+            color: var(--dark-brown);
+        }
+        
+        .hero p {
+            color: var(--cozy-brown);
+            margin-bottom: 8px;
+            line-height: 1.6;
+        }
+        
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 14px 24px;
+            border-radius: 12px;
+            font-weight: bold;
+            text-decoration: none;
+            cursor: pointer;
+            border: none;
+            font-size: 16px;
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+        
+        .btn:active {
+            transform: scale(0.98);
+        }
+        
+        .btn-primary {
+            background: var(--golden-yellow);
+            color: var(--dark-brown);
+            box-shadow: 0 4px 12px rgba(242, 201, 76, 0.4);
+        }
+        
+        .btn-secondary {
+            background: transparent;
+            color: var(--cozy-brown);
+            border: 2px solid var(--cozy-brown);
+        }
+        
+        /* Cards */
+        .card {
+            background: var(--cream);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+            border: 2px solid var(--warm-yellow);
+            box-shadow: 0 4px 12px rgba(75, 46, 22, 0.1);
+        }
+        
+        .card-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        
+        .card-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            border: 2px solid var(--golden-yellow);
+            object-fit: cover;
+        }
+        
+        .card h3 {
+            font-size: 18px;
+            color: var(--dark-brown);
+            margin-bottom: 4px;
+        }
+        
+        .card p {
+            color: var(--cozy-brown);
+            font-size: 14px;
+        }
+        
+        .card ul {
+            list-style: disc;
+            padding-right: 20px;
+            color: var(--coffee);
+            font-size: 14px;
+        }
+        
+        .card ul li {
+            margin-bottom: 4px;
+        }
+        
+        /* Steps Section */
+        .steps {
+            background: var(--cream);
+            border-radius: 24px;
+            padding: 24px 16px;
+            margin: 20px 0;
+            border: 2px solid var(--warm-yellow);
+        }
+        
+        .steps h2 {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 20px;
+        }
+        
+        .step {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .step-number {
+            width: 40px;
+            height: 40px;
+            background: var(--golden-yellow);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 18px;
+            margin: 0 auto 10px;
+            color: var(--dark-brown);
+        }
+        
+        .step-img {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: 2px solid var(--golden-yellow);
+            margin: 0 auto 8px;
+            object-fit: cover;
+        }
+        
+        .step h3 {
+            font-size: 16px;
+            color: var(--dark-brown);
+            margin-bottom: 4px;
+        }
+        
+        .step p {
+            font-size: 13px;
+            color: var(--coffee);
+        }
+        
+        /* Library Page */
+        .library-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .library-header h1 {
+            font-size: 22px;
+            margin-bottom: 8px;
+        }
+        
+        .library-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .course-card {
+            background: var(--cream);
+            border-radius: 16px;
+            padding: 20px;
+            border: 2px dashed var(--warm-yellow);
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .course-card.active-course {
+            border-style: solid;
+            border-color: var(--golden-yellow);
+        }
+        
+        .course-card:active {
+            transform: scale(0.98);
+        }
+        
+        .course-icon {
+            font-size: 32px;
+            margin-bottom: 8px;
+        }
+        
+        .course-badge {
+            display: inline-block;
+            background: var(--warm-yellow);
+            color: var(--dark-brown);
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            margin-bottom: 8px;
+        }
+        
+        /* Course Page */
+        .course-header {
+            background: linear-gradient(135deg, #42A5F5 0%, #1976D2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 16px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .course-header h1 {
+            font-size: 22px;
+            margin-bottom: 8px;
+        }
+        
+        .tool-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+        
+        .tool-card {
+            background: var(--cream);
+            border-radius: 16px;
+            padding: 16px;
+            text-align: center;
+            border: 2px solid var(--warm-yellow);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .tool-card:active {
+            transform: scale(0.95);
+            border-color: var(--golden-yellow);
+        }
+        
+        .tool-card .emoji {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+        
+        .tool-card h3 {
+            font-size: 14px;
+            color: var(--dark-brown);
+        }
+        
+        /* Flashcard Demo */
+        .flashcard-container {
+            perspective: 1000px;
+            margin: 20px 0;
+        }
+        
+        .flashcard {
+            width: 100%;
+            height: 200px;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.6s;
+            cursor: pointer;
+        }
+        
+        .flashcard.flipped {
+            transform: rotateY(180deg);
+        }
+        
+        .flashcard-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            text-align: center;
+            font-size: 18px;
+        }
+        
+        .flashcard-front {
+            background: var(--golden-yellow);
+            color: var(--dark-brown);
+            border: 3px solid var(--cozy-brown);
+        }
+        
+        .flashcard-back {
+            background: var(--cream);
+            color: var(--cozy-brown);
+            border: 3px solid var(--golden-yellow);
+            transform: rotateY(180deg);
+        }
+        
+        .flashcard-nav {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            margin-top: 16px;
+        }
+        
+        .flashcard-nav button {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: 2px solid var(--cozy-brown);
+            background: var(--cream);
+            font-size: 18px;
+            cursor: pointer;
+        }
+        
+        /* Quiz Demo */
+        .quiz-question {
+            background: var(--cream);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+            border: 2px solid var(--warm-yellow);
+        }
+        
+        .quiz-question h3 {
+            font-size: 16px;
+            margin-bottom: 16px;
+        }
+        
+        .quiz-option {
+            display: block;
+            width: 100%;
+            padding: 14px 16px;
+            margin-bottom: 8px;
+            background: white;
+            border: 2px solid var(--warm-yellow);
+            border-radius: 12px;
+            text-align: right;
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .quiz-option:active {
+            background: var(--warm-yellow);
+        }
+        
+        .quiz-option.correct {
+            background: #C8E6C9;
+            border-color: #7CB342;
+        }
+        
+        .quiz-option.wrong {
+            background: #FFCDD2;
+            border-color: #E57373;
+        }
+        
+        /* Avner Helper */
+        .avner-helper {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            z-index: 50;
+        }
+        
+        .avner-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: 3px solid var(--golden-yellow);
+            box-shadow: 0 4px 16px rgba(75, 46, 22, 0.3);
+            cursor: pointer;
+            transition: transform 0.2s;
+            animation: bounce 2s infinite;
+        }
+        
+        .avner-avatar:active {
+            transform: scale(0.9);
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+        
+        .avner-bubble {
+            position: absolute;
+            bottom: 70px;
+            left: 0;
+            background: var(--cream);
+            border: 2px solid var(--warm-yellow);
+            border-radius: 16px;
+            padding: 12px 16px;
+            max-width: 200px;
+            box-shadow: 0 4px 12px rgba(75, 46, 22, 0.2);
+            display: none;
+        }
+        
+        .avner-bubble.active {
+            display: block;
+            animation: fadeIn 0.3s ease-out;
+        }
+        
+        .avner-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 25px;
+            border: 10px solid transparent;
+            border-top-color: var(--warm-yellow);
+        }
+        
+        /* Footer */
+        footer {
+            background: var(--cozy-brown);
+            color: var(--cream);
+            padding: 20px;
+            text-align: center;
+            margin-top: 40px;
+        }
+        
+        footer img {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: 2px solid var(--golden-yellow);
+            margin-bottom: 10px;
+        }
+        
+        /* Tip box */
+        .tip-box {
+            background: var(--warm-beige);
+            border-radius: 12px;
+            padding: 16px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            margin: 16px 0;
+            border: 1px solid var(--warm-yellow);
+        }
+        
+        .tip-box .emoji {
+            font-size: 24px;
+        }
+        
+        /* Summary result */
+        .summary-result {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            border: 2px solid var(--warm-yellow);
+        }
+        
+        .summary-result h2 {
+            font-size: 18px;
+            margin-bottom: 16px;
+            color: var(--dark-brown);
+        }
+        
+        .summary-result h3 {
+            font-size: 15px;
+            color: var(--cozy-brown);
+            margin: 12px 0 8px;
+        }
+        
+        .summary-result ul {
+            padding-right: 20px;
+            color: var(--coffee);
+        }
+        
+        .summary-result li {
+            margin-bottom: 6px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav>
+        <div class="logo">
+            <img src="https://raw.githubusercontent.com/itaygross7/study_buddy-proj/main/ui/Avner/avner_logo.jpeg" alt="Logo" class="logo-img" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2280%22>🦫</text></svg>'">
+            <span>StudyBuddy</span>
+        </div>
+        <button class="menu-btn" onclick="toggleMenu()">☰</button>
+    </nav>
+    
+    <!-- Mobile Menu -->
+    <div class="mobile-menu" id="mobileMenu">
+        <a href="#" onclick="showPage('home')" class="active">🏠 בית</a>
+        <a href="#" onclick="showPage('library')">📚 הספרייה שלי</a>
+        <a href="#" onclick="showPage('course')">🤖 הקורס שלי</a>
+        <a href="#" onclick="showPage('flashcards')">🃏 כרטיסיות</a>
+        <a href="#" onclick="showPage('quiz')">✅ בחן אותי</a>
+        <a href="#" onclick="showPage('summary')">📝 סיכום</a>
+    </div>
+    
+    <main>
+        <!-- Home Page -->
+        <div class="page active" id="page-home">
+            <div class="hero">
+                <img src="https://raw.githubusercontent.com/itaygross7/study_buddy-proj/main/ui/Avner/avner_waving.jpeg" alt="אבנר" class="hero-img" onerror="this.style.display='none'">
+                <h1>ברוכים הבאים ל-StudyBuddy 🦫</h1>
+                <p>לומדים יחד עם אבנר – עוזר הלמידה החמים שלכם</p>
+                <p style="font-size: 14px;">העלו את חומרי הלימוד שלכם, ואבנר יעזור לכם עם סיכומים, כרטיסיות זיכרון, שאלות תרגול ועוד!</p>
+                <div style="margin-top: 20px;">
+                    <button class="btn btn-primary" onclick="showPage('library')">📚 לספרייה שלי ←</button>
+                </div>
+            </div>
+            
+            <div class="steps">
+                <h2>איך זה עובד? 🤔</h2>
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <img src="https://raw.githubusercontent.com/itaygross7/study_buddy-proj/main/ui/Avner/avner_signing_ok.jpeg" alt="" class="step-img" onerror="this.style.display='none'">
+                    <h3>נרשמים</h3>
+                    <p>הרשמה מהירה עם אימייל או Google</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <img src="https://raw.githubusercontent.com/itaygross7/study_buddy-proj/main/ui/Avner/avner_holding_backbak.jpeg" alt="" class="step-img" onerror="this.style.display='none'">
+                    <h3>יוצרים קורס</h3>
+                    <p>מוסיפים קורס לכל נושא שלומדים</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <img src="https://raw.githubusercontent.com/itaygross7/study_buddy-proj/main/ui/Avner/avner_reading.jpeg" alt="" class="step-img" onerror="this.style.display='none'">
+                    <h3>מעלים חומר</h3>
+                    <p>סיכומים, מצגות, PDF - הכל עובד!</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <img src="https://raw.githubusercontent.com/itaygross7/study_buddy-proj/main/ui/Avner/avner_horay.jpeg" alt="" class="step-img" onerror="this.style.display='none'">
+                    <h3>לומדים!</h3>
+                    <p>משתמשים בכלים ושואלים את אבנר</p>
+                </div>
+            </div>
+            
+            <h2 style="text-align: center; margin: 20px 0;">הכלים של אבנר 🛠️</h2>
+            
+            <div class="card">
+                <div class="card-header">
+                    <img src="https://raw.githubusercontent.com/itaygross7/study_buddy-proj/main/ui/Avner/avner_reading.jpeg" alt="" class="card-icon" onerror="this.textContent='📝'">
+                    <div>
+                        <h3>📝 מסכם</h3>
+                        <p>הופך טקסט ארוך לסיכום קצר וברור</p>
+                    </div>
+                </div>
+                <ul>
+                    <li>מסכם טקסטים ארוכים לנקודות עיקריות</li>
+                    <li>מדגיש מושגים חשובים</li>
+                </ul>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <img src="https://raw.githubusercontent.com/itaygross7/study_buddy-proj/main/ui/Avner/avner_studing.jpeg" alt="" class="card-icon" onerror="this.textContent='🃏'">
+                    <div>
+                        <h3>🃏 כרטיסיות</h3>
+                        <p>כרטיסיות שאלה-תשובה לתרגול</p>
+                    </div>
+                </div>
+                <ul>
+                    <li>יוצר כרטיסיות אוטומטית מהחומר</li>
+                    <li>מעולה לשינון מושגים</li>
+                </ul>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <img src="https://raw.githubusercontent.com/itaygross7/study_buddy-proj/main/ui/Avner/avner_thinking.jpeg" alt="" class="card-icon" onerror="this.textContent='✅'">
+                    <div>
+                        <h3>✅ בחן אותי</h3>
+                        <p>שאלות בחירה לבדיקה עצמית</p>
+                    </div>
+                </div>
+                <ul>
+                    <li>יוצר שאלות אמריקאיות מהחומר</li>
+                    <li>בודק תשובות ונותן ציון</li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Library Page -->
+        <div class="page" id="page-library">
+            <div class="library-header">
+                <h1>📚 הספרייה שלי</h1>
+                <p>כאן נמצאים כל הקורסים והחומרים שלך</p>
+            </div>
+            
+            <div class="library-actions">
+                <button class="btn btn-secondary">👤 הפרופיל שלי</button>
+                <button class="btn btn-primary">➕ קורס חדש</button>
+            </div>
+            
+            <div class="course-card active-course" onclick="showPage('course')">
+                <div class="course-icon">🤖</div>
+                <div class="course-badge">פעיל</div>
+                <h3 style="font-size: 18px; margin-bottom: 8px;">Introduction to AI</h3>
+                <p style="color: var(--cozy-brown); font-size: 14px;">Learn the basics of Artificial Intelligence</p>
+                <div style="margin-top: 12px; font-size: 13px; color: var(--coffee);">
+                    📄 1 מסמכים · עברית
+                </div>
+            </div>
+            
+            <div class="course-card">
+                <div class="course-icon">➕</div>
+                <h3 style="font-size: 16px; color: var(--cozy-brown);">הוסף קורס חדש</h3>
+                <p style="font-size: 13px; color: var(--coffee);">1/20</p>
+            </div>
+            
+            <div class="tip-box">
+                <span class="emoji">💡</span>
+                <div>
+                    <strong>טיפ:</strong> העלה את כל החומרים של קורס לתיקייה אחת. ככה אבנר יוכל לענות על שאלות מכל החומר!
+                </div>
+            </div>
+        </div>
+        
+        <!-- Course Page -->
+        <div class="page" id="page-course">
+            <div class="course-header">
+                <div style="font-size: 40px; margin-bottom: 8px;">🤖</div>
+                <h1>Introduction to AI</h1>
+                <p>Learn the basics of Artificial Intelligence</p>
+            </div>
+            
+            <h2 style="margin-bottom: 16px;">כלי למידה</h2>
+            
+            <div class="tool-grid">
+                <div class="tool-card" onclick="showPage('summary')">
+                    <div class="emoji">📝</div>
+                    <h3>מסכם</h3>
+                </div>
+                <div class="tool-card" onclick="showPage('flashcards')">
+                    <div class="emoji">🃏</div>
+                    <h3>כרטיסיות</h3>
+                </div>
+                <div class="tool-card" onclick="showPage('quiz')">
+                    <div class="emoji">✅</div>
+                    <h3>בחן אותי</h3>
+                </div>
+                <div class="tool-card">
+                    <div class="emoji">📚</div>
+                    <h3>עוזר שיעורים</h3>
+                </div>
+            </div>
+            
+            <div class="card" style="margin-top: 20px;">
+                <h3 style="margin-bottom: 12px;">📄 מסמכים בקורס</h3>
+                <div style="display: flex; align-items: center; gap: 12px; padding: 12px; background: white; border-radius: 8px;">
+                    <span style="font-size: 24px;">📄</span>
+                    <div>
+                        <div style="font-weight: 600;">AI Basics Notes.txt</div>
+                        <div style="font-size: 13px; color: var(--coffee);">1 KB · טקסט</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Flashcards Page -->
+        <div class="page" id="page-flashcards">
+            <h1 style="text-align: center; margin-bottom: 8px;">🃏 כרטיסיות</h1>
+            <p style="text-align: center; color: var(--cozy-brown); margin-bottom: 20px;">לחץ על הכרטיס כדי להפוך</p>
+            
+            <div class="flashcard-container">
+                <div class="flashcard" id="flashcard" onclick="flipCard()">
+                    <div class="flashcard-face flashcard-front">
+                        <div id="flashcard-question">מהי בינה מלאכותית?</div>
+                    </div>
+                    <div class="flashcard-face flashcard-back">
+                        <div id="flashcard-answer">תחום במדעי המחשב שעוסק ביצירת מערכות חכמות</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flashcard-nav">
+                <button onclick="prevCard()">◀</button>
+                <span id="card-counter" style="display: flex; align-items: center; font-weight: bold;">1 / 5</span>
+                <button onclick="nextCard()">▶</button>
+            </div>
+            
+            <div class="tip-box" style="margin-top: 20px;">
+                <span class="emoji">💡</span>
+                <div>לחץ על הכרטיס כדי לראות את התשובה. השתמש בחצים לנווט בין הכרטיסים.</div>
+            </div>
+        </div>
+        
+        <!-- Quiz Page -->
+        <div class="page" id="page-quiz">
+            <h1 style="text-align: center; margin-bottom: 8px;">✅ בחן אותי</h1>
+            <p style="text-align: center; color: var(--cozy-brown); margin-bottom: 20px;">בחר את התשובה הנכונה</p>
+            
+            <div class="quiz-question">
+                <h3>שאלה 1: מהו התחום המאפשר למחשבים ללמוד מנתונים?</h3>
+                <button class="quiz-option" onclick="checkAnswer(this, false)">ראייה ממוחשבת</button>
+                <button class="quiz-option" onclick="checkAnswer(this, true)">למידת מכונה</button>
+                <button class="quiz-option" onclick="checkAnswer(this, false)">עיבוד גרפי</button>
+                <button class="quiz-option" onclick="checkAnswer(this, false)">אבטחת מידע</button>
+            </div>
+            
+            <div class="quiz-question">
+                <h3>שאלה 2: איזה יישום אינו קשור ישירות ל-AI?</h3>
+                <button class="quiz-option" onclick="checkAnswer(this, false)">רכבים אוטונומיים</button>
+                <button class="quiz-option" onclick="checkAnswer(this, false)">תרגום אוטומטי</button>
+                <button class="quiz-option" onclick="checkAnswer(this, true)">מחשבון פשוט</button>
+                <button class="quiz-option" onclick="checkAnswer(this, false)">אבחון רפואי</button>
+            </div>
+            
+            <div id="quiz-result" style="display: none; text-align: center; margin-top: 20px;">
+                <div style="font-size: 48px; margin-bottom: 10px;">🎉</div>
+                <h2>כל הכבוד!</h2>
+                <p style="color: var(--cozy-brown);">סיימת את המבחן</p>
+            </div>
+        </div>
+        
+        <!-- Summary Page -->
+        <div class="page" id="page-summary">
+            <h1 style="text-align: center; margin-bottom: 20px;">📝 סיכום</h1>
+            
+            <div class="summary-result">
+                <h2>סיכום: מבוא לבינה מלאכותית 🤖</h2>
+                
+                <h3>נקודות עיקריות:</h3>
+                
+                <p style="margin: 8px 0;"><strong>1. מהי בינה מלאכותית?</strong></p>
+                <ul>
+                    <li>תחום במדעי המחשב ליצירת מערכות חכמות</li>
+                    <li>מאפשרת למחשבים לבצע משימות הדורשות אינטליגנציה</li>
+                </ul>
+                
+                <p style="margin: 12px 0 8px;"><strong>2. טכנולוגיות מרכזיות:</strong></p>
+                <ul>
+                    <li>למידת מכונה (ML)</li>
+                    <li>רשתות נוירונים</li>
+                    <li>עיבוד שפה טבעית</li>
+                    <li>ראייה ממוחשבת</li>
+                </ul>
+                
+                <p style="margin: 12px 0 8px;"><strong>3. יישומים נפוצים:</strong></p>
+                <ul>
+                    <li>עוזרים וירטואליים (Siri, Alexa)</li>
+                    <li>רכבים אוטונומיים</li>
+                    <li>אבחון רפואי</li>
+                </ul>
+                
+                <p style="margin: 12px 0 8px;"><strong>4. אתגרים:</strong></p>
+                <ul>
+                    <li>הטיות באלגוריתמים</li>
+                    <li>פרטיות נתונים</li>
+                    <li>אתיקה בשימוש ב-AI</li>
+                </ul>
+            </div>
+            
+            <button class="btn btn-primary" style="width: 100%; margin-top: 16px;">
+                📥 הורד כ-PDF
+            </button>
+        </div>
+    </main>
+    
+    <!-- Avner Helper -->
+    <div class="avner-helper">
+        <div class="avner-bubble" id="avnerBubble">
+            שלום! 🦫 אני אבנר!<br>
+            איך אפשר לעזור לך היום?
+        </div>
+        <img src="https://raw.githubusercontent.com/itaygross7/study_buddy-proj/main/ui/Avner/avner_waving.jpeg" 
+             alt="אבנר" 
+             class="avner-avatar" 
+             onclick="toggleAvner()"
+             onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2280%22>🦫</text></svg>'">
+    </div>
+    
+    <!-- Footer -->
+    <footer>
+        <img src="https://raw.githubusercontent.com/itaygross7/study_buddy-proj/main/ui/Avner/avner_logo.jpeg" alt="אבנר" onerror="this.style.display='none'">
+        <p>© 2025 StudyBuddyAI · לומדים יחד עם אבנר</p>
+        <p style="font-size: 13px; margin-top: 8px; opacity: 0.8;">🎨 Demo Version</p>
+    </footer>
+    
+    <script>
+        // Menu toggle
+        function toggleMenu() {
+            document.getElementById('mobileMenu').classList.toggle('active');
+        }
+        
+        // Page navigation
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById('page-' + pageId).classList.add('active');
+            document.getElementById('mobileMenu').classList.remove('active');
+            window.scrollTo(0, 0);
+        }
+        
+        // Flashcard logic
+        const flashcards = [
+            { q: "מהי בינה מלאכותית?", a: "תחום במדעי המחשב שעוסק ביצירת מערכות חכמות" },
+            { q: "מהי למידת מכונה?", a: "טכנולוגיה שמאפשרת למחשבים ללמוד מנתונים" },
+            { q: "מה תפקיד רשתות נוירונים?", a: "מודלים מתמטיים המחקים את המוח האנושי" },
+            { q: "מהו NLP?", a: "עיבוד שפה טבעית - מאפשר למחשבים להבין טקסט ודיבור" },
+            { q: "תן דוגמה לעוזר וירטואלי", a: "Siri, Alexa, Google Assistant" }
+        ];
+        let currentCard = 0;
+        
+        function flipCard() {
+            document.getElementById('flashcard').classList.toggle('flipped');
+        }
+        
+        function updateCard() {
+            document.getElementById('flashcard').classList.remove('flipped');
+            document.getElementById('flashcard-question').textContent = flashcards[currentCard].q;
+            document.getElementById('flashcard-answer').textContent = flashcards[currentCard].a;
+            document.getElementById('card-counter').textContent = (currentCard + 1) + ' / ' + flashcards.length;
+        }
+        
+        function nextCard() {
+            currentCard = (currentCard + 1) % flashcards.length;
+            updateCard();
+        }
+        
+        function prevCard() {
+            currentCard = (currentCard - 1 + flashcards.length) % flashcards.length;
+            updateCard();
+        }
+        
+        // Quiz logic
+        let answeredQuestions = 0;
+        function checkAnswer(btn, isCorrect) {
+            if (btn.classList.contains('correct') || btn.classList.contains('wrong')) return;
+            
+            const question = btn.parentElement;
+            question.querySelectorAll('.quiz-option').forEach(opt => {
+                opt.style.pointerEvents = 'none';
+            });
+            
+            if (isCorrect) {
+                btn.classList.add('correct');
+            } else {
+                btn.classList.add('wrong');
+                // Show correct answer
+                question.querySelectorAll('.quiz-option').forEach(opt => {
+                    if (opt.onclick.toString().includes('true')) {
+                        opt.classList.add('correct');
+                    }
+                });
+            }
+            
+            answeredQuestions++;
+            if (answeredQuestions >= 2) {
+                setTimeout(() => {
+                    document.getElementById('quiz-result').style.display = 'block';
+                }, 500);
+            }
+        }
+        
+        // Avner helper
+        function toggleAvner() {
+            document.getElementById('avnerBubble').classList.toggle('active');
+        }
+        
+        // Close menu when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('nav') && !e.target.closest('.mobile-menu')) {
+                document.getElementById('mobileMenu').classList.remove('active');
+            }
+        });
+    </script>
+</body>
+</html>

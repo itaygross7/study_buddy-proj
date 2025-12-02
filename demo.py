@@ -171,7 +171,13 @@ class MockCursor:
         return iter(results)
     
     def __len__(self):
-        return len(list(self))
+        results = self._results.copy()
+        if self._sort_key:
+            results.sort(key=lambda x: x.get(self._sort_key, ''), reverse=(self._sort_dir == -1))
+        results = results[self._skip:]
+        if self._limit:
+            results = results[:self._limit]
+        return len(results)
 
 
 class MockDatabase:
