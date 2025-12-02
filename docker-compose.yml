@@ -1,6 +1,19 @@
-version: '3.8'
+# =============================================================================
+# StudyBuddyAI Docker Compose Configuration
+# =============================================================================
+# For Ubuntu 22.04 deployment with DNS fallbacks and health checks
+#
+# Usage:
+#   docker compose up -d --build    # Start all services
+#   docker compose logs -f app      # View app logs
+#   docker compose down              # Stop all services
+#
+# =============================================================================
 
 services:
+  # ===========================================================================
+  # Main Flask Application
+  # ===========================================================================
   app:
     build:
       context: .
@@ -16,22 +29,36 @@ services:
     env_file: .env
     environment:
       - FLASK_ENV=${FLASK_ENV:-production}
+    # Wait for dependencies to be healthy before starting
     depends_on:
-      - mongo
-      - rabbitmq
-    restart: on-failure
+      mongo:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/health')"]
+      # Note: curl is installed in Dockerfile for health checks
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 30s
+    # DNS fallback configuration
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+      - 1.1.1.1
+    networks:
+      - studybuddy_network
 
+  # ===========================================================================
+  # Background Worker (RabbitMQ Consumer)
+  # ===========================================================================
   worker:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: studybuddy_worker
-    # The command to run the worker script
     command: ["python", "worker.py"]
     volumes:
       - ./src:/app/src
@@ -39,10 +66,22 @@ services:
       - ./worker.py:/app/worker.py
     env_file: .env
     depends_on:
-      - mongo
-      - rabbitmq
-    restart: on-failure
+      mongo:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+    # DNS fallback configuration
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+      - 1.1.1.1
+    networks:
+      - studybuddy_network
 
+  # ===========================================================================
+  # MongoDB Database
+  # ===========================================================================
   mongo:
     image: mongo:5.0
     container_name: studybuddy_mongo
@@ -50,35 +89,80 @@ services:
       - "27017:27017"
     volumes:
       - mongo_data:/data/db
-    restart: always
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - studybuddy_network
 
+  # ===========================================================================
+  # RabbitMQ Message Broker
+  # ===========================================================================
   rabbitmq:
     image: rabbitmq:3.9-management
     container_name: studybuddy_rabbitmq
     ports:
-      - "5672:5672"  # For services
-      - "15672:15672" # For management UI
+      - "5672:5672"   # AMQP protocol
+      - "15672:15672" # Management UI
     environment:
-      RABBITMQ_DEFAULT_USER: user
-      RABBITMQ_DEFAULT_PASS: password
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-user}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS:-password}
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
-    restart: always
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - studybuddy_network
 
-  # Optional: Nginx reverse proxy for HTTPS (uncomment to use)
-  # nginx:
-  #   image: nginx:alpine
-  #   container_name: studybuddy_nginx
+  # ===========================================================================
+  # Caddy Reverse Proxy (Optional - for production HTTPS)
+  # ===========================================================================
+  # Uncomment to use Caddy for automatic HTTPS with Let's Encrypt
+  # caddy:
+  #   image: caddy:2-alpine
+  #   container_name: studybuddy_caddy
   #   ports:
   #     - "80:80"
   #     - "443:443"
   #   volumes:
-  #     - ./nginx.conf:/etc/nginx/nginx.conf:ro
-  #     - ./certs:/etc/nginx/certs:ro
+  #     - ./infra/Caddyfile:/etc/caddy/Caddyfile:ro
+  #     - caddy_data:/data
+  #     - caddy_config:/config
   #   depends_on:
-  #     - app
-  #   restart: always
+  #     app:
+  #       condition: service_healthy
+  #   restart: unless-stopped
+  #   networks:
+  #     - studybuddy_network
 
+# =============================================================================
+# Networks
+# =============================================================================
+networks:
+  studybuddy_network:
+    driver: bridge
+    # Enable DNS resolution between containers
+    driver_opts:
+      com.docker.network.bridge.enable_ip_masquerade: "true"
+
+# =============================================================================
+# Volumes
+# =============================================================================
 volumes:
   mongo_data:
+    driver: local
   rabbitmq_data:
+    driver: local
+  # caddy_data:
+  #   driver: local
+  # caddy_config:
+  #   driver: local
