@@ -74,6 +74,25 @@ def _generate_apple_client_secret():
     return jwt.encode(payload, settings.APPLE_PRIVATE_KEY, algorithm='ES256', headers=headers)
 
 
+def _extract_apple_user_name(form_data) -> str:
+    """Extract user name from Apple OAuth form data.
+
+    Apple only sends user name on first login in a 'user' JSON field.
+    Returns empty string if not available.
+    """
+    if 'user' not in form_data:
+        return ''
+    try:
+        import json
+        user_data = json.loads(form_data['user'])
+        name_data = user_data.get('name', {})
+        first_name = name_data.get('firstName', '')
+        last_name = name_data.get('lastName', '')
+        return f"{first_name} {last_name}".strip()
+    except (json.JSONDecodeError, TypeError, KeyError):
+        return ''
+
+
 def _get_or_create_oauth_user(email: str, name: str, provider: str):
     """Get existing user or create new one from OAuth data."""
     # Check if user exists
@@ -201,21 +220,7 @@ def apple_callback():
             return redirect(url_for('auth.login'))
 
         # Apple only sends name on first login
-        name = ''
-        if 'user' in request.form:
-            import json
-            user_data = json.loads(request.form['user'])
-            name = f"{
-                user_data.get(
-                    'name',
-                    {}).get(
-                    'firstName',
-                    '')} {
-                user_data.get(
-                    'name',
-                    {}).get(
-                        'lastName',
-                    '')}".strip()
+        name = _extract_apple_user_name(request.form)
 
         # Get or create user
         user = _get_or_create_oauth_user(email, name, 'apple')

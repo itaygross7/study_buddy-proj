@@ -21,8 +21,7 @@ def generate_assessment(document_id: str, document_content: str, num_questions: 
 
     prompt = f"""
     Based on the provided text, generate exactly {num_questions} quiz questions of type '{question_type}'.
-    For 'mcq' (multiple choice), each question must have 'options' (a list of 4 strings) and
-    a 'correct_answer'.
+    For 'mcq' (multiple choice), each question must have 'options' (a list of 4 strings) and a 'correct_answer'.
     Return the output as a valid JSON array of objects, like this:
     [
       {{"question": "What is the capital of France?", "options": ["Berlin", "Paris", "London", "Madrid"], "correct_answer": "Paris"}},

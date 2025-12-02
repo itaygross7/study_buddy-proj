@@ -26,19 +26,14 @@ def upload_file_route():
     if not file or not file.filename:
         return jsonify({"error": "No file selected"}), 400
 
-    # Get user_id and course_id from request or authenticated user
-    user_id = request.form.get('user_id', '')
-    course_id = request.form.get('course_id', '')
-
-    # If user is authenticated, use their ID
+    # Determine user_id: prioritize authenticated user, then form value, then default
     if current_user.is_authenticated:
         user_id = current_user.id
+    else:
+        user_id = request.form.get('user_id', '') or 'anonymous'
 
-    # If no user_id or course_id provided, use defaults for testing
-    if not user_id:
-        user_id = 'anonymous'
-    if not course_id:
-        course_id = 'default'
+    # Get course_id from form or use default
+    course_id = request.form.get('course_id', '') or 'default'
 
     filename = secure_filename(file.filename)
     try:
