@@ -854,6 +854,14 @@ EOF
         log_info "Access your site at: https://$domain"
         log_info "Check Caddy logs: sudo journalctl -u caddy -f"
         echo ""
+        
+        # Check if update_dns.sh exists and remind about it
+        if [[ -f "scripts/update_dns.sh" ]]; then
+            log_info "Dynamic DNS script detected: scripts/update_dns.sh"
+            log_info "Make sure it's configured in crontab for dynamic IP updates"
+            log_info "Example: */5 * * * * $(pwd)/scripts/update_dns.sh"
+        fi
+        echo ""
     else
         log_error "Failed to start Caddy"
         log_info "Check logs: sudo journalctl -u caddy -n 50"

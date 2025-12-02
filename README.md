@@ -150,9 +150,54 @@ If you prefer manual setup or need more control:
    - Sign up with your admin email to get admin access
    - Check your email to verify your account (if email is configured)
 
-### Production Setup with HTTPS
+## Dynamic DNS Support (for Home Servers)
 
-For production, we recommend using Nginx as a reverse proxy with SSL certificates:
+If you have a dynamic IP address (home server, residential connection), the deployment works seamlessly with the included DNS updater script.
+
+### Your Existing Cron Job
+
+The deployment script **does NOT interfere** with your existing `update_dns.sh` cron job. They work together:
+
+- **`update_dns.sh`** (cron job) - Keeps your DNS updated when IP changes
+- **`deploy.sh`** - Deploys the application and sets up HTTPS
+
+### Setup DNS Updater (if not already done)
+
+```bash
+# Easy setup helper
+./scripts/setup-dns-updater.sh
+```
+
+Or manually:
+
+```bash
+# 1. Edit the script with your credentials
+nano scripts/update_dns.sh
+# Set: API_KEY, ZONE_ID, DOMAIN
+
+# 2. Make it executable
+chmod +x scripts/update_dns.sh
+
+# 3. Add to crontab (runs every 5 minutes)
+crontab -e
+# Add: */5 * * * * /path/to/study_buddy-proj/scripts/update_dns.sh
+```
+
+### How They Work Together
+
+1. **DNS Updater** runs every 5 minutes via cron
+   - Detects if your public IP changed
+   - Updates DNS A/AAAA records automatically
+   - Works with Hostinger API (or modify for other providers)
+
+2. **Deployment** uses the domain from your `.env`
+   - Verifies DNS points to your server
+   - Sets up HTTPS with Caddy
+   - Configures Let's Encrypt SSL
+
+**Result**: Your site is always accessible at your domain, even when IP changes!
+
+---
 
 1. **Install Nginx and Certbot:**
    ```bash
