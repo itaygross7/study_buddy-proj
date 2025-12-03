@@ -331,7 +331,8 @@ check_firewall() {
         if sudo ufw status 2>/dev/null | grep -q "Status: active"; then
             log_warning "UFW firewall is active"
             log_info "Ensure ports 5000 (or 80/443 for proxy) are open"
-            log_info "Example: sudo ufw allow 5000/tcp"
+            log_info "To enable network access, run: ./scripts/enable-network-access.sh"
+            log_info "Or manually: sudo ufw allow 5000/tcp"
         else
             log_info "UFW firewall is inactive"
         fi
@@ -339,6 +340,7 @@ check_firewall() {
         if sudo firewall-cmd --state 2>/dev/null | grep -q "running"; then
             log_warning "firewalld is active"
             log_info "Ensure required ports are open"
+            log_info "To enable network access, run: ./scripts/enable-network-access.sh"
         else
             log_info "firewalld is not running"
         fi

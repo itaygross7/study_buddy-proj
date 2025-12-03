@@ -176,6 +176,17 @@ Get your Tailscale IP:
 sudo tailscale ip -4
 ```
 
+### Can't Connect from Another Computer?
+
+If you're running in development mode (port 5000) and can't access the app from a different computer:
+
+```bash
+# Quick fix - run the network access helper
+./scripts/enable-network-access.sh
+```
+
+See [`docs/NETWORK_ACCESS.md`](docs/NETWORK_ACCESS.md) for detailed troubleshooting.
+
 ## 🔒 Security Features
 
 Your server is now secure:
