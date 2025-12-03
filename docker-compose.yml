@@ -146,6 +146,25 @@ services:
     networks:
       - studybuddy_network
 
+  # ===========================================================================
+  # Health Check Monitor
+  # ===========================================================================
+  healthcheck:
+    image: alpine:latest
+    container_name: studybuddy_healthcheck
+    command: sh -c "apk add --no-cache curl bash && /health-monitor.sh"
+    volumes:
+      - ./scripts/health-monitor.sh:/health-monitor.sh:ro
+    environment:
+      - CHECK_INTERVAL=30
+      - MAX_FAILURES=3
+    depends_on:
+      app:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - studybuddy_network
+
 # =============================================================================
 # Networks
 # =============================================================================

@@ -120,6 +120,14 @@ else
     log_warning "Could not get Tailscale IP. You can find it with: sudo tailscale status"
 fi
 
+# Verify Tailscale connectivity
+log_info "Verifying Tailscale connectivity..."
+if $SUDO tailscale ping --c 1 --timeout 5s 100.64.0.1 &> /dev/null 2>&1 || $SUDO tailscale status | grep -q "online"; then
+    log_success "Tailscale is connected and working"
+else
+    log_warning "Tailscale connectivity test inconclusive. You can verify manually with: sudo tailscale status"
+fi
+
 # =============================================================================
 # 3. Configure Firewall (UFW) - Tailscale Only + HTTPS
 # =============================================================================
