@@ -23,6 +23,7 @@ from src.api.routes_admin import admin_bp
 from src.api.routes_avner import avner_bp
 from src.api.routes_library import library_bp
 from src.api.routes_oauth import oauth_bp, init_oauth
+from src.api.routes_webhook import webhook_bp
 from src.services import auth_service
 
 
@@ -73,6 +74,7 @@ def create_app():
     app.register_blueprint(admin_bp, url_prefix='/admin')
     app.register_blueprint(library_bp, url_prefix='/library')
     app.register_blueprint(avner_bp, url_prefix='/api/avner')
+    app.register_blueprint(webhook_bp, url_prefix='/webhook')
     app.register_blueprint(summary_bp, url_prefix='/api/summary')
     app.register_blueprint(flashcards_bp, url_prefix='/api/flashcards')
     app.register_blueprint(assess_bp, url_prefix='/api/assess')
@@ -115,7 +117,114 @@ def create_app():
     # --- Health Check ---
     @app.route('/health')
     def health_check():
+        """Basic health check endpoint."""
         return jsonify({"status": "healthy"}), 200
+    
+    @app.route('/health/detailed')
+    def detailed_health_check():
+        """Detailed health check for all components."""
+        from src.infrastructure.database import db
+        import time
+        
+        health_status = {
+            "status": "healthy",
+            "timestamp": time.time(),
+            "components": {}
+        }
+        
+        overall_healthy = True
+        
+        # Check MongoDB
+        try:
+            db.command('ping')
+            health_status["components"]["mongodb"] = {
+                "status": "healthy",
+                "message": "Connected"
+            }
+        except Exception as e:
+            health_status["components"]["mongodb"] = {
+                "status": "unhealthy",
+                "message": f"Error: {str(e)}"
+            }
+            overall_healthy = False
+        
+        # Check RabbitMQ (if available)
+        try:
+            import pika
+            params = pika.URLParameters(settings.RABBITMQ_URI)
+            connection = pika.BlockingConnection(params)
+            connection.close()
+            health_status["components"]["rabbitmq"] = {
+                "status": "healthy",
+                "message": "Connected"
+            }
+        except Exception as e:
+            health_status["components"]["rabbitmq"] = {
+                "status": "unhealthy",
+                "message": f"Error: {str(e)}"
+            }
+            overall_healthy = False
+        
+        # Check AI service availability
+        try:
+            if settings.GEMINI_API_KEY or settings.OPENAI_API_KEY:
+                health_status["components"]["ai_service"] = {
+                    "status": "healthy",
+                    "message": "API keys configured"
+                }
+            else:
+                health_status["components"]["ai_service"] = {
+                    "status": "unhealthy",
+                    "message": "No API keys configured"
+                }
+                overall_healthy = False
+        except Exception as e:
+            health_status["components"]["ai_service"] = {
+                "status": "unhealthy",
+                "message": f"Error: {str(e)}"
+            }
+            overall_healthy = False
+        
+        # Check email service
+        try:
+            if settings.MAIL_USERNAME and settings.MAIL_PASSWORD:
+                health_status["components"]["email_service"] = {
+                    "status": "healthy",
+                    "message": "SMTP configured"
+                }
+            else:
+                health_status["components"]["email_service"] = {
+                    "status": "degraded",
+                    "message": "SMTP not configured (optional)"
+                }
+        except Exception as e:
+            health_status["components"]["email_service"] = {
+                "status": "degraded",
+                "message": f"Error: {str(e)}"
+            }
+        
+        health_status["status"] = "healthy" if overall_healthy else "unhealthy"
+        status_code = 200 if overall_healthy else 503
+        
+        return jsonify(health_status), status_code
+    
+    @app.route('/health/ready')
+    def readiness_check():
+        """Kubernetes-style readiness probe."""
+        from src.infrastructure.database import db
+        
+        try:
+            # Check if app can serve requests
+            db.command('ping')
+            return jsonify({"status": "ready"}), 200
+        except Exception as e:
+            return jsonify({"status": "not ready", "error": str(e)}), 503
+    
+    @app.route('/health/live')
+    def liveness_check():
+        """Kubernetes-style liveness probe."""
+        # Simple check that the app is running
+        return jsonify({"status": "alive"}), 200
 
     # --- Error Handling ---
     @app.errorhandler(NotFound)

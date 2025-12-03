@@ -1,0 +1,30 @@
+[Unit]
+Description=StudyBuddy AI Application
+Documentation=https://github.com/itaygross7/study_buddy-proj
+After=docker.service network-online.target
+Requires=docker.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/opt/studybuddy
+ExecStartPre=/usr/bin/docker compose down
+ExecStart=/usr/bin/docker compose up -d --build
+ExecStop=/usr/bin/docker compose down
+ExecReload=/usr/bin/docker compose pull && /usr/bin/docker compose up -d --build
+Restart=on-failure
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+
+# Limit resources
+CPUQuota=95%
+MemoryLimit=4G
+
+[Install]
+WantedBy=multi-user.target

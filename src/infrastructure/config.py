@@ -73,6 +73,9 @@ class Settings(BaseSettings):
     SESSION_COOKIE_SECURE: bool = Field(default=False)  # Set to True in production with HTTPS
     SESSION_COOKIE_HTTPONLY: bool = Field(default=True)
     SESSION_COOKIE_SAMESITE: str = Field(default='Lax')
+    
+    # Webhook Configuration (for auto-updates)
+    WEBHOOK_SECRET: str = Field(default='')  # GitHub webhook secret for auto-updates
 
 
 settings = Settings()
