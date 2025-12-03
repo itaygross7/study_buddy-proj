@@ -298,6 +298,37 @@ class AvnerAvatar {
         this.stopAnimations();
         this.container.innerHTML = '';
     }
+    
+    // Baby Capy Mode - switches to baby avatar
+    setBabyMode(enabled) {
+        this.isBabyMode = enabled;
+        const babyImage = 'baby_avner.png';
+        
+        if (enabled) {
+            // Save current state to restore later
+            this.savedState = this.currentState;
+            
+            // Update to baby image
+            this.mainImage.style.opacity = '0';
+            setTimeout(() => {
+                this.mainImage.src = `${this.options.basePath}${babyImage}`;
+                this.mainImage.style.opacity = '1';
+            }, 150);
+            
+            // Show baby mode message
+            if (this.options.showBubble) {
+                this.showMessage('🍼 Baby Capy Mode! 🦫', 2000);
+            }
+            
+            // Stop animations during baby mode
+            this.stopAnimations();
+        } else {
+            // Restore normal mode
+            this.currentState = this.savedState || 'idle';
+            this.updateImage();
+            this.setState(this.currentState);
+        }
+    }
 }
 
 // Singleton for the main helper avatar

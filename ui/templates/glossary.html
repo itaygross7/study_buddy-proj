@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+
+{% block title %}Course Wiki - StudyBuddyAI{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8 max-w-6xl">
+    <!-- Header -->
+    <div class="bg-white rounded-xl shadow-md p-6 mb-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-cozy-brown mb-2">📚 Course Wiki / Glossary</h1>
+                <p class="text-gray-600">Auto-generated terms and definitions from your course materials</p>
+            </div>
+            <img src="{{ url_for('serve_avner', filename='avner_reading.jpeg') }}" 
+                 alt="Avner reading" 
+                 class="h-20 w-20 rounded-full object-cover border-4 border-warm-yellow"
+                 onerror="this.style.display='none';">
+        </div>
+    </div>
+
+    <!-- Search Bar -->
+    <div class="bg-white rounded-xl shadow-md p-6 mb-6">
+        <div class="relative">
+            <input type="text" 
+                   id="searchInput"
+                   placeholder="🔍 Search terms..."
+                   class="w-full px-4 py-3 pr-12 border-2 border-warm-yellow rounded-lg focus:outline-none focus:ring-2 focus:ring-caramel">
+            <button onclick="searchTerms()" 
+                    class="absolute left-4 top-1/2 transform -translate-y-1/2 text-caramel hover:text-cozy-brown transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- Terms Grid -->
+    <div id="termsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Terms will be loaded here -->
+    </div>
+
+    <!-- Loading State -->
+    <div id="loadingState" class="text-center py-12">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-caramel mx-auto mb-4"></div>
+        <p class="text-gray-600">Loading glossary terms...</p>
+    </div>
+
+    <!-- Empty State -->
+    <div id="emptyState" class="hidden bg-warm-beige rounded-xl p-12 text-center">
+        <img src="{{ url_for('serve_avner', filename='avner_cluless.jpeg') }}" 
+             alt="Avner confused" 
+             class="h-32 w-32 mx-auto mb-4 rounded-full object-cover"
+             onerror="this.style.display='none';">
+        <h3 class="text-xl font-bold text-cozy-brown mb-2">No terms yet!</h3>
+        <p class="text-gray-600 mb-4">Upload some course materials and generate summaries to build your glossary.</p>
+        <a href="{{ url_for('library.index') }}" 
+           class="inline-block bg-caramel text-white px-6 py-3 rounded-lg hover:bg-cozy-brown transition-colors">
+            Go to Library
+        </a>
+    </div>
+</div>
+
+<script>
+    const courseId = "{{ course_id }}";
+
+    // Load terms on page load
+    document.addEventListener('DOMContentLoaded', () => {
+        loadTerms();
+    });
+
+    async function loadTerms() {
+        try {
+            const response = await fetch(`/api/glossary/course/${courseId}`);
+            const data = await response.json();
+
+            document.getElementById('loadingState').style.display = 'none';
+
+            if (data.success && data.terms.length > 0) {
+                displayTerms(data.terms);
+            } else {
+                document.getElementById('emptyState').classList.remove('hidden');
+            }
+        } catch (error) {
+            console.error('Error loading terms:', error);
+            document.getElementById('loadingState').innerHTML = 
+                '<p class="text-red-600">Error loading glossary. Please try again.</p>';
+        }
+    }
+
+    function displayTerms(terms) {
+        const container = document.getElementById('termsContainer');
+        container.innerHTML = terms.map(term => `
+            <div class="bg-white rounded-lg shadow-md p-5 hover:shadow-lg transition-shadow">
+                <h3 class="text-lg font-bold text-cozy-brown mb-2">${escapeHtml(term.term)}</h3>
+                <p class="text-gray-700 mb-2">${escapeHtml(term.definition)}</p>
+                ${term.source_file ? `<p class="text-sm text-gray-500">📄 Source: ${escapeHtml(term.source_file)}</p>` : ''}
+            </div>
+        `).join('');
+    }
+
+    async function searchTerms() {
+        const query = document.getElementById('searchInput').value.trim();
+        
+        if (!query) {
+            loadTerms();
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/glossary/search', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    query: query,
+                    course_id: courseId
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                if (data.terms.length > 0) {
+                    displayTerms(data.terms);
+                    document.getElementById('emptyState').classList.add('hidden');
+                } else {
+                    document.getElementById('termsContainer').innerHTML = 
+                        '<div class="col-span-2 text-center py-8 text-gray-600">No matching terms found.</div>';
+                }
+            }
+        } catch (error) {
+            console.error('Error searching terms:', error);
+        }
+    }
+
+    // Allow search on Enter key
+    document.getElementById('searchInput').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            searchTerms();
+        }
+    });
+
+    function escapeHtml(text) {
+        const map = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;'
+        };
+        return text.replace(/[&<>"']/g, m => map[m]);
+    }
+</script>
+{% endblock %}
