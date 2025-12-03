@@ -7,6 +7,7 @@ from pymongo import MongoClient
 from src.infrastructure.config import settings
 from src.infrastructure.repositories import MongoTaskRepository, MongoDocumentRepository
 from src.services import summary_service, flashcards_service, assess_service, homework_service
+from src.services import glossary_service
 from src.domain.models.db_models import TaskStatus
 from src.domain.errors import DocumentNotFoundError
 from sb_utils.logger_utils import logger
@@ -43,6 +44,20 @@ def process_task(body: bytes):
         if not doc:
             raise DocumentNotFoundError(f"Document {data['document_id']} not found.")
         result_id = summary_service.generate_summary(doc.id, doc.content_text, db_conn)
+        
+        # Background task: Extract glossary terms from the document
+        try:
+            user_id = data.get('user_id', '')
+            course_id = data.get('course_id', '')
+            if user_id and course_id:
+                logger.info(f"[Worker] Extracting glossary terms for document {doc.id}")
+                glossary_service.extract_terms_from_content(
+                    doc.id, doc.content_text, course_id, user_id, 
+                    doc.filename, db_conn
+                )
+        except Exception as e:
+            logger.warning(f"[Worker] Glossary extraction failed (non-critical): {e}")
+
 
     elif queue_name == 'flashcards':
         doc = doc_repo.get_by_id(data['document_id'])

@@ -30,7 +30,8 @@ def generate_assessment(document_id: str, document_content: str, num_questions: 
     Do not include any other text or explanation in your response.
     """
 
-    json_string = ai_client.generate_text(prompt=prompt, context=document_content)
+    json_string = ai_client.generate_text(prompt=prompt, context=document_content,
+                                          task_type="quiz", require_json=True)
 
     try:
         questions_data = json.loads(json_string)

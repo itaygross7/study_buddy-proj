@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, ConfigDict
-from typing import List, Optional
+from typing import List, Optional, Dict
 from datetime import datetime, timezone
 from enum import Enum
 
@@ -214,6 +214,43 @@ class SystemConfig(BaseModel):
     default_questions_count: int = 5
     enabled_modules: List[str] = Field(default_factory=lambda: ["summary", "flashcards", "assess", "homework"])
     maintenance_mode: bool = False
+    updated_at: datetime = Field(default_factory=_utc_now)
+
+    def to_dict(self):
+        """Convert model to dictionary for MongoDB."""
+        return self.model_dump(by_alias=True)
+
+
+class CourseTerm(BaseModel):
+    """A glossary term extracted from course materials."""
+    model_config = ConfigDict(populate_by_name=True)
+
+    id: str = Field(..., alias="_id")
+    term: str  # The term/concept
+    definition: str  # Definition or explanation
+    source_file: str = ""  # Source document filename
+    course_id: str = ""  # Which course this term belongs to
+    user_id: str  # Owner of this term
+    created_at: datetime = Field(default_factory=_utc_now)
+
+    def to_dict(self):
+        """Convert model to dictionary for MongoDB."""
+        return self.model_dump(by_alias=True)
+
+
+class TutorSession(BaseModel):
+    """Interactive tutor session with step-by-step learning."""
+    model_config = ConfigDict(populate_by_name=True)
+
+    id: str = Field(..., alias="_id")
+    user_id: str
+    course_id: str = ""  # Optional course association
+    topic: str  # What the user wants to learn
+    syllabus: List[str] = Field(default_factory=list)  # List of steps/concepts
+    current_step: int = 0  # Which step the user is on (0-indexed)
+    chat_history: List[Dict] = Field(default_factory=list)  # Chat messages
+    completed_steps: List[int] = Field(default_factory=list)  # Which steps are done
+    created_at: datetime = Field(default_factory=_utc_now)
     updated_at: datetime = Field(default_factory=_utc_now)
 
     def to_dict(self):
