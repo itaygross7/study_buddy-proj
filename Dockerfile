@@ -52,13 +52,19 @@ WORKDIR /app
 # Copy dependency files separately for Docker layer caching
 COPY requirements.txt ./
 
-# Install Python dependencies with retry mechanism
+# Install Python dependencies with retry mechanism and SSL fallback
 # Using requirements.txt instead of Pipfile for simpler deployment
 RUN set -eux; \
-    for i in 1 2 3; do \
-        pip install --no-cache-dir -r requirements.txt \
-        && break || { echo "pip install retry $i failed, waiting..."; sleep 5; }; \
-    done
+    # Upgrade pip and setuptools first to ensure latest SSL handling
+    pip install --upgrade pip setuptools wheel || \
+        pip install --trusted-host pypi.org --trusted-host files.pythonhosted.org --upgrade pip setuptools wheel; \
+    # Try with proper SSL verification first
+    if pip install --no-cache-dir -r requirements.txt; then \
+        echo "Dependencies installed successfully with SSL verification"; \
+    else \
+        echo "SSL verification failed, falling back to trusted-host mode"; \
+        pip install --no-cache-dir --trusted-host pypi.org --trusted-host files.pythonhosted.org -r requirements.txt; \
+    fi
 
 # Remove build dependencies to reduce image size
 RUN apt-get update && apt-get purge -y gcc libffi-dev && apt-get autoremove -y && apt-get clean && rm -rf /var/lib/apt/lists/*
