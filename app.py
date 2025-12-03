@@ -254,4 +254,19 @@ def create_app():
 
 if __name__ == '__main__':
     app = create_app()
-    app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 5000)))
+    port = int(os.environ.get("PORT", 5000))
+    host = '0.0.0.0'
+    
+    logger.info(f"Starting StudyBuddy server on {host}:{port}")
+    logger.info(f"Server will be accessible at:")
+    logger.info(f"  - Local: http://localhost:{port}")
+    logger.info(f"  - Network: http://<your-ip>:{port}")
+    logger.info(f"")
+    logger.info(f"To access from another computer:")
+    logger.info(f"  1. Find your IP: hostname -I")
+    logger.info(f"  2. Open firewall: sudo ufw allow {port}/tcp")
+    logger.info(f"  3. Access via: http://<your-ip>:{port}")
+    logger.info(f"")
+    logger.info(f"For help, see: docs/NETWORK_ACCESS.md")
+    
+    app.run(host=host, port=port)

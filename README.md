@@ -181,6 +181,25 @@ If you prefer manual setup or need more control:
    - Sign up with your admin email to get admin access
    - Check your email to verify your account (if email is configured)
 
+5. **Enable Network Access (if needed):**
+   
+   If you can't access the app from a different computer, your firewall may be blocking port 5000:
+   
+   ```bash
+   # Quick fix - run the network access helper
+   ./scripts/enable-network-access.sh
+   ```
+   
+   Or manually open the port:
+   ```bash
+   # For Ubuntu/Debian with UFW
+   sudo ufw allow 5000/tcp
+   ```
+   
+   See [`docs/NETWORK_ACCESS.md`](docs/NETWORK_ACCESS.md) for detailed troubleshooting.
+   
+   ⚠️ **Security Note:** Port 5000 uses HTTP (not HTTPS). For production, use `./deploy-production.sh` which sets up HTTPS on ports 80/443.
+
 ## Dynamic DNS Support (for Home Servers)
 
 If you have a dynamic IP address (home server, residential connection), the deployment works seamlessly with the included DNS updater script.
@@ -363,6 +382,56 @@ docker compose logs -f healthcheck
 - Logs to `/var/log/studybuddy-healthcheck.log`
 
 See `docs/HEALTH_AND_MONITORING.md` for complete guide.
+
+---
+
+## 🌐 Network Access & Troubleshooting
+
+### Can't Access from Another Computer?
+
+If your app is running but you can't connect from a different computer:
+
+**Quick Fix:**
+```bash
+# Run the network access helper script
+./scripts/enable-network-access.sh
+```
+
+This will:
+- Check if your app is running
+- Detect your firewall (UFW, firewalld, or iptables)
+- Open port 5000 for network access
+- Show you how to access the app
+
+**Manual Fix:**
+```bash
+# For Ubuntu/Debian with UFW
+sudo ufw allow 5000/tcp
+
+# For CentOS/RHEL/Fedora with firewalld
+sudo firewall-cmd --permanent --add-port=5000/tcp
+sudo firewall-cmd --reload
+
+# Get your server's IP address
+hostname -I | awk '{print $1}'
+
+# Access from another computer
+# http://YOUR_SERVER_IP:5000
+```
+
+**Common Issues:**
+- **Firewall blocking port 5000** - Use the script above or see [`docs/NETWORK_ACCESS.md`](docs/NETWORK_ACCESS.md)
+- **App not binding to 0.0.0.0** - Already configured correctly in app.py
+- **Docker port not exposed** - Already configured in docker-compose.yml
+- **Router/NAT not forwarding** - Configure port forwarding on your router for internet access
+
+**Security Note:** Direct access on port 5000 uses HTTP (not HTTPS). For production deployments, use:
+```bash
+./deploy-production.sh
+```
+This sets up HTTPS with automatic SSL certificates on standard ports 80/443.
+
+See the complete [Network Access Guide](docs/NETWORK_ACCESS.md) for detailed troubleshooting.
 
 ---
 
