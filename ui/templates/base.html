@@ -9,6 +9,24 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
     <script src="https://unpkg.com/htmx.org@1.9.10" integrity="sha384-D1Kt99CQMDuVetoL1lrYwg5t+9QdHe7NLX/SoJYkXDFfX37iInKRy5xLSi8nO7UC" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        // Initialize Mermaid.js for diagram rendering
+        if (typeof mermaid !== 'undefined') {
+            mermaid.initialize({ 
+                startOnLoad: true,
+                theme: 'default',
+                themeVariables: {
+                    primaryColor: '#F2C94C',
+                    primaryTextColor: '#5C4033',
+                    primaryBorderColor: '#8B6F47',
+                    lineColor: '#8B6F47',
+                    secondaryColor: '#FFE5CC',
+                    tertiaryColor: '#FFF8E7'
+                }
+            });
+        }
+    </script>
     <script src="{{ url_for('static', filename='js/avner_animations.js') }}"></script>
 </head>
 <body class="h-full flex flex-col bg-warm-beige font-sans text-dark-brown">

@@ -24,6 +24,9 @@ from src.api.routes_avner import avner_bp
 from src.api.routes_library import library_bp
 from src.api.routes_oauth import oauth_bp, init_oauth
 from src.api.routes_webhook import webhook_bp
+from src.api.routes_glossary import glossary_bp
+from src.api.routes_tutor import tutor_bp
+from src.api.routes_diagram import diagram_bp
 from src.services import auth_service
 
 
@@ -83,6 +86,9 @@ def create_app():
     app.register_blueprint(task_bp, url_prefix='/api/tasks')
     app.register_blueprint(results_bp, url_prefix='/results')
     app.register_blueprint(pdf_bp, url_prefix='/export/pdf')
+    app.register_blueprint(glossary_bp, url_prefix='/api/glossary')
+    app.register_blueprint(tutor_bp, url_prefix='/api/tutor')
+    app.register_blueprint(diagram_bp, url_prefix='/api/diagram')
 
     # Context processor to make current_user available in templates
     @app.context_processor
@@ -113,6 +119,21 @@ def create_app():
     @login_required
     def homework_tool():
         return render_template('tool_homework.html')
+
+    @app.route('/tool/tutor')
+    @login_required
+    def tutor_tool():
+        return render_template('tool_tutor.html')
+    
+    @app.route('/tool/diagram')
+    @login_required
+    def diagram_tool():
+        return render_template('tool_diagram.html')
+    
+    @app.route('/glossary/<course_id>')
+    @login_required
+    def glossary_page(course_id):
+        return render_template('glossary.html', course_id=course_id)
 
     # --- Health Check ---
     @app.route('/health')

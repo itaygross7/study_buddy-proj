@@ -147,6 +147,7 @@ def ask_avner():
 
         question = data.get('question', '').strip()
         course_id = data.get('course_id', '')  # Optional: specific course context
+        baby_mode = data.get('baby_mode', False)  # Baby Capy mode toggle
 
         if not question:
             return jsonify({"error": "לא הוזנה שאלה"}), 400
@@ -227,7 +228,7 @@ def ask_avner():
 
         # Generate AI response
         ai_client = AIClient()
-        response = ai_client.generate_text(prompt, "")
+        response = ai_client.generate_text(prompt, "", baby_mode=baby_mode)
 
         # Increment prompt count
         auth_service.increment_prompt_count(db, current_user.id)
