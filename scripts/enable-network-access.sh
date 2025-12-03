@@ -155,7 +155,7 @@ configure_firewalld() {
         # Show current rules
         echo ""
         log_info "Current firewalld ports:"
-        $SUDO firewall-cmd --list-ports | grep 5000
+        $SUDO firewall-cmd --list-ports | grep 5000 || echo "  (port 5000 rule added but not visible in this output)"
         echo ""
         return 0
     else
@@ -185,11 +185,26 @@ configure_iptables() {
         
         # Try to save the rules
         if command -v netfilter-persistent &> /dev/null; then
-            $SUDO netfilter-persistent save 2>/dev/null
-            log_success "iptables rules saved with netfilter-persistent"
+            if $SUDO netfilter-persistent save 2>/dev/null; then
+                log_success "iptables rules saved with netfilter-persistent"
+            else
+                log_warning "Failed to save with netfilter-persistent"
+            fi
         elif command -v iptables-save &> /dev/null; then
-            $SUDO iptables-save > /etc/iptables/rules.v4 2>/dev/null
-            log_success "iptables rules saved"
+            # Create directory if it doesn't exist
+            $SUDO mkdir -p /etc/iptables 2>/dev/null
+            # Save rules to a temporary file first, then move
+            if $SUDO iptables-save > /tmp/iptables-rules.v4 2>/dev/null; then
+                if $SUDO mv /tmp/iptables-rules.v4 /etc/iptables/rules.v4 2>/dev/null; then
+                    log_success "iptables rules saved"
+                else
+                    log_warning "Could not save iptables rules to /etc/iptables/rules.v4"
+                    log_warning "Rule will be lost on reboot"
+                fi
+            else
+                log_warning "Could not save iptables rules"
+                log_warning "Rule will be lost on reboot"
+            fi
         else
             log_warning "Could not save iptables rules permanently"
             log_warning "Rule will be lost on reboot"
