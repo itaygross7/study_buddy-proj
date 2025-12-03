@@ -55,15 +55,22 @@ COPY requirements.txt ./
 # Install Python dependencies with retry mechanism and SSL fallback
 # Using requirements.txt instead of Pipfile for simpler deployment
 RUN set -eux; \
+    # Define trusted hosts for SSL fallback (only used if SSL verification fails)
+    TRUSTED_HOSTS="--trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org"; \
     # Upgrade pip and setuptools first to ensure latest SSL handling
-    pip install --upgrade pip setuptools wheel || \
-        pip install --trusted-host pypi.org --trusted-host files.pythonhosted.org --upgrade pip setuptools wheel; \
+    if pip install --upgrade pip setuptools wheel; then \
+        echo "pip/setuptools/wheel upgraded successfully with SSL verification"; \
+    else \
+        echo "WARNING: SSL verification failed, using trusted-host mode for pip upgrade"; \
+        pip install $TRUSTED_HOSTS --upgrade pip setuptools wheel; \
+    fi; \
     # Try with proper SSL verification first
     if pip install --no-cache-dir -r requirements.txt; then \
         echo "Dependencies installed successfully with SSL verification"; \
     else \
-        echo "SSL verification failed, falling back to trusted-host mode"; \
-        pip install --no-cache-dir --trusted-host pypi.org --trusted-host files.pythonhosted.org -r requirements.txt; \
+        echo "WARNING: SSL verification failed, falling back to trusted-host mode"; \
+        echo "This may indicate a self-signed certificate or SSL proxy in the network"; \
+        pip install --no-cache-dir $TRUSTED_HOSTS -r requirements.txt; \
     fi
 
 # Remove build dependencies to reduce image size
