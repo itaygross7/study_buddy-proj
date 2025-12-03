@@ -147,6 +147,13 @@ if command -v ufw &> /dev/null; then
     $SUDO ufw default allow outgoing
     
     # Allow SSH only from Tailscale network
+    # Get Tailscale network interface (better fallback)
+    TAILSCALE_IFACE=$($SUDO tailscale status --json 2>/dev/null | grep -o '"TUN":"[^"]*"' | cut -d'"' -f4)
+    if [ -z "$TAILSCALE_IFACE" ]; then
+    TAILSCALE_IFACE="tailscale0"
+    log_warning "Could not auto-detect Tailscale interface, defaulting to tailscale0"
+    fi
+
     $SUDO ufw allow in on $TAILSCALE_IFACE to any port 22 comment 'SSH from Tailscale only'
     
     # Allow HTTP and HTTPS for Let's Encrypt and web access
