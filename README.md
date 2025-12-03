@@ -34,9 +34,46 @@ StudyBuddyAI is a comprehensive web application designed to help students with t
 
 ## 🚀 Quick Start (Ubuntu 22.04 / Ubuntu 20.04+ / Linux)
 
-### One-Click Deployment (Recommended)
+### Production Deployment (Recommended for Production Servers)
 
-**Ultra-Robust Auto-Fix Deployment** - Works no matter the server state!
+**Complete production setup with HTTPS, Tailscale, and auto-updates!**
+
+```bash
+# Clone the repository
+git clone https://github.com/itaygross7/study_buddy-proj.git
+cd study_buddy-proj
+
+# Configure your environment
+cp .env.example .env
+nano .env  # Add your domain, API keys, etc.
+
+# Run the production deployment script
+./deploy-production.sh
+```
+
+**The production script automatically:**
+- ✅ Installs Docker and Docker Compose if missing
+- ✅ Installs and configures Tailscale for secure access
+- ✅ Sets up HTTPS with Let's Encrypt (automatic certificates)
+- ✅ Configures firewall (SSH only via Tailscale, HTTPS public)
+- ✅ Creates systemd service for auto-restart on failure
+- ✅ Sets up auto-update system (manual, cron, or webhook)
+- ✅ Generates secure SECRET_KEY automatically
+- ✅ Builds and starts all services
+- ✅ Validates HTTPS is working
+
+**Perfect for:**
+- Production servers with a domain name
+- Secure deployments (SSH via Tailscale only)
+- Hands-off maintenance (auto-restart, auto-updates)
+
+See `docs/DEPLOYMENT.md` and `docs/OAUTH_EMAIL_SETUP.md` for details.
+
+---
+
+### Quick Development Deployment
+
+**For testing or development without HTTPS:**
 
 ```bash
 # Clone the repository
@@ -47,7 +84,7 @@ cd study_buddy-proj
 ./deploy.sh
 ```
 
-**The script automatically:**
+**The dev script automatically:**
 - ✅ Detects and installs Docker if missing
 - ✅ Detects and installs Docker Compose if missing
 - ✅ Fixes Docker daemon if not running
@@ -64,12 +101,6 @@ cd study_buddy-proj
 - User: `./deploy.sh` (uses sudo when needed)
 
 **Tested on**: Ubuntu 22.04 LTS (also works on Ubuntu 20.04+, Debian, and other Linux distributions with Docker)
-- ✅ Check Docker and system requirements
-- ✅ Verify ports are available
-- ✅ Test network and DNS connectivity
-- ✅ Validate your configuration
-- ✅ Build and start all services
-- ✅ Show you how to access your app
 
 **Script Options:**
 ```bash
