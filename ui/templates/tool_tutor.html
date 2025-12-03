@@ -219,7 +219,7 @@
                 
                 // Update current step
                 currentSession.current_step = result.next_step;
-                if (result.correct) {
+                if (result.correct && !currentSession.completed_steps.includes(result.next_step - 1)) {
                     currentSession.completed_steps.push(result.next_step - 1);
                 }
                 

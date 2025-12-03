@@ -2,10 +2,16 @@ import json
 import uuid
 from pymongo.database import Database
 from typing import Dict, List
+from datetime import datetime, timezone
 from .ai_client import ai_client
 from src.infrastructure.database import db as flask_db
 from src.domain.models.db_models import TutorSession
 from sb_utils.logger_utils import logger
+
+
+def _utc_now():
+    """Return current UTC datetime."""
+    return datetime.now(timezone.utc)
 
 
 def _get_db(db_conn: Database = None) -> Database:
@@ -169,7 +175,7 @@ def teach_step(session_id: str, user_id: str, db_conn: Database = None) -> Dict:
             {"_id": session_id},
             {
                 "$push": {"chat_history": chat_entry},
-                "$set": {"updated_at": TutorSession.model_fields["updated_at"].default_factory()}
+                "$set": {"updated_at": _utc_now()}
             }
         )
         
@@ -248,13 +254,13 @@ def submit_answer(session_id: str, user_id: str, answer: str, db_conn: Database 
         
         update_data = {
             "$push": {"chat_history": answer_entry},
-            "$set": {"updated_at": TutorSession.model_fields["updated_at"].default_factory()}
+            "$set": {"updated_at": _utc_now()}
         }
         
         # If correct, advance to next step
         if is_correct:
             update_data["$set"]["current_step"] = current_step + 1
-            update_data["$push"]["completed_steps"] = current_step
+            update_data["$addToSet"] = {"completed_steps": current_step}  # Use $addToSet to avoid duplicates
         
         db.tutor_sessions.update_one({"_id": session_id}, update_data)
         
