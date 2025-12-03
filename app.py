@@ -23,6 +23,7 @@ from src.api.routes_admin import admin_bp
 from src.api.routes_avner import avner_bp
 from src.api.routes_library import library_bp
 from src.api.routes_oauth import oauth_bp, init_oauth
+from src.api.routes_webhook import webhook_bp
 from src.services import auth_service
 
 
@@ -73,6 +74,7 @@ def create_app():
     app.register_blueprint(admin_bp, url_prefix='/admin')
     app.register_blueprint(library_bp, url_prefix='/library')
     app.register_blueprint(avner_bp, url_prefix='/api/avner')
+    app.register_blueprint(webhook_bp, url_prefix='/webhook')
     app.register_blueprint(summary_bp, url_prefix='/api/summary')
     app.register_blueprint(flashcards_bp, url_prefix='/api/flashcards')
     app.register_blueprint(assess_bp, url_prefix='/api/assess')

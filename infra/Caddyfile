@@ -1,18 +1,16 @@
 # StudyBuddyAI Caddy Configuration
-# For deployment on Hostinger domain: studybuddyai.my
+# Automatic HTTPS with Let's Encrypt
 #
-# Usage:
-# 1. Install Caddy on your Ubuntu server
-# 2. Copy this file to /etc/caddy/Caddyfile
-# 3. Update the domain name if needed
-# 4. Run: sudo systemctl reload caddy
+# This configuration:
+# - Automatically obtains and renews SSL certificates
+# - Redirects HTTP to HTTPS
+# - Adds security headers
+# - Proxies requests to Flask app
 #
-# Prerequisites:
-# - Domain DNS A record pointing to server IP
-# - Optional: www CNAME pointing to studybuddyai.my
-# - Ports 80 and 443 open in firewall
+# The domain is read from the DOMAIN environment variable
+# Default: studybuddyai.my
 
-studybuddyai.my, www.studybuddyai.my {
+{$DOMAIN:studybuddyai.my} {
     # Reverse proxy to Flask application
     reverse_proxy localhost:5000 {
         # Health checks

@@ -172,20 +172,23 @@
         </div>
     </footer>
     
-    <!-- Avner Live Chat Widget - Available for EVERYONE -->
+    <!-- Avner Chat Widget - Simple Chat Interface -->
     <div class="avner-helper-floating" id="avner-helper">
-        <!-- Animated Avatar Container -->
-        <div id="floating-avner-avatar" class="cursor-pointer" onclick="toggleAvnerChat()"></div>
+        <!-- Simple Chat Button -->
+        <button onclick="toggleAvnerChat()" class="avner-chat-button">
+            <img src="/avner/avner_waving.jpeg" alt="אבנר" class="avner-button-img">
+            <span class="avner-button-badge">💬</span>
+        </button>
     </div>
     
-    <!-- Avner Live Chat Modal -->
+    <!-- Avner Chat Modal - Simplified -->
     <div class="avner-chat-modal" id="avner-chat">
         <div class="avner-chat-header">
             <div class="flex items-center gap-2">
-                <div id="chat-header-avner"></div>
+                <img src="/avner/avner_waving.jpeg" alt="אבנר" class="w-10 h-10 rounded-full object-cover border-2 border-warm-yellow">
                 <div>
                     <span class="font-bold">צ'אט עם אבנר 🦫</span>
-                    <p class="text-xs text-cream/80">שאל אותי על האפליקציה!</p>
+                    <p class="text-xs text-cream/80">אני כאן לעזור!</p>
                 </div>
             </div>
             <button onclick="toggleAvnerChat()" class="text-cream hover:text-warm-yellow p-1">
@@ -219,9 +222,7 @@
             <input type="text" 
                    id="avner-question" 
                    placeholder="שאל את אבנר..."
-                   onkeypress="if(event.key==='Enter' && !event.shiftKey){event.preventDefault();askAvner();}"
-                   onfocus="onChatInputFocus()"
-                   onblur="onChatInputBlur()">
+                   onkeypress="if(event.key==='Enter' && !event.shiftKey){event.preventDefault();askAvner();}">
             <button onclick="askAvner()" id="send-btn">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
@@ -330,63 +331,15 @@
             }
         }
 
-        // Avner Live Chat - Animated Avatar System
-        let floatingAvner = null;
-        let headerAvner = null;
+        // Avner Chat - Simple Version
         let chatOpen = false;
-        
-        // Initialize Avner avatars when page loads
-        document.addEventListener('DOMContentLoaded', function() {
-            // Initialize floating avatar (if container exists)
-            const floatingContainer = document.getElementById('floating-avner-avatar');
-            if (floatingContainer && typeof AvnerAvatar !== 'undefined') {
-                floatingAvner = new AvnerAvatar('floating-avner-avatar', { 
-                    size: 'medium', 
-                    showBubble: true,
-                    basePath: '/avner/'
-                });
-                floatingAvner.showMessage('היי! לחץ עליי לשיחה 🦫', 5000);
-            }
-            
-            // Initialize chat header avatar
-            const headerContainer = document.getElementById('chat-header-avner');
-            if (headerContainer && typeof AvnerAvatar !== 'undefined') {
-                headerAvner = new AvnerAvatar('chat-header-avner', { 
-                    size: 'small', 
-                    showBubble: false,
-                    basePath: '/avner/'
-                });
-            }
-        });
         
         function toggleAvnerChat() {
             const chat = document.getElementById('avner-chat');
             if (chat) {
                 chatOpen = !chatOpen;
                 chat.classList.toggle('open', chatOpen);
-                
-                // Update avatar state
-                if (floatingAvner) {
-                    if (chatOpen) {
-                        floatingAvner.setState('listening');
-                        floatingAvner.hideBubble();
-                    } else {
-                        floatingAvner.setState('idle');
-                    }
-                }
             }
-        }
-        
-        function onChatInputFocus() {
-            // Avner becomes attentive when user starts typing
-            if (floatingAvner) floatingAvner.setState('listening');
-            if (headerAvner) headerAvner.setState('listening');
-        }
-        
-        function onChatInputBlur() {
-            // Return to idle when not typing
-            if (floatingAvner && chatOpen) floatingAvner.setState('listening');
-            if (headerAvner) headerAvner.setState('idle');
         }
         
         async function askAvner() {
@@ -401,7 +354,7 @@
             input.disabled = true;
             sendBtn.disabled = true;
             
-            // Add user message
+            // Add user message to the right
             chatBody.innerHTML += `
                 <div class="flex gap-2 mb-3 justify-end">
                     <div class="bg-golden-yellow rounded-xl p-3 text-sm text-dark-brown max-w-[85%]">
@@ -413,11 +366,7 @@
             input.value = '';
             chatBody.scrollTop = chatBody.scrollHeight;
             
-            // Set thinking state
-            if (floatingAvner) floatingAvner.setState('thinking');
-            if (headerAvner) headerAvner.setState('thinking');
-            
-            // Show typing indicator
+            // Show typing indicator on the left
             const typingId = 'typing-' + Date.now();
             chatBody.innerHTML += `
                 <div class="flex gap-2 mb-3" id="${typingId}">
@@ -443,67 +392,65 @@
                 document.getElementById(typingId)?.remove();
                 
                 if (data.error) {
-                    // Error state
-                    if (floatingAvner) floatingAvner.setState('error');
-                    if (headerAvner) headerAvner.setState('error');
-                    
+                    // Show error message from Avner (left side)
                     chatBody.innerHTML += `
                         <div class="flex gap-2 mb-3">
                             <img src="/avner/avner_shy.jpeg" 
                                  alt="אבנר" class="w-8 h-8 rounded-full object-cover flex-shrink-0 border-2 border-golden-yellow">
-                            <div class="bg-red-50 border border-error rounded-xl p-3 text-sm text-dark-brown max-w-[85%]">
+                            <div class="bg-red-50 border border-red-200 rounded-xl p-3 text-sm text-red-700 max-w-[85%]">
                                 ${escapeHtml(data.error)}
                             </div>
                         </div>
                     `;
                 } else {
-                    // Success - answering state
-                    if (floatingAvner) floatingAvner.setState('answering');
-                    if (headerAvner) headerAvner.setState('answering');
-                    
+                    // Show Avner's answer (left side)
                     chatBody.innerHTML += `
                         <div class="flex gap-2 mb-3">
                             <img src="/avner/avner_signing_ok.jpeg" 
                                  alt="אבנר" class="w-8 h-8 rounded-full object-cover flex-shrink-0 border-2 border-golden-yellow">
                             <div class="bg-warm-beige rounded-xl p-3 text-sm text-dark-brown max-w-[85%]">
-                                ${escapeHtml(data.answer)}
+                                ${formatMessage(data.answer)}
                             </div>
                         </div>
                     `;
-                    
-                    // Return to idle after answering
-                    setTimeout(() => {
-                        if (floatingAvner) floatingAvner.setState('listening');
-                        if (headerAvner) headerAvner.setState('idle');
-                    }, 2000);
                 }
+                
+                chatBody.scrollTop = chatBody.scrollHeight;
+                
             } catch (error) {
+                // Remove typing indicator
                 document.getElementById(typingId)?.remove();
                 
-                if (floatingAvner) floatingAvner.setState('error');
-                
+                // Show error from Avner (left side)
                 chatBody.innerHTML += `
                     <div class="flex gap-2 mb-3">
-                        <img src="/avner/avner_annoied.jpeg" 
+                        <img src="/avner/avner_shy.jpeg" 
                              alt="אבנר" class="w-8 h-8 rounded-full object-cover flex-shrink-0 border-2 border-golden-yellow">
-                        <div class="bg-red-50 border border-error rounded-xl p-3 text-sm text-dark-brown max-w-[85%]">
-                            אופס! משהו השתבש. נסה שוב מאוחר יותר 🦫
+                        <div class="bg-red-50 border border-red-200 rounded-xl p-3 text-sm text-red-700 max-w-[85%]">
+                            אופס! משהו השתבש. נסה שוב 🦫
                         </div>
                     </div>
                 `;
+                chatBody.scrollTop = chatBody.scrollHeight;
+            } finally {
+                // Re-enable input
+                input.disabled = false;
+                sendBtn.disabled = false;
+                input.focus();
             }
-            
-            // Re-enable input
-            input.disabled = false;
-            sendBtn.disabled = false;
-            input.focus();
-            chatBody.scrollTop = chatBody.scrollHeight;
         }
         
         function escapeHtml(text) {
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
+        }
+        
+        function formatMessage(text) {
+            // Convert markdown-style formatting to HTML
+            return escapeHtml(text)
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\n/g, '<br>');
         }
     </script>
 

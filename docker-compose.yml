@@ -124,25 +124,27 @@ services:
       - studybuddy_network
 
   # ===========================================================================
-  # Caddy Reverse Proxy (Optional - for production HTTPS)
+  # Caddy Reverse Proxy (for production HTTPS)
   # ===========================================================================
-  # Uncomment to use Caddy for automatic HTTPS with Let's Encrypt
-  # caddy:
-  #   image: caddy:2-alpine
-  #   container_name: studybuddy_caddy
-  #   ports:
-  #     - "80:80"
-  #     - "443:443"
-  #   volumes:
-  #     - ./infra/Caddyfile:/etc/caddy/Caddyfile:ro
-  #     - caddy_data:/data
-  #     - caddy_config:/config
-  #   depends_on:
-  #     app:
-  #       condition: service_healthy
-  #   restart: unless-stopped
-  #   networks:
-  #     - studybuddy_network
+  caddy:
+    image: caddy:2-alpine
+    container_name: studybuddy_caddy
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"  # HTTP/3 support
+    volumes:
+      - ./infra/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    environment:
+      - DOMAIN=${DOMAIN:-studybuddyai.my}
+    depends_on:
+      app:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - studybuddy_network
 
 # =============================================================================
 # Networks
@@ -162,7 +164,7 @@ volumes:
     driver: local
   rabbitmq_data:
     driver: local
-  # caddy_data:
-  #   driver: local
-  # caddy_config:
-  #   driver: local
+  caddy_data:
+    driver: local
+  caddy_config:
+    driver: local
