@@ -6,104 +6,84 @@ ENV PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1
 
-# =============================================================================
-# System Dependencies Installation
-# =============================================================================
-# Install system packages with retry mechanism for network reliability
-# - ca-certificates: SSL certificate verification
-# - curl: for health checks and debugging
-# - libmagic*: for python-magic file type detection
-# - libgobject / libglib / pango / cairo / harfbuzz / fontconfig / gdk-pixbuf: for WeasyPrint/Pango stack (PDF generation)
-# - libffi-dev + gcc: for bcrypt compilation
-#
-# Note: DNS configuration is handled at runtime via docker-compose.yml
-RUN set -eux; \
-    # Update CA certificates first to fix potential SSL issues
-    apt-get update && apt-get install -y --no-install-recommends ca-certificates; \
-    update-ca-certificates; \
-    # Retry mechanism for package installation
-    for i in 1 2 3; do \
-        apt-get update && apt-get install -y --no-install-recommends \
-            curl \
-            libmagic1 \
-            libmagic-dev \
-            file \
-            libgobject-2.0-0 \
-            libglib2.0-0 \
-            libpango-1.0-0 \
-            libpangoft2-1.0-0 \
-            libpangocairo-1.0-0 \
-            libcairo2 \
-            libgdk-pixbuf-2.0-0 \
-            libharfbuzz0b \
-            libfontconfig1 \
-            libffi-dev \
-            gcc \
-        && break || { echo "Retry $i failed, waiting..."; sleep 5; }; \
-    done; \
-    apt-get clean; \
-    rm -rf /var/lib/apt/lists/*
-
 WORKDIR /app
 
 # =============================================================================
-# Python Dependencies Installation
+# 1. Runtime System Dependencies
 # =============================================================================
-# Copy dependency files separately for Docker layer caching
+# We install these FIRST and keep them.
+# Since we list them explicitly here, apt marks them as "manual" automatically.
+# We do not include gcc or dev headers here.
+RUN set -eux; \
+    apt-get update && apt-get install -y --no-install-recommends \
+        ca-certificates \
+        curl \
+        # Libmagic
+        libmagic1 \
+        file \
+        # WeasyPrint / Pango / Cairo dependencies
+        libgobject-2.0-0 \
+        libglib2.0-0 \
+        libpango-1.0-0 \
+        libpangoft2-1.0-0 \
+        libpangocairo-1.0-0 \
+        libcairo2 \
+        libgdk-pixbuf-2.0-0 \
+        libharfbuzz0b \
+        libfontconfig1 \
+    && rm -rf /var/lib/apt/lists/*
+
+# =============================================================================
+# 2. Python Dependencies & Build Tools
+# =============================================================================
 COPY requirements.txt ./
 
-# Install Python dependencies with retry mechanism and SSL fallback
-# Using requirements.txt instead of Pipfile for simpler deployment
+# This block does 3 things in ONE layer to keep image small:
+# A. Installs heavy build dependencies (gcc, headers)
+# B. Installs Python packages via pip
+# C. Removes the build dependencies immediately
 RUN set -eux; \
-    # Define trusted hosts for SSL fallback (only used if SSL verification fails)
+    # A. Install Build Deps
+    apt-get update && apt-get install -y --no-install-recommends \
+        gcc \
+        libffi-dev \
+        libmagic-dev \
+    ; \
+    # B. Install Python packages
+    # (Includes your SSL fallback logic)
     TRUSTED_HOSTS="--trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org"; \
-    # Upgrade pip and setuptools first to ensure latest SSL handling
     if pip install --upgrade pip setuptools wheel; then \
-        echo "pip/setuptools/wheel upgraded successfully with SSL verification"; \
+        echo "Pip upgraded successfully"; \
     else \
-        echo "WARNING: SSL verification failed, using trusted-host mode for pip upgrade"; \
         pip install $TRUSTED_HOSTS --upgrade pip setuptools wheel; \
     fi; \
-    # Try with proper SSL verification first
     if pip install --no-cache-dir -r requirements.txt; then \
-        echo "Dependencies installed successfully with SSL verification"; \
+        echo "Deps installed successfully"; \
     else \
-        echo "WARNING: SSL verification failed, falling back to trusted-host mode"; \
-        echo "This may indicate a self-signed certificate or SSL proxy in the network"; \
+        echo "WARNING: SSL fallback triggered"; \
         pip install --no-cache-dir $TRUSTED_HOSTS -r requirements.txt; \
-    fi
-
-# Remove build dependencies to reduce image size
-# Mark runtime libraries as manually installed to prevent autoremove from removing them
-RUN apt-mark manual \
-        # libmagic for python-magic file type detection
-        libmagic1 file \
-        # WeasyPrint dependencies for PDF generation
-        libgobject-2.0-0 libglib2.0-0 \
-        libpango-1.0-0 libpangoft2-1.0-0 libpangocairo-1.0-0 \
-        libcairo2 libgdk-pixbuf-2.0-0 libharfbuzz0b libfontconfig1 && \
-    # Remove build-time dependencies (dev headers and compilers)
-    apt-get purge -y gcc libffi-dev libmagic-dev && \
-    apt-get autoremove -y && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+    fi; \
+    # C. Cleanup Build Deps
+    # We purge the compilers, but the runtime libs (from step 1) stay because
+    # they were installed in a previous committed layer.
+    apt-get purge -y --auto-remove \
+        gcc \
+        libffi-dev \
+        libmagic-dev \
+    && rm -rf /var/lib/apt/lists/*
 
 # =============================================================================
 # Application Setup
 # =============================================================================
-# Copy the application last (so code changes don't rebuild deps)
 COPY . .
 
 # Create non-root user for security
 RUN useradd -m -r appuser && chown -R appuser:appuser /app
 USER appuser
 
-# Expose port
 EXPOSE 5000
 
-# Health check for container orchestration
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:5000/health || exit 1
 
-# Run the app
 CMD ["python", "app.py"]
