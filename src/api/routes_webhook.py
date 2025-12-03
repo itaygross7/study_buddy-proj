@@ -11,7 +11,7 @@ from sb_utils.logger_utils import logger
 webhook_bp = Blueprint('webhook', __name__)
 
 # Webhook secret for GitHub webhook verification
-WEBHOOK_SECRET = settings.WEBHOOK_SECRET if hasattr(settings, 'WEBHOOK_SECRET') else None
+WEBHOOK_SECRET = settings.WEBHOOK_SECRET if settings.WEBHOOK_SECRET else None
 
 
 def verify_signature(f):

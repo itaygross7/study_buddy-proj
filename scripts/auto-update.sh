@@ -91,7 +91,7 @@ if ! git pull origin $BRANCH 2>&1 | tee -a "$LOG_FILE"; then
 fi
 
 # Restore .env if it was overwritten
-if [ -f ".env.backup."* ]; then
+if ls .env.backup.* >/dev/null 2>&1; then
     LATEST_BACKUP=$(ls -t .env.backup.* 2>/dev/null | head -1)
     if [ -f "$LATEST_BACKUP" ]; then
         log_info "Restoring .env from backup..."

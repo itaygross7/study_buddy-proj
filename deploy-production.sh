@@ -112,12 +112,12 @@ else
     log_success "Tailscale already running"
 fi
 
-# Get Tailscale IP
-TAILSCALE_IP=$($SUDO tailscale ip -4 2>/dev/null || echo "")
+# Get Tailscale IP (with fallback for different versions)
+TAILSCALE_IP=$($SUDO tailscale ip -4 2>/dev/null || $SUDO tailscale status --json 2>/dev/null | grep -o '"TailscaleIPs":\["[^"]*"' | cut -d'"' -f4 || echo "")
 if [ -n "$TAILSCALE_IP" ]; then
     log_success "Tailscale IP: $TAILSCALE_IP"
 else
-    log_warning "Could not get Tailscale IP"
+    log_warning "Could not get Tailscale IP. You can find it with: sudo tailscale status"
 fi
 
 # =============================================================================

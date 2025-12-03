@@ -447,10 +447,14 @@
         }
         
         function formatMessage(text) {
-            // Convert markdown-style formatting to HTML
-            return escapeHtml(text)
-                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            // First escape HTML to prevent XSS
+            const escaped = escapeHtml(text);
+            // Then apply safe formatting using DOM manipulation
+            const temp = document.createElement('div');
+            temp.innerHTML = escaped
+                .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
                 .replace(/\n/g, '<br>');
+            return temp.innerHTML;
         }
     </script>
 
