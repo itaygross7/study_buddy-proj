@@ -333,6 +333,37 @@ docker exec studybuddy_mongo mongodump --out /backup
 docker cp studybuddy_mongo:/backup ./backup
 ```
 
+## 🏥 Health & Monitoring
+
+StudyBuddy includes comprehensive health monitoring and restart capabilities:
+
+```bash
+# Restart application
+./scripts/restart-app.sh
+
+# Test all API endpoints
+./scripts/test-api-endpoints.sh
+
+# Check detailed health
+curl http://localhost:5000/health/detailed
+
+# View health monitor logs
+docker compose logs -f healthcheck
+```
+
+**Health Endpoints:**
+- `/health` - Basic health check
+- `/health/detailed` - Component-level status (MongoDB, RabbitMQ, AI, Email)
+- `/health/live` - Liveness probe
+- `/health/ready` - Readiness probe
+
+**Automatic Monitoring:**
+- Health check container monitors all components every 30 seconds
+- Auto-restarts failed components after 3 consecutive failures
+- Logs to `/var/log/studybuddy-healthcheck.log`
+
+See `docs/HEALTH_AND_MONITORING.md` for complete guide.
+
 ---
 
 ## 📂 Project Structure
