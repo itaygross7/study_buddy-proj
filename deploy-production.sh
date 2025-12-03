@@ -157,7 +157,7 @@ if command -v ufw &> /dev/null; then
     $SUDO ufw allow in on $TAILSCALE_IFACE to any port 22 comment 'SSH from Tailscale only'
     
     # Allow HTTP and HTTPS for Let's Encrypt and web access
-    $SUDO ufw allow 80/tcp comment "HTTP for Let's Encrypt"
+    $SUDO ufw allow 80/tcp comment 'HTTP for Lets Encrypt'
     $SUDO ufw allow 443/tcp comment 'HTTPS'
     $SUDO ufw allow 443/udp comment 'HTTP/3'
     
