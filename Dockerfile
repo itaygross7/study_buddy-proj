@@ -75,7 +75,14 @@ RUN set -eux; \
 
 # Remove build dependencies to reduce image size
 # Mark runtime libraries as manually installed to prevent autoremove from removing them
-RUN apt-mark manual libmagic1 file libgobject-2.0-0 libglib2.0-0 libpango-1.0-0 libpangoft2-1.0-0 libpangocairo-1.0-0 libcairo2 libgdk-pixbuf-2.0-0 libharfbuzz0b libfontconfig1 && \
+RUN apt-mark manual \
+        # libmagic for python-magic file type detection
+        libmagic1 file \
+        # WeasyPrint dependencies for PDF generation
+        libgobject-2.0-0 libglib2.0-0 \
+        libpango-1.0-0 libpangoft2-1.0-0 libpangocairo-1.0-0 \
+        libcairo2 libgdk-pixbuf-2.0-0 libharfbuzz0b libfontconfig1 && \
+    # Remove build-time dependencies (dev headers and compilers)
     apt-get purge -y gcc libffi-dev libmagic-dev && \
     apt-get autoremove -y && \
     apt-get clean && \
