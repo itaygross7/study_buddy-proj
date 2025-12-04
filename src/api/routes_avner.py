@@ -227,8 +227,15 @@ def ask_avner():
         prompt += f"שאלת המשתמש: {question}\n\nתשובה קצרה וברורה:"
 
         # Generate AI response
-        ai_client = AIClient()
-        response = ai_client.generate_text(prompt, "", baby_mode=baby_mode)
+        try:
+            ai_client = AIClient()
+            response = ai_client.generate_text(prompt, "", task_type="standard", baby_mode=baby_mode)
+        except Exception as ai_error:
+            logger.error(f"AI generation failed: {ai_error}", exc_info=True)
+            return jsonify({
+                "error": "לא הצלחתי לקבל תשובה מהמערכת. בדוק שהגדרת את ה-API keys בקובץ .env 🦫",
+                "details": str(ai_error)
+            }), 500
 
         # Increment prompt count
         auth_service.increment_prompt_count(db, current_user.id)

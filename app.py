@@ -1,4 +1,5 @@
 import os
+import sys
 from flask import Flask, jsonify, render_template, request, send_from_directory
 from flask_cors import CORS
 from flask_login import current_user, login_required
@@ -274,6 +275,12 @@ def create_app():
 
 
 if __name__ == '__main__':
+    # Validate configuration before starting
+    import validate_config
+    if not validate_config.print_validation_results():
+        logger.error("Configuration validation failed. Exiting.")
+        sys.exit(1)
+    
     app = create_app()
     port = int(os.environ.get("PORT", 5000))
     host = '0.0.0.0'
