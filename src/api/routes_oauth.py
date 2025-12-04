@@ -195,7 +195,8 @@ def google_callback():
 
     except Exception as e:
         logger.error(f"Google OAuth error: {e}", exc_info=True)
-        flash(f'שגיאה בהתחברות עם Google: {str(e)}. ודא ש-BASE_URL ו-redirect URI מוגדרים נכון.', 'error')
+        # Don't expose full error details to users for security
+        flash('שגיאה בהתחברות עם Google. ודא שההגדרות ב-.env נכונות. ראה TROUBLESHOOTING.md לעזרה.', 'error')
         return redirect(url_for('auth.login'))
 
 

@@ -232,9 +232,9 @@ def ask_avner():
             response = ai_client.generate_text(prompt, "", task_type="standard", baby_mode=baby_mode)
         except Exception as ai_error:
             logger.error(f"AI generation failed: {ai_error}", exc_info=True)
+            # Don't expose internal error details for security
             return jsonify({
-                "error": "לא הצלחתי לקבל תשובה מהמערכת. בדוק שהגדרת את ה-API keys בקובץ .env 🦫",
-                "details": str(ai_error)
+                "error": "לא הצלחתי לקבל תשובה מהמערכת. ודא שהגדרת את ה-API keys בקובץ .env 🦫"
             }), 500
 
         # Increment prompt count

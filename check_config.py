@@ -160,18 +160,16 @@ def main():
     if openai_ok or gemini_ok:
         print("\n🧪 TESTING AI CONNECTIONS")
         print("-" * 70)
+        print("Note: This tests actual API connectivity with minimal requests")
+        print()
         
         if openai_ok:
             print("Testing OpenAI connection...")
             try:
                 import openai
                 client = openai.OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
-                # Test with a minimal request
-                response = client.chat.completions.create(
-                    model=os.getenv('SB_OPENAI_MODEL', 'gpt-4o-mini'),
-                    messages=[{"role": "user", "content": "Hi"}],
-                    max_tokens=5
-                )
+                # Test with models list endpoint (doesn't consume credits)
+                models = client.models.list()
                 print("✅ OpenAI connection successful!")
             except Exception as e:
                 print(f"❌ OpenAI connection failed: {e}")
@@ -182,9 +180,14 @@ def main():
             try:
                 import google.generativeai as genai
                 genai.configure(api_key=os.getenv('GEMINI_API_KEY'))
-                model = genai.GenerativeModel(os.getenv('SB_GEMINI_MODEL', 'gemini-1.5-flash'))
-                response = model.generate_content("Hi")
-                print("✅ Gemini connection successful!")
+                # List models to test connection (minimal API usage)
+                models = genai.list_models()
+                # Check if we have access to at least one model
+                model_count = sum(1 for _ in models)
+                if model_count > 0:
+                    print("✅ Gemini connection successful!")
+                else:
+                    print("⚠️  Gemini API key valid but no models available")
             except Exception as e:
                 print(f"❌ Gemini connection failed: {e}")
                 all_ok = False
