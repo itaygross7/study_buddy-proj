@@ -307,7 +307,7 @@ docker compose stop caddy
 
 ## Need More Help?
 
-- **Network access issues:** See [`NETWORK_ACCESS.md`](./NETWORK_ACCESS.md) or run `./scripts/enable-network-access.sh`
+- **Network access issues:** See [NETWORK_ACCESS.md](NETWORK_ACCESS.md) or run `./scripts/enable-network-access.sh`
 - **Production deployment:** See [`DEPLOYMENT.md`](./DEPLOYMENT.md) or run `./deploy-production.sh`
 - **Quick network fix:** See [`QUICK_FIX_NETWORK.md`](./QUICK_FIX_NETWORK.md)
 - **General troubleshooting:** See [`../TROUBLESHOOTING.md`](../TROUBLESHOOTING.md)

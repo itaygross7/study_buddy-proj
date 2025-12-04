@@ -113,32 +113,42 @@ echo ""
 echo -e "${BLUE}[5/5]${NC} Checking firewall..."
 
 # Try to open firewall port
-if command -v ufw &> /dev/null && $SUDO ufw status | grep -q "Status: active"; then
-    echo -e "${CYAN}Detected UFW firewall...${NC}"
-    if ! $SUDO ufw status | grep -q "5000/tcp"; then
-        echo -e "${YELLOW}!${NC} Opening port 5000..."
-        $SUDO ufw allow 5000/tcp comment 'StudyBuddy Local Network'
-        echo -e "${GREEN}✓${NC} Port 5000 opened"
-    else
-        echo -e "${GREEN}✓${NC} Port 5000 already open"
+if command -v ufw &> /dev/null; then
+    if $SUDO ufw status 2>/dev/null | grep -q "Status: active"; then
+        echo -e "${CYAN}Detected UFW firewall...${NC}"
+        if ! $SUDO ufw status | grep -q "5000/tcp"; then
+            echo -e "${YELLOW}!${NC} Opening port 5000..."
+            $SUDO ufw allow 5000/tcp comment 'StudyBuddy Local Network' 2>/dev/null || true
+            echo -e "${GREEN}✓${NC} Port 5000 opened"
+        else
+            echo -e "${GREEN}✓${NC} Port 5000 already open"
+        fi
     fi
-elif command -v firewall-cmd &> /dev/null && $SUDO firewall-cmd --state &> /dev/null; then
-    echo -e "${CYAN}Detected firewalld...${NC}"
-    if ! $SUDO firewall-cmd --list-ports | grep -q "5000/tcp"; then
-        echo -e "${YELLOW}!${NC} Opening port 5000..."
-        $SUDO firewall-cmd --permanent --add-port=5000/tcp
-        $SUDO firewall-cmd --reload
-        echo -e "${GREEN}✓${NC} Port 5000 opened"
-    else
-        echo -e "${GREEN}✓${NC} Port 5000 already open"
+elif command -v firewall-cmd &> /dev/null; then
+    if $SUDO firewall-cmd --state 2>/dev/null | grep -q "running"; then
+        echo -e "${CYAN}Detected firewalld...${NC}"
+        if ! $SUDO firewall-cmd --list-ports 2>/dev/null | grep -q "5000/tcp"; then
+            echo -e "${YELLOW}!${NC} Opening port 5000..."
+            $SUDO firewall-cmd --permanent --add-port=5000/tcp 2>/dev/null || true
+            $SUDO firewall-cmd --reload 2>/dev/null || true
+            echo -e "${GREEN}✓${NC} Port 5000 opened"
+        else
+            echo -e "${GREEN}✓${NC} Port 5000 already open"
+        fi
     fi
 else
     echo -e "${YELLOW}!${NC} No firewall detected or firewall inactive"
     echo -e "    If you can't access from other devices, check your firewall manually"
 fi
 
-# Get IP address
-IP=$(hostname -I | awk '{print $1}')
+# Get IP address with fallback options
+IP=$(hostname -I 2>/dev/null | awk '{print $1}')
+if [[ -z "$IP" ]]; then
+    IP=$(ip addr show 2>/dev/null | grep "inet " | grep -v 127.0.0.1 | head -1 | awk '{print $2}' | cut -d/ -f1)
+fi
+if [[ -z "$IP" ]]; then
+    IP=$(ifconfig 2>/dev/null | grep "inet " | grep -v 127.0.0.1 | head -1 | awk '{print $2}')
+fi
 
 echo ""
 echo -e "${GREEN}═══════════════════════════════════════════════════════${NC}"
