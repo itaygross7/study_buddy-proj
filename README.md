@@ -34,6 +34,9 @@ StudyBuddyAI is a comprehensive web application designed to help students with t
 
 ## 🚀 Quick Start (Ubuntu 22.04 / Ubuntu 20.04+ / Linux)
 
+> **⚠️ IMPORTANT:** Before deployment, configure your `.env` file with at least one AI provider (OpenAI or Gemini).  
+> The app will not start without valid API keys. See [Configuration](#-configuration) section below.
+
 ### Production Deployment (Recommended for Production Servers)
 
 **Complete production setup with HTTPS, Tailscale, and auto-updates!**
@@ -199,6 +202,117 @@ If you prefer manual setup or need more control:
    See [`docs/NETWORK_ACCESS.md`](docs/NETWORK_ACCESS.md) for detailed troubleshooting.
    
    ⚠️ **Security Note:** Port 5000 uses HTTP (not HTTPS). For production, use `./deploy-production.sh` which sets up HTTPS on ports 80/443.
+
+---
+
+## ⚙️ Configuration
+
+StudyBuddy requires proper configuration to work. All settings are in the `.env` file.
+
+### Quick Configuration Check
+
+Check if your configuration is valid:
+
+```bash
+python check_config.py
+```
+
+This tool validates all settings and tests AI API connections.
+
+### Minimum Required Configuration
+
+**Critical (app won't start without these):**
+
+1. **At least one AI provider:**
+   ```bash
+   # Option 1: Google Gemini (Recommended - Free tier available)
+   GEMINI_API_KEY="your_key_here"
+   # Get from: https://makersuite.google.com/app/apikey
+   
+   # Option 2: OpenAI (Requires payment)
+   OPENAI_API_KEY="sk-your_key_here"
+   # Get from: https://platform.openai.com/api-keys
+   ```
+
+2. **Domain/URL configuration:**
+   ```bash
+   # For production
+   BASE_URL="https://yourdomain.com"
+   
+   # For development
+   BASE_URL="http://localhost:5000"
+   ```
+
+### Recommended Configuration
+
+**For full functionality:**
+
+1. **Email verification (highly recommended):**
+   ```bash
+   # Using Gmail (easiest)
+   MAIL_SERVER="smtp.gmail.com"
+   MAIL_PORT=587
+   MAIL_USE_TLS=true
+   MAIL_USERNAME="your_email@gmail.com"
+   MAIL_PASSWORD="your_16_char_app_password"
+   MAIL_DEFAULT_SENDER="StudyBuddy <your_email@gmail.com>"
+   ```
+   
+   **Gmail Setup:**
+   - Enable 2-Step Verification: https://myaccount.google.com/security
+   - Generate App Password: https://myaccount.google.com/apppasswords
+   - Use the 16-character app password (not your regular password!)
+
+2. **Google Sign-In (optional but recommended):**
+   ```bash
+   GOOGLE_CLIENT_ID="your_id.apps.googleusercontent.com"
+   GOOGLE_CLIENT_SECRET="your_secret"
+   ```
+   
+   **Setup:**
+   - Go to https://console.cloud.google.com/
+   - Create new project → APIs & Services → Credentials
+   - Create OAuth 2.0 Client ID → Web application
+   - Add redirect URI: `https://yourdomain.com/oauth/google/callback`
+   - For development: `http://localhost:5000/oauth/google/callback`
+
+3. **Admin account:**
+   ```bash
+   ADMIN_EMAIL="your_admin@example.com"
+   ```
+
+### Common Configuration Issues
+
+| Issue | Solution |
+|-------|----------|
+| **"No AI provider configured"** | Add `GEMINI_API_KEY` or `OPENAI_API_KEY` to `.env` |
+| **Google Sign-In not working** | Check `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and redirect URI |
+| **Verification emails not sent** | Configure SMTP settings (see Gmail setup above) |
+| **"Invalid verification link"** | Ensure `BASE_URL` matches where users access the site |
+| **Can't access from other devices** | Check firewall: `sudo ufw allow 5000/tcp` |
+| **Avner chat only says "hi"** | Check AI API keys are configured correctly |
+
+### Complete Configuration Example
+
+See `.env.example` for a complete, well-documented configuration file with all available options.
+
+### Troubleshooting
+
+For detailed troubleshooting of all common issues, see **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)**.
+
+Quick diagnostics:
+```bash
+# Check configuration
+python check_config.py
+
+# Check detailed health
+curl http://localhost:5000/health/detailed
+
+# View logs
+docker compose logs -f app
+```
+
+---
 
 ## Dynamic DNS Support (for Home Servers)
 

@@ -153,10 +153,22 @@ def logout():
 @auth_bp.route('/verify/<token>')
 def verify_email(token):
     """Verify user email with token."""
-    if auth_service.verify_user_email(db, token):
-        flash('האימייל אומת בהצלחה! כעת ניתן להתחבר', 'success')
+    logger.info(f"Email verification attempted with token: {token[:10]}...")
+    
+    if not token or len(token) < 10:
+        logger.warning("Invalid verification token format")
+        flash('קישור האימות אינו תקף', 'error')
+        return redirect(url_for('auth.login'))
+    
+    result = auth_service.verify_user_email(db, token)
+    
+    if result:
+        logger.info(f"Email verified successfully for token: {token[:10]}...")
+        flash('האימייל אומת בהצלחה! כעת ניתן להתחבר 🦫', 'success')
     else:
+        logger.warning(f"Email verification failed for token: {token[:10]}...")
         flash('קישור האימות אינו תקף או שהאימייל כבר אומת', 'error')
+    
     return redirect(url_for('auth.login'))
 
 

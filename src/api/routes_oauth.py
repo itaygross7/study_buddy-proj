@@ -141,33 +141,47 @@ def _get_or_create_oauth_user(email: str, name: str, provider: str):
 @oauth_bp.route('/google/login')
 def google_login():
     """Initiate Google OAuth login."""
-    if not settings.GOOGLE_CLIENT_ID:
-        flash('התחברות עם Google לא מוגדרת', 'error')
+    if not settings.GOOGLE_CLIENT_ID or not settings.GOOGLE_CLIENT_SECRET:
+        logger.warning("Google OAuth attempted but not configured")
+        flash('התחברות עם Google לא מוגדרת. אנא הגדר GOOGLE_CLIENT_ID ו-GOOGLE_CLIENT_SECRET בקובץ .env', 'error')
         return redirect(url_for('auth.login'))
 
     redirect_uri = url_for('oauth.google_callback', _external=True)
-    return oauth.google.authorize_redirect(redirect_uri)
+    logger.info(f"Initiating Google OAuth with redirect URI: {redirect_uri}")
+    
+    try:
+        return oauth.google.authorize_redirect(redirect_uri)
+    except Exception as e:
+        logger.error(f"Failed to initiate Google OAuth: {e}", exc_info=True)
+        flash(f'שגיאה בהתחברות עם Google: {str(e)}', 'error')
+        return redirect(url_for('auth.login'))
 
 
 @oauth_bp.route('/google/callback')
 def google_callback():
     """Handle Google OAuth callback."""
     try:
+        logger.info("Google OAuth callback received")
         token = oauth.google.authorize_access_token()
+        logger.info("Google OAuth token obtained successfully")
+        
         user_info = token.get('userinfo')
 
         if not user_info or not user_info.get('email'):
+            logger.error("Google OAuth: No user info or email in response")
             flash('לא הצלחנו לקבל מידע מ-Google', 'error')
             return redirect(url_for('auth.login'))
 
         email = user_info['email']
         name = user_info.get('name', '')
+        logger.info(f"Google OAuth: User info received for email: {email}")
 
         # Get or create user
         user = _get_or_create_oauth_user(email, name, 'google')
 
         # Check if user is active
         if not user.is_active:
+            logger.warning(f"Google OAuth: Inactive user attempted login: {email}")
             flash('החשבון שלך מושהה. פנה למנהל.', 'error')
             return redirect(url_for('auth.login'))
 
@@ -175,12 +189,14 @@ def google_callback():
         user_wrapper = auth_service.UserWrapper(user)
         login_user(user_wrapper, remember=True)
 
+        logger.info(f"Google OAuth: User logged in successfully: {email}")
         flash(f'שלום {user.name}! התחברת בהצלחה 🦫', 'success')
         return redirect(url_for('library.index'))
 
     except Exception as e:
         logger.error(f"Google OAuth error: {e}", exc_info=True)
-        flash('שגיאה בהתחברות עם Google. נסה שוב.', 'error')
+        # Don't expose full error details to users for security
+        flash('שגיאה בהתחברות עם Google. ודא שההגדרות ב-.env נכונות. ראה TROUBLESHOOTING.md לעזרה.', 'error')
         return redirect(url_for('auth.login'))
 
 
