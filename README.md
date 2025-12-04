@@ -32,10 +32,54 @@ StudyBuddyAI is a comprehensive web application designed to help students with t
 
 ---
 
-## 🚀 Quick Start (Ubuntu 22.04 / Ubuntu 20.04+ / Linux)
+## 📚 Documentation
 
-> **⚠️ IMPORTANT:** Before deployment, configure your `.env` file with at least one AI provider (OpenAI or Gemini).  
+**New to StudyBuddy?** Start here:
+- 📖 **[Documentation Index](docs/INDEX.md)** - Find any guide quickly
+- 🚀 **[Getting Started](GETTING_STARTED.md)** - Step-by-step setup
+- 🔧 **[Troubleshooting](TROUBLESHOOTING.md)** - Fix common issues
+- 📜 **[Scripts Guide](SCRIPTS_GUIDE.md)** - Which script to use
+
+**Quick links by use case:**
+| I want to... | Guide | Command |
+|--------------|-------|---------|
+| 📱 Access from phone/tablet | [Local Network Access](docs/LOCAL_NETWORK_ACCESS.md) | `./start-local.sh` |
+| 🌐 Deploy to production | [Production Deployment](docs/DEPLOYMENT.md) | `./deploy-production.sh` |
+| 🧪 Quick test | [Getting Started](GETTING_STARTED.md) | `./deploy-simple.sh` |
+| 🔒 Setup OAuth/Email | [OAuth & Email Setup](docs/OAUTH_EMAIL_SETUP.md) | Edit `.env` |
+| ❌ Fix connection issues | [Network Troubleshooting](docs/NETWORK_ACCESS.md) | `./scripts/enable-network-access.sh` |
+
+---
+
+## 🚀 Quick Start
+
+> **⚠️ IMPORTANT:** Configure your `.env` file with at least one AI provider (OpenAI or Gemini).  
 > The app will not start without valid API keys. See [Configuration](#-configuration) section below.
+
+### Local Network Access (New! ⭐)
+
+**Access StudyBuddy from your phone, tablet, or other devices on the same network:**
+
+```bash
+# Clone the repository
+git clone https://github.com/itaygross7/study_buddy-proj.git
+cd study_buddy-proj
+
+# Start for local network access (no domain/HTTPS needed)
+./start-local.sh
+```
+
+**Access from any device on the same network:**
+- From the server: `http://localhost:5000`
+- From other devices: `http://YOUR_IP:5000` (IP shown by script)
+
+**Perfect for:**
+- 🏠 Testing at home
+- 📱 Accessing from mobile devices
+- 👨‍👩‍👧‍👦 Demo to friends and family
+- 💻 Development and testing
+
+📖 **Full guide:** [Local Network Access Documentation](docs/LOCAL_NETWORK_ACCESS.md)
 
 ### Production Deployment (Recommended for Production Servers)
 
@@ -74,36 +118,28 @@ See `docs/DEPLOYMENT.md` and `docs/OAUTH_EMAIL_SETUP.md` for details.
 
 ---
 
-### Quick Development Deployment
+### Simple Test Deployment
 
-**For testing or development without HTTPS:**
+**For quick testing:**
 
 ```bash
 # Clone the repository
 git clone https://github.com/itaygross7/study_buddy-proj.git
 cd study_buddy-proj
 
-# Run as root (or regular user with sudo access)
-./deploy.sh
+# Simple one-click deployment
+./deploy-simple.sh
 ```
 
-**The dev script automatically:**
-- ✅ Detects and installs Docker if missing
-- ✅ Detects and installs Docker Compose if missing
-- ✅ Fixes Docker daemon if not running
-- ✅ Clears port conflicts automatically
-- ✅ Fixes network and DNS issues
-- ✅ Generates secure SECRET_KEY automatically
-- ✅ Cleans up disk space if needed
+**The simple script:**
+- ✅ Quick checks (Docker, disk space, etc.)
 - ✅ Creates .env from template
 - ✅ Builds and starts all services
-- ✅ Validates deployment is working
+- ✅ Shows access information
 
-**Can be run as:**
-- Root: `./deploy.sh` (full system access, installs missing dependencies)
-- User: `./deploy.sh` (uses sudo when needed)
+**Note:** This starts all services including Caddy. For local network access without domain/HTTPS, use `./start-local.sh` instead.
 
-**Tested on**: Ubuntu 22.04 LTS (also works on Ubuntu 20.04+, Debian, and other Linux distributions with Docker)
+📖 **See also:** [Scripts Guide](SCRIPTS_GUIDE.md) - Complete reference of all deployment scripts
 
 **Script Options:**
 ```bash
