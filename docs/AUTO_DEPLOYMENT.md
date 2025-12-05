@@ -1,6 +1,6 @@
 # Auto-Deployment Setup Guide
 
-This guide shows you how to enable automatic deployment for StudyBuddy. When you push code to the `main` branch, it will automatically deploy to your production server.
+This guide shows you how to enable automatic deployment for StudyBuddy. When you push code to the `master` branch, it will automatically deploy to your production server.
 
 ## Setup Methods
 
@@ -37,7 +37,7 @@ Copy the output.
    ```
 
 #### Step 4: Test
-Push a commit to `main` branch and check GitHub Actions!
+Push a commit to `master` branch and check GitHub Actions!
 
 ---
 
@@ -76,7 +76,7 @@ nano ~/.ssh/authorized_keys
    - `DEPLOY_PATH`: Path where StudyBuddy is installed (e.g., `/opt/studybuddy`)
 
 #### Step 4: Test
-Push a commit to `main` branch and check GitHub Actions!
+Push a commit to `master` branch and check GitHub Actions!
 
 ---
 
@@ -85,7 +85,7 @@ Push a commit to `main` branch and check GitHub Actions!
 ### Check GitHub Actions
 1. Go to your repository on GitHub
 2. Click "Actions" tab
-3. You should see workflow runs on each push to main
+3. You should see workflow runs on each push to master
 
 ### Check Server Logs
 ```bash
@@ -138,11 +138,12 @@ You can manually trigger deployment:
 ## What Gets Deployed?
 
 The auto-deployment:
-1. Pulls latest code from `main` branch
+1. Pulls latest code from `master` branch
 2. Preserves your `.env` configuration
 3. Rebuilds containers if needed (Dockerfile/requirements changed)
 4. Restarts the application
 5. Verifies health after deployment
 6. Logs everything to `/var/log/studybuddy-update.log`
+7. **Supports force-pushed commits** - handles history rewrites gracefully
 
 **Your data is safe** - MongoDB and RabbitMQ data persists across updates!
