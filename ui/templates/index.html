@@ -1,8 +1,15 @@
 {% extends "base.html" %}
 {% block content %}
 
-<!-- Hero Section - Powerful and Convincing -->
+<!-- Hero Section with Prominent Logo -->
 <div class="relative overflow-hidden rounded-3xl bg-gradient-to-l from-golden-yellow via-warm-yellow to-cream p-8 md:p-12 mb-8 shadow-2xl border-4 border-golden-yellow">
+  <!-- Prominent Logo at Top -->
+  <div class="flex justify-center mb-6">
+    <img src="{{ url_for('serve_avner', filename='app_logo.jpeg') }}" 
+         alt="StudyBuddy Logo" 
+         class="h-24 md:h-32 w-auto object-contain shadow-2xl rounded-xl border-4 border-white hover:scale-105 transition-transform z-10">
+  </div>
+  
   <div class="grid md:grid-cols-2 gap-8 items-center">
     <!-- Left: Compelling Message -->
     <div class="text-right space-y-6">
@@ -27,9 +34,17 @@
             <span class="text-2xl flex-shrink-0">🏠</span>
             <span><strong>נעים כמו בבית:</strong> ממשק חם ופשוט שכל אחד יכול להשתמש בו</span>
           </li>
-          <li class="flex items-start gap-2">
+          <li class="flex items-start gap-2 bg-golden-yellow/20 p-3 rounded-lg border-2 border-golden-yellow">
             <span class="text-2xl flex-shrink-0">🎯</span>
-            <span><strong>ממוקד בחומר שלך בלבד:</strong> הבינה המלאכותית לומדת <u>אך ורק</u> מהקבצים שאתה מעלה - <strong>ללא מידע מהאינטרנט!</strong> זה מבטיח תשובות מדויקות ורלוונטיות דווקא לחומר שלך.</span>
+            <div>
+              <strong>🔐 למידה רק מהחומר שלך - 100% אמין ומדויק!</strong><br>
+              <span class="text-sm">הבינה המלאכותית של StudyBuddy לומדת <u>אך ורק</u> מהקבצים והחומרים שאתה מעלה:</span>
+              <ul class="mt-2 space-y-1 text-sm mr-4">
+                <li>✓ <strong>ללא מידע מהאינטרנט</strong> - רק החומר שלך</li>
+                <li>✓ <strong>דיוק מקסימלי</strong> - תשובות מבוססות 100% על החומר שלך</li>
+                <li>✓ <strong>אמינות גבוהה</strong> - אין מידע לא רלוונטי או טעויות מהאינטרנט</li>
+              </ul>
+            </div>
           </li>
           <li class="flex items-start gap-2">
             <span class="text-2xl flex-shrink-0">🦫</span>
@@ -380,7 +395,7 @@
     <div class="bg-white p-6 rounded-xl shadow-lg text-center border-2 border-golden-yellow">
       <div class="text-5xl mb-3">🎯</div>
       <h3 class="font-bold text-dark-brown mb-2 text-lg">🔒 ממוקד בחומר שלכם בלבד - 100% אמין!</h3>
-      <p class="text-cozy-brown text-sm"><strong>הבינה המלאכותית עובדת רק עם הקבצים שהעליתם</strong> - ללא שימוש במידע מהאינטרנט או ממקורות חיצוניים. זה אומר שהתשובות מדויקות, ממוקדות וללא הפרעות של מידע לא רלוונטי.</p>
+      <p class="text-cozy-brown text-sm"><strong>הבינה המלאכותית עובדת רק עם הקבצים שהעליתם</strong> - ללא שימוש במידע מהאינטרנט או ממקורות חיצוניים. זה אומר שהתשובות מדויקות לחלוטין, ממוקדות ב-100% בחומר שלכם, וללא הפרעות של מידע לא רלוונטי. <strong>אבנר לומד רק ממה שאתם מלמדים אותו!</strong></p>
     </div>
     
     <div class="bg-white p-6 rounded-xl shadow-lg text-center">
