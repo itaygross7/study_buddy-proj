@@ -49,10 +49,13 @@
             
             const chatContainer = document.getElementById('summary-chat-' + summaryId);
             
-            // Add user message
+            // Add user message - using textContent for security
             const userMsg = document.createElement('div');
             userMsg.className = 'bg-golden-yellow/20 p-3 rounded-lg border border-golden-yellow text-right';
-            userMsg.innerHTML = '<strong>אתה:</strong> ' + question;
+            const userLabel = document.createElement('strong');
+            userLabel.textContent = 'אתה: ';
+            userMsg.appendChild(userLabel);
+            userMsg.appendChild(document.createTextNode(question));
             chatContainer.appendChild(userMsg);
             
             // Clear input
@@ -61,7 +64,13 @@
             // Add loading indicator
             const loadingMsg = document.createElement('div');
             loadingMsg.className = 'bg-warm-beige p-3 rounded-lg border border-warm-yellow text-right';
-            loadingMsg.innerHTML = '<strong>אבנר:</strong> <span class="animate-pulse">חושב...</span>';
+            const loadingLabel = document.createElement('strong');
+            loadingLabel.textContent = 'אבנר: ';
+            const loadingSpan = document.createElement('span');
+            loadingSpan.className = 'animate-pulse';
+            loadingSpan.textContent = 'חושב...';
+            loadingMsg.appendChild(loadingLabel);
+            loadingMsg.appendChild(loadingSpan);
             loadingMsg.id = 'loading-' + summaryId;
             chatContainer.appendChild(loadingMsg);
             chatContainer.scrollTop = chatContainer.scrollHeight;
@@ -84,10 +93,13 @@
                 // Remove loading message
                 document.getElementById('loading-' + summaryId)?.remove();
                 
-                // Add Avner's response
+                // Add Avner's response - using textContent for security
                 const avnerMsg = document.createElement('div');
                 avnerMsg.className = 'bg-warm-beige p-3 rounded-lg border border-warm-yellow text-right';
-                avnerMsg.innerHTML = '<strong>אבנר:</strong> ' + (data.answer || data.error || 'שגיאה בקבלת תשובה');
+                const avnerLabel = document.createElement('strong');
+                avnerLabel.textContent = 'אבנר: ';
+                avnerMsg.appendChild(avnerLabel);
+                avnerMsg.appendChild(document.createTextNode(data.answer || data.error || 'שגיאה בקבלת תשובה'));
                 chatContainer.appendChild(avnerMsg);
                 chatContainer.scrollTop = chatContainer.scrollHeight;
                 
@@ -95,9 +107,13 @@
                 console.error('Error:', error);
                 document.getElementById('loading-' + summaryId)?.remove();
                 
+                // Add error message - using textContent for security
                 const errorMsg = document.createElement('div');
                 errorMsg.className = 'bg-red-100 p-3 rounded-lg border border-red-300 text-right';
-                errorMsg.innerHTML = '<strong>שגיאה:</strong> לא הצלחתי לקבל תשובה. נסו שוב 🦫';
+                const errorLabel = document.createElement('strong');
+                errorLabel.textContent = 'שגיאה: ';
+                errorMsg.appendChild(errorLabel);
+                errorMsg.appendChild(document.createTextNode('לא הצלחתי לקבל תשובה. נסו שוב 🦫'));
                 chatContainer.appendChild(errorMsg);
             }
         }

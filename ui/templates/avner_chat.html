@@ -168,7 +168,12 @@
         
         const text = document.createElement('p');
         text.className = 'text-dark-brown whitespace-pre-wrap';
-        text.innerHTML = `<strong>${isUser ? 'את/ה' : 'אבנר'}:</strong> ${content}`;
+        
+        // Use textContent for security instead of innerHTML
+        const label = document.createElement('strong');
+        label.textContent = isUser ? 'את/ה: ' : 'אבנר: ';
+        text.appendChild(label);
+        text.appendChild(document.createTextNode(content));
         
         const time = document.createElement('p');
         time.className = 'text-xs text-warm-gray mt-1';
@@ -210,7 +215,7 @@
             const babyMode = babyModeToggle.checked;
             const courseId = courseSelector ? courseSelector.value : '';
             
-            const response = await fetch('{{ url_for("avner.ask_avner") }}', {
+            const response = await fetch('/api/avner/ask', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
