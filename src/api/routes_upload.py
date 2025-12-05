@@ -16,6 +16,7 @@ from src.services.file_service import file_service
 upload_bp = Blueprint('upload_bp', __name__)
 
 MAX_FILE_SIZE = 50 * 1024 * 1024  # 50MB
+ANONYMOUS_USER_ID = '00000000-0000-0000-0000-000000000000'  # Reserved UUID for anonymous users
 
 @upload_bp.route('/', methods=['POST'])
 def upload_route():
@@ -23,13 +24,13 @@ def upload_route():
     Handles both direct text input and file uploads.
     - For text, it's processed synchronously.
     - For files, it's processed asynchronously.
-    - Works with or without authentication (uses 'anonymous' user if not logged in)
+    - Works with or without authentication (uses reserved UUID for anonymous)
     """
-    # Use current_user if authenticated, otherwise use anonymous
+    # Use current_user if authenticated, otherwise use anonymous UUID
     if current_user.is_authenticated:
         user_id = current_user.id
     else:
-        user_id = 'anonymous'
+        user_id = ANONYMOUS_USER_ID
     
     course_id = request.form.get('course_id', 'default')
     text_input = request.form.get('text', '').strip()
