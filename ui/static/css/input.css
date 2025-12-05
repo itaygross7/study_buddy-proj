@@ -42,3 +42,84 @@
         }
     }
 }
+
+/* 
+==================================================================
+  3. Landing Page Hero & Tool Card Styles
+     - Custom styles for the hero section and tool cards
+     - Maintains RTL layout and cozy aesthetic
+==================================================================
+*/
+@layer components {
+    .hero {
+        display: flex;
+        gap: 20px;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+    
+    .hero-left { 
+        flex: 1; 
+    }
+    
+    .hero-right { 
+        flex: 1; 
+        text-align: right; 
+    }
+    
+    .avner-hero { 
+        max-width: 320px; 
+        height: auto; 
+        object-fit: contain; 
+    }
+    
+    .tools-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+    }
+    
+    .tool-card {
+        background: #ffffff;
+        border-radius: 12px;
+        padding: 16px;
+        box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .tool-link {
+        text-decoration: none;
+        color: inherit;
+        cursor: pointer;
+        display: block;
+    }
+    
+    .tool-link:hover .tool-card {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 24px rgba(0,0,0,0.08);
+    }
+    
+    .tool-card .sticker {
+        width: 120px;
+        height: auto;
+        display: block;
+        margin-left: auto;
+        margin-right: 0;
+    }
+    
+    /* Mobile responsive styles */
+    @media (max-width: 768px) {
+        .hero { 
+            flex-direction: column-reverse; 
+        }
+        
+        .tools-grid { 
+            grid-template-columns: 1fr; 
+        }
+        
+        .tool-card .sticker { 
+            width: 180px; 
+            margin: 0 auto 8px auto; 
+        }
+    }
+}
