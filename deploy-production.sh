@@ -1,410 +1,127 @@
 #!/bin/bash
 # =============================================================================
-# StudyBuddy AI - Complete Production Deployment Script
-# =============================================================================
-# This script does EVERYTHING needed for production deployment:
-# - HTTPS with Caddy and Let's Encrypt
-# - Tailscale for secure server access
-# - Systemd service for auto-restart
-# - Firewall configuration
-# - Auto-update setup
-#
-# Run once and you're done!
+# StudyBuddy AI - Cloudflare Tunnel Production Deployment
 # =============================================================================
 
-set -e  # Exit on error
+set -e # Exit immediately if a command exits with a non-zero status
 
-# Colors
-RED='\033[0;31m'
+# Colors for pretty output
 GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-CYAN='\033[0;36m'
-NC='\033[0m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+NC='\033[0m' # No Color
 
-# Detect if running as root
-if [[ $EUID -eq 0 ]]; then
-    SUDO=""
-else
-    SUDO="sudo"
+echo -e "${BLUE}======================================================${NC}"
+echo -e "${BLUE}   StudyBuddy AI: Cloudflare Tunnel Deployment    ${NC}"
+echo -e "${BLUE}======================================================${NC}"
+
+# 1. Check Root Privileges
+if [[ $EUID -ne 0 ]]; then
+   echo -e "${RED}Error: This script must be run as root.${NC}" 
+   echo -e "Try running: ${YELLOW}sudo ./deploy.sh${NC}"
+   exit 1
 fi
 
-log_info() { echo -e "${BLUE}[INFO]${NC} $*"; }
-log_success() { echo -e "${GREEN}[✓]${NC} $*"; }
-log_error() { echo -e "${RED}[✗]${NC} $*"; }
-log_warning() { echo -e "${YELLOW}[!]${NC} $*"; }
-
-show_banner() {
-    clear
-    echo -e "${GREEN}"
-    cat << "EOF"
-   _____ _             _       ____            _     _       
-  / ____| |           | |     |  _ \          | |   | |      
- | (___ | |_ _   _  __| |_   _| |_) |_   _  __| | __| |_   _ 
-  \___ \| __| | | |/ _` | | | |  _ <| | | |/ _` |/ _` | | | |
-  ____) | |_| |_| | (_| | |_| | |_) | |_| | (_| | (_| | |_| |
- |_____/ \__|\__,_|\__,_|\__, |____/ \__,_|\__,_|\__,_|\__, |
-                          __/ |                         __/ |
-                         |___/                         |___/ 
-EOF
-    echo -e "${NC}"
-    echo -e "${CYAN}════════════════════════════════════════════════════════════${NC}"
-    echo -e "${CYAN}  Complete Production Deployment with HTTPS & Tailscale${NC}"
-    echo -e "${CYAN}════════════════════════════════════════════════════════════${NC}"
-    echo ""
-}
-
-show_banner
-
-# =============================================================================
-# 1. Check Prerequisites
-# =============================================================================
-log_info "Step 1/8: Checking prerequisites..."
-
+# 2. Check for .env file
 if [ ! -f ".env" ]; then
-    log_error ".env file not found!"
-    log_info "Creating .env from .env.example..."
-    cp .env.example .env
-    log_warning "IMPORTANT: Edit .env file with your configuration before continuing!"
-    log_warning "Required: DOMAIN, BASE_URL, API keys, ADMIN_EMAIL, MAIL settings"
-    read -p "Press Enter after editing .env file..."
-fi
-
-# Check Docker
-if ! command -v docker &> /dev/null; then
-    log_warning "Docker not found. Installing..."
-    curl -fsSL https://get.docker.com -o /tmp/get-docker.sh
-    $SUDO sh /tmp/get-docker.sh
-    $SUDO usermod -aG docker $USER
-    log_success "Docker installed"
-fi
-
-# Check Docker Compose
-if ! command -v docker compose &> /dev/null && ! command -v docker-compose &> /dev/null; then
-    log_warning "Docker Compose not found. Installing..."
-    $SUDO apt-get update
-    $SUDO apt-get install -y docker-compose-plugin
-    log_success "Docker Compose installed"
-fi
-
-log_success "Prerequisites checked"
-
-# =============================================================================
-# 2. Install and Configure Tailscale
-# =============================================================================
-log_info "Step 2/8: Setting up Tailscale..."
-
-if ! command -v tailscale &> /dev/null; then
-    log_info "Installing Tailscale..."
-    curl -fsSL https://tailscale.com/install.sh | sh
-    log_success "Tailscale installed"
-else
-    log_success "Tailscale already installed"
-fi
-
-# Check if Tailscale is connected
-if ! $SUDO tailscale status &> /dev/null; then
-    log_warning "Tailscale not connected. Starting Tailscale..."
-    log_info "You'll need to authenticate via the link provided"
-    $SUDO tailscale up
-    log_success "Tailscale connected"
-else
-    log_success "Tailscale already running"
-fi
-
-# Get Tailscale IP (with fallback for different versions)
-TAILSCALE_IP=$($SUDO tailscale ip -4 2>/dev/null || $SUDO tailscale status --json 2>/dev/null | grep -o '"TailscaleIPs":\["[^"]*"' | cut -d'"' -f4 || echo "")
-if [ -n "$TAILSCALE_IP" ]; then
-    log_success "Tailscale IP: $TAILSCALE_IP"
-else
-    log_warning "Could not get Tailscale IP. You can find it with: sudo tailscale status"
-fi
-
-# Verify Tailscale connectivity
-log_info "Verifying Tailscale connectivity..."
-if $SUDO tailscale ping --c 1 --timeout 5s 100.64.0.1 &> /dev/null 2>&1 || $SUDO tailscale status | grep -q "online"; then
-    log_success "Tailscale is connected and working"
-else
-    log_warning "Tailscale connectivity test inconclusive. You can verify manually with: sudo tailscale status"
-fi
-
-# =============================================================================
-# 3. Configure Firewall (UFW) - Tailscale Only + HTTPS
-# =============================================================================
-log_info "Step 3/8: Configuring firewall..."
-
-if command -v ufw &> /dev/null; then
-    # Get Tailscale network interface
-    TAILSCALE_IFACE=$($SUDO tailscale status --json 2>/dev/null | grep -o '"TUN":"[^"]*"' | cut -d'"' -f4 || echo "tailscale0")
-    
-    log_info "Setting up UFW firewall rules..."
-    
-    # Reset UFW to default
-    $SUDO ufw --force reset
-    
-    # Default policies
-    $SUDO ufw default deny incoming
-    $SUDO ufw default allow outgoing
-    
-    # Allow SSH only from Tailscale network
-    # Get Tailscale network interface (better fallback)
-    TAILSCALE_IFACE=$($SUDO tailscale status --json 2>/dev/null | grep -o '"TUN":"[^"]*"' | cut -d'"' -f4)
-    if [ -z "$TAILSCALE_IFACE" ]; then
-    TAILSCALE_IFACE="tailscale0"
-    log_warning "Could not auto-detect Tailscale interface, defaulting to tailscale0"
-    fi
-
-    $SUDO ufw allow in on $TAILSCALE_IFACE to any port 22 comment 'SSH from Tailscale only'
-    
-    # Allow HTTP and HTTPS for Let's Encrypt and web access
-    $SUDO ufw allow 80/tcp comment 'HTTP for Lets Encrypt'
-    $SUDO ufw allow 443/tcp comment 'HTTPS'
-    $SUDO ufw allow 443/udp comment 'HTTP/3'
-    
-    # Allow Tailscale
-    $SUDO ufw allow 41641/udp comment 'Tailscale'
-    
-    # Enable UFW
-    $SUDO ufw --force enable
-    
-    log_success "Firewall configured - SSH only via Tailscale, HTTPS open"
-else
-    log_warning "UFW not found. Firewall not configured."
-    $SUDO apt-get install -y ufw
-    log_info "UFW installed. Rerun script to configure firewall."
-fi
-
-# =============================================================================
-# 4. Update .env for HTTPS
-# =============================================================================
-log_info "Step 4/8: Updating .env for HTTPS..."
-
-# Check if DOMAIN is set
-if ! grep -q "^DOMAIN=" .env; then
-    log_error "DOMAIN not set in .env file!"
-    read -p "Enter your domain (e.g., studybuddyai.my): " DOMAIN
-    echo "DOMAIN=\"$DOMAIN\"" >> .env
-else
-    DOMAIN=$(grep "^DOMAIN=" .env | cut -d'=' -f2 | tr -d '"' | tr -d "'")
-fi
-
-# Update BASE_URL to use HTTPS
-if grep -q "^BASE_URL=" .env; then
-    sed -i 's|^BASE_URL=.*|BASE_URL="https://'"$DOMAIN"'"|' .env
-else
-    echo "BASE_URL=\"https://$DOMAIN\"" >> .env
-fi
-
-# Enable secure cookies for HTTPS
-if grep -q "^SESSION_COOKIE_SECURE=" .env; then
-    sed -i 's|^SESSION_COOKIE_SECURE=.*|SESSION_COOKIE_SECURE=true|' .env
-else
-    echo "SESSION_COOKIE_SECURE=true" >> .env
-fi
-
-# Generate SECRET_KEY if not set or is default
-if ! grep -q "^SECRET_KEY=" .env || grep -q "change-this-to-a-very-secret-key" .env; then
-    SECRET_KEY=$(python3 -c "import secrets; print(secrets.token_hex(32))" 2>/dev/null || openssl rand -hex 32)
-    sed -i 's|^SECRET_KEY=.*|SECRET_KEY="'"$SECRET_KEY"'"|' .env || echo "SECRET_KEY=\"$SECRET_KEY\"" >> .env
-    log_success "Generated secure SECRET_KEY"
-fi
-
-log_success ".env configured for HTTPS"
-
-# =============================================================================
-# 5. Build and Start Docker Services
-# =============================================================================
-log_info "Step 5/8: Building and starting services..."
-
-# Stop any existing services
-docker compose down 2>/dev/null || true
-
-# Build and start with Caddy
-log_info "Starting all services with HTTPS support..."
-docker compose up -d --build
-
-# Wait for services to be healthy
-log_info "Waiting for services to be ready..."
-sleep 10
-
-# Check if services are running
-if docker compose ps | grep -q "Up"; then
-    log_success "Services started successfully"
-else
-    log_error "Some services failed to start"
-    docker compose logs --tail=50
+    echo -e "${RED}Error: .env file not found.${NC}"
+    echo "Please create one from .env.example"
     exit 1
 fi
 
-# =============================================================================
-# 6. Install as Systemd Service
-# =============================================================================
-log_info "Step 6/8: Installing systemd service..."
+# 3. Verify Cloudflare Token
+if ! grep -q "TUNNEL_TOKEN=" .env; then
+    echo -e "${YELLOW}Missing TUNNEL_TOKEN in .env file.${NC}"
+    echo -e "Please paste your Cloudflare Tunnel token:"
+    read -p "Token > " TOKEN_INPUT
+    
+    if [ -z "$TOKEN_INPUT" ]; then
+        echo -e "${RED}Token cannot be empty.${NC}"
+        exit 1
+    fi
+    
+    echo "" >> .env
+    echo "# Cloudflare Tunnel Token" >> .env
+    echo "TUNNEL_TOKEN=$TOKEN_INPUT" >> .env
+    echo -e "${GREEN}Token added to .env${NC}"
+fi
 
-# Get the current directory
-INSTALL_DIR=$(pwd)
+# 4. Install Docker & Compose (if missing)
+if ! command -v docker &> /dev/null; then
+    echo -e "${BLUE}Installing Docker...${NC}"
+    curl -fsSL https://get.docker.com | sh
+    usermod -aG docker $SUDO_USER
+fi
 
-# Create systemd service file
-cat > /tmp/studybuddy.service << EOF
+# 5. Install/Update Tailscale (For private SSH access)
+if ! command -v tailscale &> /dev/null; then
+    echo -e "${BLUE}Installing Tailscale...${NC}"
+    curl -fsSL https://tailscale.com/install.sh | sh
+    echo -e "${YELLOW}IMPORTANT: Run 'sudo tailscale up' after this script to log in.${NC}"
+fi
+
+# 6. Secure Firewall (UFW)
+if command -v ufw &> /dev/null; then
+    echo -e "${BLUE}Configuring Firewall (Zero Trust Mode)...${NC}"
+    ufw --force reset > /dev/null
+    
+    # Block all incoming by default
+    ufw default deny incoming
+    ufw default allow outgoing
+    
+    # Allow SSH (Ideally restrict this to Tailscale interface 'tailscale0')
+    ufw allow ssh
+    
+    # Note: We do NOT need to open port 80 or 443! Cloudflare Tunnel handles this.
+    
+    ufw --force enable
+    echo -e "${GREEN}Firewall active. Incoming ports closed (Secure).${NC}"
+else
+    echo -e "${YELLOW}UFW not found, skipping firewall setup.${NC}"
+fi
+
+# 7. Start Docker Containers
+echo -e "${BLUE}Starting Application...${NC}"
+# Stop old containers if running
+docker compose down --remove-orphans 2>/dev/null || true
+# Start new setup
+docker compose up -d --build
+
+# 8. Setup Auto-Restart (Systemd)
+WORKING_DIR=$(pwd)
+SERVICE_FILE="/etc/systemd/system/studybuddy.service"
+
+echo -e "${BLUE}Creating Systemd Service...${NC}"
+cat > $SERVICE_FILE << EOF
 [Unit]
-Description=StudyBuddy AI Application
-Documentation=https://github.com/itaygross7/study_buddy-proj
+Description=StudyBuddy AI (Cloudflare Tunnel)
 After=docker.service network-online.target
 Requires=docker.service
-Wants=network-online.target
 
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-WorkingDirectory=$INSTALL_DIR
-ExecStartPre=/usr/bin/docker compose down
-ExecStart=/usr/bin/docker compose up -d --build
+WorkingDirectory=$WORKING_DIR
+ExecStart=/usr/bin/docker compose up -d
 ExecStop=/usr/bin/docker compose down
-ExecReload=/usr/bin/docker compose pull && /usr/bin/docker compose up -d --build
 Restart=on-failure
-RestartSec=10
-StandardOutput=journal
-StandardError=journal
-
-# Security settings
-NoNewPrivileges=true
-PrivateTmp=true
-
-# Limit resources
-CPUQuota=95%
-MemoryLimit=4G
 
 [Install]
 WantedBy=multi-user.target
 EOF
 
-# Install service
-$SUDO cp /tmp/studybuddy.service /etc/systemd/system/studybuddy.service
-$SUDO systemctl daemon-reload
-$SUDO systemctl enable studybuddy.service
+systemctl daemon-reload
+systemctl enable studybuddy.service
 
-log_success "Systemd service installed and enabled"
-log_info "Service will auto-start on boot and restart on failure"
-
-# =============================================================================
-# 7. Setup Auto-Update Script
-# =============================================================================
-log_info "Step 7/8: Setting up auto-update system..."
-
-# Create auto-update script
-cat > scripts/auto-update.sh << 'EOF'
-#!/bin/bash
-# Auto-update script for StudyBuddy
-# This script pulls latest changes and restarts the service
-
-LOG_FILE="/var/log/studybuddy-update.log"
-INSTALL_DIR="/opt/studybuddy"
-
-echo "[$(date)] Starting auto-update..." >> "$LOG_FILE"
-
-cd "$INSTALL_DIR" || exit 1
-
-# Check for changes
-git fetch origin
-LOCAL=$(git rev-parse HEAD)
-REMOTE=$(git rev-parse origin/main)
-
-if [ "$LOCAL" = "$REMOTE" ]; then
-    echo "[$(date)] No updates available" >> "$LOG_FILE"
-    exit 0
-fi
-
-echo "[$(date)] Updates found. Pulling changes..." >> "$LOG_FILE"
-
-# Backup current .env
-cp .env .env.backup
-
-# Pull changes
-git pull origin main
-
-# Restore .env (in case it was changed)
-if [ -f .env.backup ]; then
-    mv .env.backup .env
-fi
-
-# Restart service
-echo "[$(date)] Restarting service..." >> "$LOG_FILE"
-sudo systemctl restart studybuddy.service
-
-echo "[$(date)] Update complete" >> "$LOG_FILE"
-EOF
-
-chmod +x scripts/auto-update.sh
-
-# Ask user if they want to set up auto-updates
-echo ""
-log_info "Auto-update options:"
-echo "  1. Manual updates only (run ./scripts/auto-update.sh when needed)"
-echo "  2. Automatic updates via cron (checks daily at 3 AM)"
-echo "  3. Webhook endpoint for instant updates (requires setup)"
-read -p "Choose option (1-3) [1]: " UPDATE_CHOICE
-UPDATE_CHOICE=${UPDATE_CHOICE:-1}
-
-if [ "$UPDATE_CHOICE" = "2" ]; then
-    # Add cron job for daily updates
-    CRON_CMD="0 3 * * * $INSTALL_DIR/scripts/auto-update.sh"
-    (crontab -l 2>/dev/null | grep -v "auto-update.sh"; echo "$CRON_CMD") | crontab -
-    log_success "Daily auto-updates enabled (3 AM)"
-elif [ "$UPDATE_CHOICE" = "3" ]; then
-    log_info "Webhook endpoint: POST /api/update (requires authentication)"
-    log_info "Set up in your GitHub repository webhook settings"
-fi
-
-log_success "Auto-update system configured"
-
-# =============================================================================
-# 8. Final Checks and Summary
-# =============================================================================
-log_info "Step 8/8: Final checks..."
-
-# Wait a bit for Caddy to get certificate
-sleep 5
-
-# Test if HTTPS is working
-log_info "Testing HTTPS connection..."
-if curl -s -o /dev/null -w "%{http_code}" "https://$DOMAIN" | grep -q "200\|301\|302"; then
-    log_success "HTTPS is working!"
-else
-    log_warning "HTTPS test failed. It may take a few minutes for Let's Encrypt to issue certificate"
-    log_info "Check logs: docker compose logs caddy"
-fi
-
-# =============================================================================
-# Deployment Complete!
-# =============================================================================
-echo ""
-echo -e "${GREEN}════════════════════════════════════════════════════════════${NC}"
-echo -e "${GREEN}  🎉 Deployment Complete! 🎉${NC}"
-echo -e "${GREEN}════════════════════════════════════════════════════════════${NC}"
-echo ""
-log_success "StudyBuddy is now running in production mode!"
-echo ""
-echo -e "${CYAN}📍 Access Information:${NC}"
-echo -e "   🌐 Web: ${GREEN}https://$DOMAIN${NC}"
-if [ -n "$TAILSCALE_IP" ]; then
-    echo -e "   🔒 SSH: ${GREEN}ssh user@$TAILSCALE_IP${NC} (Tailscale only)"
-fi
-echo ""
-echo -e "${CYAN}🔧 Management Commands:${NC}"
-echo -e "   View logs:      ${YELLOW}docker compose logs -f${NC}"
-echo -e "   Restart:        ${YELLOW}sudo systemctl restart studybuddy${NC}"
-echo -e "   Update:         ${YELLOW}./scripts/auto-update.sh${NC}"
-echo -e "   Status:         ${YELLOW}sudo systemctl status studybuddy${NC}"
-echo ""
-echo -e "${CYAN}🔐 Security:${NC}"
-echo -e "   ✓ HTTPS enabled (Let's Encrypt)"
-echo -e "   ✓ Tailscale running"
-echo -e "   ✓ Firewall configured (SSH only via Tailscale)"
-echo -e "   ✓ Auto-restart enabled"
-echo ""
-echo -e "${CYAN}📧 Next Steps:${NC}"
-echo -e "   1. Verify your email settings in .env work"
-echo -e "   2. Test OAuth login (Google/Apple) if configured"
-echo -e "   3. Create your admin account at https://$DOMAIN"
-echo ""
-log_info "Enjoy! 🦫"
+echo -e "${GREEN}======================================================${NC}"
+echo -e "${GREEN}   DEPLOYMENT COMPLETE! 🚀   ${NC}"
+echo -e "${GREEN}======================================================${NC}"
+echo -e "1. Go to Cloudflare Zero Trust Dashboard."
+echo -e "2. In your Tunnel settings, go to 'Public Hostname'."
+echo -e "3. Add a hostname:"
+echo -e "   - Subdomain: ${YELLOW}www${NC} (or your preference)"
+echo -e "   - Domain:    ${YELLOW}studybuddyai.my${NC}"
+echo -e "   - Service:   ${YELLOW}HTTP${NC} : ${YELLOW}studybuddy_app:5000${NC}"
+echo -e ""
+echo -e "SSH Access: Use Tailscale IP (run 'tailscale ip -4')"
