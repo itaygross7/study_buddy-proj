@@ -1,0 +1,51 @@
+name: Auto-Deploy to Production
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  deploy:
+    name: Deploy to Production Server
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Deploy via Webhook
+        if: ${{ secrets.WEBHOOK_URL != '' }}
+        run: |
+          echo "Triggering deployment via webhook..."
+          curl -X POST "${{ secrets.WEBHOOK_URL }}/webhook/update" \
+            -H "Content-Type: application/json" \
+            -H "X-Hub-Signature-256: sha256=$(echo -n '${{ github.event.head_commit.id }}' | openssl dgst -sha256 -hmac '${{ secrets.WEBHOOK_SECRET }}' | cut -d' ' -f2)" \
+            -d '{
+              "ref": "refs/heads/main",
+              "commits": [{"id": "${{ github.event.head_commit.id }}"}]
+            }'
+          echo "Deployment triggered successfully!"
+      
+      - name: Deploy via SSH (fallback)
+        if: ${{ secrets.WEBHOOK_URL == '' && secrets.SSH_HOST != '' }}
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          script: |
+            cd ${{ secrets.DEPLOY_PATH || '/opt/studybuddy' }}
+            ./scripts/auto-update.sh
+      
+      - name: Notify on Success
+        if: success()
+        run: echo "✅ Deployment completed successfully!"
+      
+      - name: Notify on Failure
+        if: failure()
+        run: |
+          echo "❌ Deployment failed!"
+          exit 1
