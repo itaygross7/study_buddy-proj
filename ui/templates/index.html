@@ -29,7 +29,7 @@
           </li>
           <li class="flex items-start gap-2">
             <span class="text-2xl flex-shrink-0">🎯</span>
-            <span><strong>ממוקד בחומר שלך:</strong> הבינה המלאכותית לומדת <u>רק</u> מהקבצים שאתה מעלה</span>
+            <span><strong>ממוקד בחומר שלך בלבד:</strong> הבינה המלאכותית לומדת <u>אך ורק</u> מהקבצים שאתה מעלה - <strong>ללא מידע מהאינטרנט!</strong> זה מבטיח תשובות מדויקות ורלוונטיות דווקא לחומר שלך.</span>
           </li>
           <li class="flex items-start gap-2">
             <span class="text-2xl flex-shrink-0">🦫</span>
@@ -299,14 +299,6 @@
     <div class="mt-2 text-xs text-success font-bold">✅ זמין בספרייה</div>
     {% endif %}
   </a>
-  {% if current_user.is_authenticated %}
-  <a href="{{ url_for('library.index') }}" class="tool-card tool-link border-2 border-golden-yellow">
-    <img src="{{ url_for('serve_avner', filename='avner_holding_backbak.jpeg') }}" alt="אבנר עם תיק" class="sticker">
-    <h3>📚 הספרייה שלי</h3>
-    <p>נהל את כל הקורסים והקבצים שלך במקום אחד! 🗂️ ארגון מושלם ללמידה יעילה.</p>
-    <div class="mt-2 text-xs text-success font-bold">🚀 התחל כאן!</div>
-  </a>
-  {% endif %}
 </div>
 
 <!-- Super Simple: What To Do Now -->
@@ -385,10 +377,10 @@
       <p class="text-cozy-brown text-sm">אבנר לומד רק מהחומר שאתם מעלים. בלי גישה למידע אישי, בלי שיתוף עם צדדים שלישיים.</p>
     </div>
     
-    <div class="bg-white p-6 rounded-xl shadow-lg text-center">
+    <div class="bg-white p-6 rounded-xl shadow-lg text-center border-2 border-golden-yellow">
       <div class="text-5xl mb-3">🎯</div>
-      <h3 class="font-bold text-dark-brown mb-2">ממוקד בחומר שלכם בלבד</h3>
-      <p class="text-cozy-brown text-sm">הבינה המלאכותית עובדת רק עם הקבצים שהעליתם - אין "מידע נוסף" מהאינטרנט שיבלבל אתכם.</p>
+      <h3 class="font-bold text-dark-brown mb-2 text-lg">🔒 ממוקד בחומר שלכם בלבד - 100% אמין!</h3>
+      <p class="text-cozy-brown text-sm"><strong>הבינה המלאכותית עובדת רק עם הקבצים שהעליתם</strong> - ללא שימוש במידע מהאינטרנט או ממקורות חיצוניים. זה אומר שהתשובות מדויקות, ממוקדות וללא הפרעות של מידע לא רלוונטי.</p>
     </div>
     
     <div class="bg-white p-6 rounded-xl shadow-lg text-center">
