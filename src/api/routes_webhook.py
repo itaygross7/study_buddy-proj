@@ -50,21 +50,27 @@ def handle_update():
     """
     Handle GitHub webhook for auto-updates.
     
-    Triggered when code is pushed to main branch.
+    Triggered when code is pushed to master branch.
     Runs the auto-update script to pull changes and restart.
+    Supports both regular and force-pushed commits.
     """
     try:
         data = request.json
         
-        # Check if this is a push to main branch
-        if data.get('ref') != 'refs/heads/main':
+        # Check if this is a push to master branch
+        if data.get('ref') != 'refs/heads/master':
             return jsonify({
                 "status": "ignored",
-                "message": "Not a push to main branch"
+                "message": "Not a push to master branch"
             })
         
         logger.info(f"Received update webhook from GitHub")
+        logger.info(f"Branch: {data.get('ref')}")
         logger.info(f"Commits: {len(data.get('commits', []))}")
+        logger.info(f"Forced: {data.get('forced', False)}")
+        
+        if data.get('forced'):
+            logger.warning("Force push detected - auto-update script will handle history reset")
         
         # Run auto-update script in background
         try:

@@ -9,7 +9,7 @@
 # Configuration
 INSTALL_DIR="${INSTALL_DIR:-$(cd "$(dirname "$0")/.." && pwd)}"
 LOG_FILE="${LOG_FILE:-/var/log/studybuddy-update.log}"
-BRANCH="${BRANCH:-main}"
+BRANCH="${BRANCH:-master}"
 
 # Colors for terminal output
 RED='\033[0;31m'
@@ -78,16 +78,31 @@ if [ -f ".env" ]; then
     cp .env .env.backup.$(date +%s)
 fi
 
-# Pull changes
+# Pull changes (support force push scenarios)
 log_info "Pulling changes..."
 if ! git pull origin $BRANCH 2>&1 | tee -a "$LOG_FILE"; then
-    log_error "Failed to pull changes"
-    # Restore from stash if available
-    if git stash list | grep -q "Auto-update stash"; then
-        log_info "Attempting to restore from stash..."
-        git stash pop
+    # Check if this is a force push scenario using git rev-list
+    # If local has commits not in remote and vice versa, history diverged
+    LOCAL_ONLY=$(git rev-list HEAD..origin/$BRANCH 2>/dev/null | wc -l)
+    REMOTE_ONLY=$(git rev-list origin/$BRANCH..HEAD 2>/dev/null | wc -l)
+    
+    if [ "$LOCAL_ONLY" -gt 0 ] && [ "$REMOTE_ONLY" -gt 0 ]; then
+        log_info "Detected force push (diverged history) - resetting to remote branch..."
+        if git reset --hard origin/$BRANCH 2>&1 | tee -a "$LOG_FILE"; then
+            log_success "Successfully reset to remote branch"
+        else
+            log_error "Failed to reset to remote branch"
+            exit 1
+        fi
+    else
+        log_error "Failed to pull changes"
+        # Restore from stash if available
+        if git stash list | grep -q "Auto-update stash"; then
+            log_info "Attempting to restore from stash..."
+            git stash pop
+        fi
+        exit 1
     fi
-    exit 1
 fi
 
 # Restore .env if it was overwritten
