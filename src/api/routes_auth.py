@@ -63,7 +63,7 @@ def admin_required(f):
 def login():
     """Login page and handler."""
     if current_user.is_authenticated:
-        return redirect(url_for('index'))
+        return redirect(url_for('library.index'))
 
     if request.method == 'POST':
         email = request.form.get('email', '').strip()
@@ -86,7 +86,7 @@ def login():
             next_page = request.args.get('next')
             if next_page and next_page.startswith('/'):
                 return redirect(next_page)
-            return redirect(url_for('index'))
+            return redirect(url_for('library.index'))
         else:
             flash('אימייל או סיסמה שגויים', 'error')
 
