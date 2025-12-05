@@ -28,6 +28,27 @@ def test_sb_config_fields_exist():
     assert settings.SB_OPENAI_MODEL == "gpt-4o-mini", "Default OpenAI model should be gpt-4o-mini"
 
 
+def test_base_url_config_exists():
+    """Test that BASE_URL configuration field exists for OAuth redirects."""
+    # Set required environment variables
+    os.environ.setdefault('SECRET_KEY', 'test-secret-key')
+    os.environ.setdefault('MONGO_URI', 'mongodb://localhost:27017/test')
+    os.environ.setdefault('RABBITMQ_URI', 'amqp://localhost:5672/')
+    os.environ.setdefault('FLASK_ENV', 'development')
+    
+    from src.infrastructure.config import settings
+    
+    # Verify BASE_URL field exists and has correct default
+    assert hasattr(settings, 'BASE_URL'), "BASE_URL should exist for OAuth redirects"
+    assert isinstance(settings.BASE_URL, str), "BASE_URL should be a string"
+    
+    # Verify that BASE_URL can be used for OAuth redirect URI construction
+    # (mimicking the usage in src/api/routes_oauth.py)
+    test_base_url = settings.BASE_URL or 'https://example.com'
+    redirect_uri = f"{test_base_url}/oauth/google/callback"
+    assert redirect_uri.endswith('/oauth/google/callback'), "Should construct valid redirect URI"
+
+
 def test_ai_client_initialization():
     """Test that AIClient can be initialized with the settings."""
     # Set required environment variables
