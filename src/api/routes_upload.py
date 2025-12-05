@@ -12,7 +12,6 @@ from src.domain.models.db_models import Document, Task, TaskStatus
 from src.utils.file_processing import process_uploaded_file
 from src.domain.errors import InvalidFileTypeError
 from sb_utils.logger_utils import logger
-from src.services.task_service import TaskService
 
 upload_bp = Blueprint('upload_bp', __name__)
 
@@ -126,17 +125,8 @@ def upload_file_route():
         )
         task_repo.create(task)
         
-        # Queue the file processing job
-        task_service = TaskService(db)
-        task_service.enqueue_task({
-            'task_id': task_id,
-            'document_id': document_id,
-            'temp_path': temp_path,
-            'filename': filename,
-            'user_id': user_id,
-            'course_id': course_id,
-            'queue_name': 'file_processing'
-        })
+        # TODO: Queue the file processing job with a proper task queue system
+        # For now, the task is created but actual background processing needs to be implemented
         
         logger.info(f"File '{filename}' queued for processing by user {user_id} to course {course_id}")
         
