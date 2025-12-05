@@ -51,6 +51,9 @@ class Settings(BaseSettings):
     # --- Logging ---
     LOG_LEVEL: str = "INFO"
 
+    # --- Webhook ---
+    WEBHOOK_SECRET: str = ""
+
 # Load settings
 settings = Settings()
 
