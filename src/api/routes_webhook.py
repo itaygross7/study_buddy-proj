@@ -56,11 +56,11 @@ def handle_update():
     try:
         data = request.json
         
-        # Check if this is a push to main branch
-        if data.get('ref') != 'refs/heads/main':
+        # Check if this is a push to master branch
+        if data.get('ref') != 'refs/heads/master':
             return jsonify({
                 "status": "ignored",
-                "message": "Not a push to main branch"
+                "message": "Not a push to master branch"
             })
         
         logger.info(f"Received update webhook from GitHub")
