@@ -44,7 +44,10 @@ def check_user_has_documents():
     return db.documents.count_documents({"user_id": current_user.id}) > 0
 
 def require_uploaded_files(template_name):
-    """Decorator to check if user has uploaded files before accessing a tool."""
+    """Helper function to check if user has uploaded files before rendering a tool template.
+    
+    Returns the rendered template if user has documents, otherwise redirects to library.
+    """
     if not check_user_has_documents():
         flash(NO_FILES_MESSAGE, 'warning')
         return redirect(url_for('library.index'))
