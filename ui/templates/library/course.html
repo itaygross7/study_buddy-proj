@@ -69,9 +69,9 @@
             <!-- File Upload -->
             <div class="mb-4">
                 <label class="block text-sm font-medium text-dark-brown mb-2">העלה קובץ:</label>
-                <input type="file" name="file" accept=".pdf,.doc,.docx,.txt,.pptx"
+                <input type="file" name="file" accept=".pdf,.doc,.docx,.txt,.pptx,.png,.jpg,.jpeg"
                     class="w-full p-3 border-2 border-dashed border-warm-gray rounded-xl bg-white">
-                <p class="text-xs text-cozy-brown mt-1">PDF, Word, PowerPoint או טקסט (עד 10MB)</p>
+                <p class="text-xs text-cozy-brown mt-1">PDF, Word, PowerPoint, תמונות או טקסט (עד 50MB)</p>
             </div>
             
             <button type="submit" 
@@ -212,8 +212,16 @@
             const data = await res.json();
             
             if (res.ok) {
-                submitBtn.innerHTML = '✅ הועלה בהצלחה!';
-                setTimeout(() => window.location.reload(), 500);
+                // Check if file is being processed in background
+                if (data.status === 'processing') {
+                    submitBtn.innerHTML = '⚡ הועלה! מעבד...';
+                    // Poll for completion
+                    await pollDocumentStatus(data.document_id, submitBtn);
+                } else {
+                    // Text input - completed immediately
+                    submitBtn.innerHTML = '✅ הועלה בהצלחה!';
+                    setTimeout(() => window.location.reload(), 500);
+                }
             } else {
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = originalText;
@@ -252,8 +260,16 @@
             const data = await res.json();
             
             if (res.ok) {
-                submitBtn.innerHTML = '✅ הועלה!';
-                setTimeout(() => window.location.reload(), 500);
+                // Check if file is being processed in background
+                if (data.status === 'processing') {
+                    submitBtn.innerHTML = '⚡ הועלה! מעבד...';
+                    // Poll for completion
+                    await pollDocumentStatus(data.document_id, submitBtn);
+                } else {
+                    // Text input - completed immediately
+                    submitBtn.innerHTML = '✅ הועלה!';
+                    setTimeout(() => window.location.reload(), 500);
+                }
             } else {
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = originalText;
@@ -266,6 +282,49 @@
             console.error('Upload error:', error);
         }
     });
+    
+    // Poll for document processing status
+    async function pollDocumentStatus(documentId, submitBtn) {
+        const maxAttempts = 60; // 60 seconds max
+        let attempts = 0;
+        
+        const checkStatus = async () => {
+            try {
+                const res = await fetch(`/api/upload/status/${documentId}`);
+                const data = await res.json();
+                
+                if (data.ready) {
+                    submitBtn.innerHTML = '✅ הקובץ מוכן!';
+                    setTimeout(() => window.location.reload(), 500);
+                    return true;
+                }
+                
+                // Still processing
+                attempts++;
+                if (attempts >= maxAttempts) {
+                    submitBtn.innerHTML = '⏱️ מעבד ברקע...';
+                    setTimeout(() => window.location.reload(), 2000);
+                    return true;
+                }
+                
+                // Continue polling
+                setTimeout(checkStatus, 1000);
+                return false;
+                
+            } catch (error) {
+                console.error('Status check error:', error);
+                attempts++;
+                if (attempts < maxAttempts) {
+                    setTimeout(checkStatus, 1000);
+                } else {
+                    submitBtn.innerHTML = '⏱️ מעבד ברקע...';
+                    setTimeout(() => window.location.reload(), 2000);
+                }
+            }
+        };
+        
+        await checkStatus();
+    }
     
     function askAboutCourse() {
         // Open Avner chat with course context
