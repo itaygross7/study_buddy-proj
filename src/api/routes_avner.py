@@ -176,11 +176,12 @@ def ask_avner():
                 "requires_login": True
             })
 
-        # Check prompt limits
+        # Check prompt limits (admin users have no limit)
         config = get_system_config()
         user = auth_service.get_user_by_id(db, current_user.id)
 
-        if user and user.prompt_count >= config.max_prompts_per_day:
+        from src.domain.models.db_models import UserRole
+        if user and user.role != UserRole.ADMIN and user.prompt_count >= config.max_prompts_per_day:
             return jsonify({
                 "error": f"הגעת למגבלת {config.max_prompts_per_day} שאלות ליום. נסה שוב מחר! 🦫",
                 "limit_reached": True

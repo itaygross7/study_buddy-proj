@@ -90,7 +90,9 @@ def new_course():
     config = get_system_config()
     current_count = db.courses.count_documents({"user_id": current_user.id})
 
-    if current_count >= config.max_courses_per_user:
+    # Admin users have no course limit
+    from src.domain.models.db_models import UserRole
+    if current_user.user.role != UserRole.ADMIN and current_count >= config.max_courses_per_user:
         flash(f'הגעת למקסימום {config.max_courses_per_user} קורסים', 'error')
         return redirect(url_for('library.index'))
 
