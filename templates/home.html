@@ -8,6 +8,22 @@
   <div class="hero-right">
     <h1>שלום! אני אבנר ה-CapyBuddy — כאן כדי לעזור לך ללמוד בקלות.</h1>
     <p class="muted">בחר כלי, העלה קובץ או הדבק טקסט והתחל ללמוד.</p>
+    
+    <!-- Simple File Upload Form -->
+    <div style="margin-top: 20px; padding: 20px; background: white; border-radius: 8px;">
+      <form id="uploadForm" action="/api/upload/" method="post" enctype="multipart/form-data" style="text-align: right;">
+        <div style="margin-bottom: 10px;">
+          <label for="fileInput" style="display: block; margin-bottom: 5px; font-weight: bold;">העלה קובץ:</label>
+          <input type="file" id="fileInput" name="file" accept=".pdf,.docx,.pptx,.txt,.html,.png,.jpg,.jpeg,.gif" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+        </div>
+        <div style="margin-bottom: 10px;">
+          <label for="textInput" style="display: block; margin-bottom: 5px; font-weight: bold;">או הדבק טקסט:</label>
+          <textarea id="textInput" name="text" rows="4" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;" placeholder="הדבק את הטקסט שלך כאן..."></textarea>
+        </div>
+        <button type="submit" style="background: #6b5a4a; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">העלה</button>
+        <div id="uploadStatus" style="margin-top: 10px; display: none;"></div>
+      </form>
+    </div>
   </div>
 </div>
 
@@ -34,4 +50,38 @@
     <p>הסברים ידידותיים וצעד־אצעד לשיעורי בית.</p>
   </a>
 </div>
+
+<script>
+// Simple upload form handler
+document.getElementById('uploadForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const formData = new FormData(this);
+  const statusDiv = document.getElementById('uploadStatus');
+  
+  statusDiv.style.display = 'block';
+  statusDiv.innerHTML = 'מעלה...';
+  statusDiv.style.color = '#6b5a4a';
+  
+  try {
+    const response = await fetch('/api/upload/', {
+      method: 'POST',
+      body: formData
+    });
+    
+    const data = await response.json();
+    
+    if (response.ok) {
+      statusDiv.innerHTML = '✓ הועלה בהצלחה! ' + data.filename;
+      statusDiv.style.color = 'green';
+      this.reset();
+    } else {
+      statusDiv.innerHTML = '✗ שגיאה: ' + (data.error || 'משהו השתבש');
+      statusDiv.style.color = 'red';
+    }
+  } catch (error) {
+    statusDiv.innerHTML = '✗ שגיאה בהעלאה';
+    statusDiv.style.color = 'red';
+  }
+});
+</script>
 {% endblock %}
