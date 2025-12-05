@@ -24,6 +24,7 @@
                     <div class="hidden md:block mr-4">
                         <div class="flex items-baseline gap-2">
                             <a href="{{ url_for('index') }}" class="nav-link {% if request.endpoint == 'index' %}nav-link-active{% endif %}">🏠 בית</a>
+                            <a href="{{ url_for('avner_chat') }}" class="nav-link {% if request.endpoint == 'avner_chat' %}nav-link-active{% endif %}">💬 צ'אט עם אבנר</a>
                             {% if current_user.is_authenticated %}
                             <a href="{{ url_for('library.index') }}" class="nav-link {% if 'library' in request.endpoint %}nav-link-active{% endif %}">📚 הספרייה שלי</a>
                             {% endif %}
@@ -77,6 +78,7 @@
         <div class="md:hidden hidden" id="mobile-menu">
             <div class="space-y-1 px-4 pb-4 pt-2 bg-cozy-brown rounded-b-2xl border-t-2 border-caramel">
                 <a href="{{ url_for('index') }}" class="block rounded-lg px-3 py-3 text-base text-cream hover:bg-caramel transition-all font-medium">🏠 בית</a>
+                <a href="{{ url_for('avner_chat') }}" class="block rounded-lg px-3 py-3 text-base text-cream hover:bg-caramel transition-all font-medium">💬 צ'אט עם אבנר</a>
                 {% if current_user.is_authenticated %}
                 <a href="{{ url_for('library.index') }}" class="block rounded-lg px-3 py-3 text-base text-cream hover:bg-caramel transition-all font-medium">📚 הספרייה שלי</a>
                 <div class="pt-3 border-t-2 border-caramel mt-2">

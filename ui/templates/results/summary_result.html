@@ -1,12 +1,121 @@
 <div class="prose max-w-none">
     <h3 class="text-lg font-bold text-dark-brown mb-4">סיכום</h3>
     <div class="bg-warm-beige p-4 rounded-xl border border-warm-yellow">
-        <p class="text-dark-brown leading-relaxed">{{ summary.summary_text }}</p>
+        <p class="text-dark-brown leading-relaxed whitespace-pre-wrap">{{ summary.summary_text }}</p>
+    </div>
+    
+    <!-- Interactive Q&A Section -->
+    <div class="mt-6 bg-cream p-6 rounded-xl border-2 border-golden-yellow">
+        <div class="flex items-center gap-3 mb-4">
+            <img src="{{ url_for('serve_avner', filename='avner_signing_ok.jpeg') }}" 
+                 alt="אבנר" 
+                 class="w-12 h-12 rounded-full object-cover border-2 border-golden-yellow">
+            <div>
+                <h4 class="font-bold text-dark-brown">יש לכם שאלות על הסיכום?</h4>
+                <p class="text-sm text-cozy-brown">אני כאן לעזור להבהיר! 🦫</p>
+            </div>
+        </div>
+        
+        <div id="summary-chat-{{ summary._id }}" class="space-y-3 mb-4 max-h-96 overflow-y-auto">
+            <!-- Chat messages will appear here -->
+        </div>
+        
+        <form id="summary-question-form-{{ summary._id }}" class="flex gap-2" onsubmit="askAboutSummary(event, '{{ summary._id }}'); return false;">
+            <input type="text" 
+                   id="summary-question-{{ summary._id }}"
+                   placeholder="למשל: תסביר לי יותר על..."
+                   class="flex-grow p-3 border-2 border-warm-yellow rounded-lg text-right focus:ring-2 focus:ring-golden-yellow"
+                   required>
+            <button type="submit" class="bg-golden-yellow hover:bg-warm-yellow text-dark-brown font-bold px-6 py-3 rounded-lg transition-colors">
+                שאל 💬
+            </button>
+        </form>
+        
+        <p class="text-xs text-warm-gray mt-2 text-center">השאלות שלכם יענו על בסיס הסיכום והחומר המקורי</p>
     </div>
     
     <!-- Show speech bubble after results -->
     <script>
         document.getElementById('empty-state')?.classList.add('hidden');
         document.getElementById('speech-bubble')?.classList.remove('hidden');
+        
+        // Function to ask questions about the summary
+        async function askAboutSummary(event, summaryId) {
+            event.preventDefault();
+            
+            const questionInput = document.getElementById('summary-question-' + summaryId);
+            const question = questionInput.value.trim();
+            if (!question) return;
+            
+            const chatContainer = document.getElementById('summary-chat-' + summaryId);
+            
+            // Add user message - using textContent for security
+            const userMsg = document.createElement('div');
+            userMsg.className = 'bg-golden-yellow/20 p-3 rounded-lg border border-golden-yellow text-right';
+            const userLabel = document.createElement('strong');
+            userLabel.textContent = 'אתה: ';
+            userMsg.appendChild(userLabel);
+            userMsg.appendChild(document.createTextNode(question));
+            chatContainer.appendChild(userMsg);
+            
+            // Clear input
+            questionInput.value = '';
+            
+            // Add loading indicator
+            const loadingMsg = document.createElement('div');
+            loadingMsg.className = 'bg-warm-beige p-3 rounded-lg border border-warm-yellow text-right';
+            const loadingLabel = document.createElement('strong');
+            loadingLabel.textContent = 'אבנר: ';
+            const loadingSpan = document.createElement('span');
+            loadingSpan.className = 'animate-pulse';
+            loadingSpan.textContent = 'חושב...';
+            loadingMsg.appendChild(loadingLabel);
+            loadingMsg.appendChild(loadingSpan);
+            loadingMsg.id = 'loading-' + summaryId;
+            chatContainer.appendChild(loadingMsg);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            
+            try {
+                // Call Avner API with the summary context
+                const response = await fetch('/api/avner/ask', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        question: question + '\n\nהקשר: ' + `{{ summary.summary_text|escapejs }}`,
+                        baby_mode: false
+                    })
+                });
+                
+                const data = await response.json();
+                
+                // Remove loading message
+                document.getElementById('loading-' + summaryId)?.remove();
+                
+                // Add Avner's response - using textContent for security
+                const avnerMsg = document.createElement('div');
+                avnerMsg.className = 'bg-warm-beige p-3 rounded-lg border border-warm-yellow text-right';
+                const avnerLabel = document.createElement('strong');
+                avnerLabel.textContent = 'אבנר: ';
+                avnerMsg.appendChild(avnerLabel);
+                avnerMsg.appendChild(document.createTextNode(data.answer || data.error || 'שגיאה בקבלת תשובה'));
+                chatContainer.appendChild(avnerMsg);
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+                
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('loading-' + summaryId)?.remove();
+                
+                // Add error message - using textContent for security
+                const errorMsg = document.createElement('div');
+                errorMsg.className = 'bg-red-100 p-3 rounded-lg border border-red-300 text-right';
+                const errorLabel = document.createElement('strong');
+                errorLabel.textContent = 'שגיאה: ';
+                errorMsg.appendChild(errorLabel);
+                errorMsg.appendChild(document.createTextNode('לא הצלחתי לקבל תשובה. נסו שוב 🦫'));
+                chatContainer.appendChild(errorMsg);
+            }
+        }
     </script>
 </div>

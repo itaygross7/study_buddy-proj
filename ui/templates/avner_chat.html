@@ -1,0 +1,296 @@
+{% extends "base.html" %}
+
+{% block title %}💬 צ'אט עם אבנר - StudyBuddyAI{% endblock %}
+
+{% block content %}
+<div class="space-y-6 text-right">
+    <!-- Header -->
+    <div class="flex items-start gap-4">
+        <img src="{{ url_for('serve_avner', filename='avner_waving.jpeg') }}" 
+             alt="אבנר מנופף" 
+             class="w-20 h-20 rounded-full object-cover border-4 border-golden-yellow shadow-warm flex-shrink-0">
+        <div class="flex-grow">
+            <h1 class="text-3xl font-bold text-dark-brown">💬 שוחח עם אבנר</h1>
+            <p class="text-cozy-brown mt-1 text-lg">תשאל אותי כל דבר! אני כאן לעזור 🦫</p>
+        </div>
+    </div>
+
+    <!-- Baby Mode Toggle -->
+    <div class="content-card border-2 border-warm-yellow bg-gradient-to-l from-warm-beige to-cream">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <img src="{{ url_for('serve_avner', filename='baby_avner.png') }}" 
+                     alt="אבנר הקטן" 
+                     class="w-14 h-14 rounded-full object-cover border-3 border-golden-yellow shadow-sm"
+                     id="baby-mode-image">
+                <div>
+                    <h3 class="text-lg font-bold text-dark-brown">🍼 מצב אבנר הקטן</h3>
+                    <p class="text-sm text-cozy-brown">הסברים פשוטים עם דוגמאות מהחיים</p>
+                </div>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" id="baby-mode-toggle" class="sr-only peer">
+                <div class="w-14 h-7 bg-warm-gray rounded-full peer peer-checked:bg-golden-yellow peer-focus:ring-2 peer-focus:ring-warm-yellow transition-colors">
+                    <div class="dot absolute right-1 top-1 bg-white w-5 h-5 rounded-full transition-transform peer-checked:translate-x-[-28px]"></div>
+                </div>
+            </label>
+        </div>
+    </div>
+
+    <!-- Course Selector (if authenticated) -->
+    {% if current_user.is_authenticated %}
+    <div class="content-card bg-warm-beige">
+        <label for="course-selector" class="block text-sm font-bold text-dark-brown mb-2">
+            📚 בחר קורס (אופציונלי):
+        </label>
+        <select id="course-selector" class="form-input text-right">
+            <option value="">כל החומרים שלי</option>
+            {% if courses %}
+                {% for course in courses %}
+                <option value="{{ course._id }}">{{ course.icon }} {{ course.name }}</option>
+                {% endfor %}
+            {% endif %}
+        </select>
+        <p class="text-xs text-warm-gray mt-2">אבנר יענה על בסיס החומר מהקורס שתבחר</p>
+    </div>
+    {% endif %}
+
+    <!-- Chat Container -->
+    <div class="content-card min-h-[500px] flex flex-col">
+        <!-- Messages Area -->
+        <div id="chat-messages" class="flex-grow overflow-y-auto p-4 space-y-4 bg-cream rounded-lg border border-warm-yellow mb-4" style="max-height: 500px;">
+            <!-- Welcome Message -->
+            <div class="flex gap-3 items-start">
+                <img src="{{ url_for('serve_avner', filename='avner_signing_ok.jpeg') }}" 
+                     alt="אבנר" 
+                     class="w-10 h-10 rounded-full object-cover border-2 border-golden-yellow flex-shrink-0">
+                <div class="flex-grow">
+                    <div class="bg-warm-beige p-3 rounded-lg border border-warm-yellow">
+                        <p class="text-dark-brown"><strong>אבנר:</strong> היי! 🦫 אני אבנר, ואני כאן לעזור לך ללמוד. מה תרצה לדעת?</p>
+                    </div>
+                    <p class="text-xs text-warm-gray mt-1">עכשיו</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Input Area -->
+        <form id="chat-form" class="flex gap-2">
+            <textarea 
+                id="question-input" 
+                name="question"
+                class="flex-grow p-3 border-2 border-warm-yellow rounded-lg text-right resize-none focus:ring-2 focus:ring-golden-yellow focus:border-golden-yellow"
+                rows="2"
+                placeholder="כתוב את השאלה שלך כאן..."
+                required></textarea>
+            <button type="submit" 
+                    class="btn-primary px-6 self-end hover:scale-105 transition-transform"
+                    id="send-button">
+                📤 שלח
+            </button>
+        </form>
+
+        <!-- Loading Indicator -->
+        <div id="loading-indicator" class="hidden mt-2 flex items-center gap-2 text-warm-gray text-sm">
+            <div class="animate-spin h-4 w-4 border-2 border-golden-yellow border-t-transparent rounded-full"></div>
+            <span>אבנר חושב...</span>
+        </div>
+
+        <!-- Prompts Counter (if authenticated) -->
+        {% if current_user.is_authenticated %}
+        <div id="prompts-counter" class="mt-2 text-xs text-warm-gray text-center">
+            <!-- Will be updated via responses -->
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Quick Tips -->
+    <div class="content-card bg-gradient-to-l from-warm-yellow/20 to-cream border-l-4 border-golden-yellow">
+        <h3 class="font-bold text-dark-brown mb-2 flex items-center gap-2">
+            💡 טיפים מהירים
+        </h3>
+        <ul class="text-sm text-cozy-brown space-y-1">
+            <li>• אפשר לשאול על האפליקציה (איך משתמשים בכלים)</li>
+            <li>• אפשר לשאול שאלות לימודיות על החומר שהעלית</li>
+            <li>• השתמש במצב "אבנר הקטן" להסברים פשוטים יותר</li>
+            <li>• בחר קורס ספציפי כדי לקבל תשובות ממוקדות</li>
+        </ul>
+    </div>
+</div>
+
+<script>
+    const chatForm = document.getElementById('chat-form');
+    const questionInput = document.getElementById('question-input');
+    const chatMessages = document.getElementById('chat-messages');
+    const loadingIndicator = document.getElementById('loading-indicator');
+    const babyModeToggle = document.getElementById('baby-mode-toggle');
+    const courseSelector = document.getElementById('course-selector');
+    const promptsCounter = document.getElementById('prompts-counter');
+
+    // Avner personality variations
+    const avnerImages = {
+        thinking: '{{ url_for("serve_avner", filename="avner_thinking.jpeg") }}',
+        happy: '{{ url_for("serve_avner", filename="avner_signing_ok.jpeg") }}',
+        explaining: '{{ url_for("serve_avner", filename="avner_reading.jpeg") }}',
+        baby: '{{ url_for("serve_avner", filename="baby_avner.png") }}',
+        encouraging: '{{ url_for("serve_avner", filename="avner_celebrating.jpeg") }}',
+        sarcastic: '{{ url_for("serve_avner", filename="avner_says_nope.jpeg") }}'
+    };
+
+    // Add Avner encouragements/sarcasm
+    const avnerEncouragements = [
+        "יופי! שאלה מעולה! 🎉",
+        "אה, עכשיו זה מעניין... 🤔",
+        "Could this BE any easier? (אבל אני כאן לעזור 😄)",
+        "בדיוק מה שרציתי לדבר עליו! 🦫",
+        "שאלת שאלה? תקבל תשובה! ⚡",
+        "אוקיי, תן לי שנייה לחשוב... 💭",
+        "אה, עוד אחד שרוצה ללמוד! אוהב את זה! 📚"
+    ];
+
+    function getRandomEncouragement() {
+        return avnerEncouragements[Math.floor(Math.random() * avnerEncouragements.length)];
+    }
+
+    function addMessage(content, isUser = false, imageVariant = 'happy') {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'flex gap-3 items-start ' + (isUser ? 'flex-row-reverse' : '');
+        
+        const img = document.createElement('img');
+        img.src = isUser ? '' : avnerImages[imageVariant];
+        img.alt = isUser ? 'משתמש' : 'אבנר';
+        img.className = 'w-10 h-10 rounded-full object-cover border-2 border-golden-yellow flex-shrink-0';
+        
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'flex-grow';
+        
+        const bubble = document.createElement('div');
+        bubble.className = `p-3 rounded-lg border ${isUser ? 'bg-golden-yellow/20 border-golden-yellow' : 'bg-warm-beige border-warm-yellow'}`;
+        
+        const text = document.createElement('p');
+        text.className = 'text-dark-brown whitespace-pre-wrap';
+        
+        // Use textContent for security instead of innerHTML
+        const label = document.createElement('strong');
+        label.textContent = isUser ? 'את/ה: ' : 'אבנר: ';
+        text.appendChild(label);
+        text.appendChild(document.createTextNode(content));
+        
+        const time = document.createElement('p');
+        time.className = 'text-xs text-warm-gray mt-1';
+        time.textContent = 'עכשיו';
+        
+        bubble.appendChild(text);
+        contentDiv.appendChild(bubble);
+        contentDiv.appendChild(time);
+        
+        if (!isUser) {
+            messageDiv.appendChild(img);
+        }
+        messageDiv.appendChild(contentDiv);
+        
+        chatMessages.appendChild(messageDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    chatForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const question = questionInput.value.trim();
+        if (!question) return;
+        
+        // Add user message
+        addMessage(question, true);
+        questionInput.value = '';
+        
+        // Show loading
+        loadingIndicator.classList.remove('hidden');
+        
+        // Add random encouragement
+        const encouragement = getRandomEncouragement();
+        setTimeout(() => {
+            addMessage(encouragement, false, 'encouraging');
+        }, 300);
+        
+        try {
+            const babyMode = babyModeToggle.checked;
+            const courseId = courseSelector ? courseSelector.value : '';
+            
+            const response = await fetch('/api/avner/ask', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    question: question,
+                    baby_mode: babyMode,
+                    course_id: courseId
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.error) {
+                addMessage(`שגיאה: ${data.error}`, false, 'sarcastic');
+            } else {
+                // Determine image variant based on context
+                let imageVariant = 'happy';
+                if (babyMode) {
+                    imageVariant = 'baby';
+                } else if (data.used_ai) {
+                    imageVariant = 'explaining';
+                }
+                
+                addMessage(data.answer, false, imageVariant);
+                
+                // Update prompts counter if available
+                if (data.prompts_used && data.prompts_limit && promptsCounter) {
+                    promptsCounter.textContent = `שאלות היום: ${data.prompts_used}/${data.prompts_limit}`;
+                }
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            addMessage('אופס! משהו השתבש. נסה שוב 🦫', false, 'sarcastic');
+        } finally {
+            loadingIndicator.classList.add('hidden');
+        }
+    });
+
+    // Enter to send (Shift+Enter for new line)
+    questionInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            chatForm.dispatchEvent(new Event('submit'));
+        }
+    });
+
+    // Baby mode toggle effect
+    babyModeToggle.addEventListener('change', (e) => {
+        const image = document.getElementById('baby-mode-image');
+        if (e.target.checked) {
+            image.src = '{{ url_for("serve_avner", filename="baby_avner.png") }}';
+            addMessage('עברתי למצב אבנר הקטן! 🍼 עכשיו אני אסביר הכל בפשטות עם דוגמאות מהחיים!', false, 'baby');
+        } else {
+            image.src = '{{ url_for("serve_avner", filename="avner_signing_ok.jpeg") }}';
+            addMessage('חזרתי למצב רגיל! 🦫 אפשר להמשיך עם שאלות רגילות.', false, 'happy');
+        }
+    });
+</script>
+
+<style>
+    /* Smooth animations */
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    #chat-messages > div {
+        animation: slideIn 0.3s ease-out;
+    }
+</style>
+{% endblock %}

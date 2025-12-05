@@ -157,6 +157,15 @@ def create_app():
     def diagram_tool():
         return require_uploaded_files('tool_diagram.html')
 
+    @app.route('/chat')
+    def avner_chat():
+        """Avner live chat - available for everyone."""
+        courses = []
+        if current_user.is_authenticated:
+            # Get user's courses for context selector
+            courses = list(db.courses.find({"user_id": current_user.id}).sort("created_at", -1))
+        return render_template('avner_chat.html', courses=courses)
+
     @app.route('/glossary')
     @app.route('/glossary/<course_id>')
     @login_required
