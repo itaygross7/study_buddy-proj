@@ -229,8 +229,17 @@
         const fileInput = formData.get('file');
         
         if ((!textInput || textInput.trim() === '') && (!fileInput || fileInput.size === 0)) {
-            alert('יש להזין טקסט או לבחור קובץ להעלאה');
+            alert('יש להזין טקסט או לבחור קובץ להעלאה 📝');
             return;
+        }
+        
+        // Check file size on client side
+        if (fileInput && fileInput.size > 0) {
+            const maxSize = 50 * 1024 * 1024; // 50MB
+            if (fileInput.size > maxSize) {
+                alert('❌ הקובץ גדול מדי! גודל מקסימלי: 50MB\nגודל הקובץ שלך: ' + (fileInput.size / 1024 / 1024).toFixed(2) + 'MB');
+                return;
+            }
         }
         
         // Show Avner loading animation
@@ -269,13 +278,14 @@
                 statusDiv.classList.add('hidden');
                 submitBtn.disabled = false;
                 submitBtn.classList.remove('opacity-75');
-                alert('שגיאה: ' + (data.error || 'נסה שוב'));
+                const errorMsg = data.error || 'אירעה שגיאה בהעלאה. אנא נסה שוב';
+                alert('❌ שגיאה: ' + errorMsg);
             }
         } catch (error) {
             statusDiv.classList.add('hidden');
             submitBtn.disabled = false;
             submitBtn.classList.remove('opacity-75');
-            alert('שגיאה בהעלאה. בדוק את החיבור לאינטרנט.');
+            alert('❌ שגיאה בהעלאה. אנא בדוק את החיבור לאינטרנט ונסה שוב.');
             console.error('Upload error:', error);
         }
     });
@@ -288,7 +298,14 @@
         const fileInput = formData.get('file');
         
         if (!fileInput || fileInput.size === 0) {
-            alert('יש לבחור קובץ להעלאה');
+            alert('יש לבחור קובץ להעלאה 📝');
+            return;
+        }
+        
+        // Check file size on client side
+        const maxSize = 50 * 1024 * 1024; // 50MB
+        if (fileInput.size > maxSize) {
+            alert('❌ הקובץ גדול מדי! גודל מקסימלי: 50MB\nגודל הקובץ שלך: ' + (fileInput.size / 1024 / 1024).toFixed(2) + 'MB');
             return;
         }
         
@@ -318,12 +335,13 @@
             } else {
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = originalText;
-                alert('שגיאה: ' + (data.error || 'נסה שוב'));
+                const errorMsg = data.error || 'אירעה שגיאה בהעלאה. אנא נסה שוב';
+                alert('❌ שגיאה: ' + errorMsg);
             }
         } catch (error) {
             submitBtn.disabled = false;
             submitBtn.innerHTML = originalText;
-            alert('שגיאה בהעלאה. בדוק את החיבור לאינטרנט.');
+            alert('❌ שגיאה בהעלאה. אנא בדוק את החיבור לאינטרנט ונסה שוב.');
             console.error('Upload error:', error);
         }
     });
