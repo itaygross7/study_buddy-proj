@@ -126,6 +126,14 @@
         border-radius: 1rem;
     }
     
+    .app-logo-hero {
+        max-width: 280px;
+        height: auto;
+        object-fit: contain;
+        filter: drop-shadow(0 4px 12px rgba(139, 94, 52, 0.2));
+        border-radius: 1rem;
+    }
+    
     .tools-grid {
         display: grid;
         grid-template-columns: repeat(4, 1fr);
@@ -216,6 +224,10 @@
         }
         
         .avner-hero {
+            max-width: 200px;
+        }
+        
+        .app-logo-hero {
             max-width: 200px;
         }
         
