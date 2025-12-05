@@ -187,6 +187,21 @@
     document.getElementById('upload-form')?.addEventListener('submit', async function(e) {
         e.preventDefault();
         const formData = new FormData(this);
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        
+        // Check if user provided either text or file
+        const textInput = formData.get('text');
+        const fileInput = formData.get('file');
+        
+        if ((!textInput || textInput.trim() === '') && (!fileInput || fileInput.size === 0)) {
+            alert('יש להזין טקסט או לבחור קובץ להעלאה');
+            return;
+        }
+        
+        // Disable button and show loading
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '⏳ מעלה...';
         
         try {
             const res = await fetch('/api/upload/', {
@@ -194,19 +209,39 @@
                 body: formData
             });
             
+            const data = await res.json();
+            
             if (res.ok) {
-                window.location.reload();
+                submitBtn.innerHTML = '✅ הועלה בהצלחה!';
+                setTimeout(() => window.location.reload(), 500);
             } else {
-                alert('שגיאה בהעלאה. נסה שוב.');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+                alert('שגיאה: ' + (data.error || 'נסה שוב'));
             }
         } catch (error) {
-            alert('שגיאה בהעלאה.');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+            alert('שגיאה בהעלאה. בדוק את החיבור לאינטרנט.');
+            console.error('Upload error:', error);
         }
     });
     
     document.getElementById('upload-more-form')?.addEventListener('submit', async function(e) {
         e.preventDefault();
         const formData = new FormData(this);
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        const fileInput = formData.get('file');
+        
+        if (!fileInput || fileInput.size === 0) {
+            alert('יש לבחור קובץ להעלאה');
+            return;
+        }
+        
+        // Disable button and show loading
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '⏳ מעלה...';
         
         try {
             const res = await fetch('/api/upload/', {
@@ -214,13 +249,21 @@
                 body: formData
             });
             
+            const data = await res.json();
+            
             if (res.ok) {
-                window.location.reload();
+                submitBtn.innerHTML = '✅ הועלה!';
+                setTimeout(() => window.location.reload(), 500);
             } else {
-                alert('שגיאה בהעלאה.');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+                alert('שגיאה: ' + (data.error || 'נסה שוב'));
             }
         } catch (error) {
-            alert('שגיאה בהעלאה.');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+            alert('שגיאה בהעלאה. בדוק את החיבור לאינטרנט.');
+            console.error('Upload error:', error);
         }
     });
     

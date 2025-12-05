@@ -17,15 +17,8 @@ upload_bp = Blueprint('upload_bp', __name__)
 @upload_bp.route('/', methods=['POST'])
 def upload_file_route():
     """
-    Handles file uploads, extracts text, and saves it to MongoDB.
+    Handles file uploads OR text input, extracts/processes text, and saves it to MongoDB.
     """
-    if 'file' not in request.files:
-        return jsonify({"error": "No file part in request"}), 400
-
-    file = request.files['file']
-    if not file or not file.filename:
-        return jsonify({"error": "No file selected"}), 400
-
     # Determine user_id: prioritize authenticated user, then form value, then default
     if current_user.is_authenticated:
         user_id = current_user.id
@@ -34,6 +27,37 @@ def upload_file_route():
 
     # Get course_id from form or use default
     course_id = request.form.get('course_id', '') or 'default'
+    
+    # Check if text was provided directly
+    text_input = request.form.get('text', '').strip()
+    
+    if text_input:
+        # Handle direct text input
+        try:
+            doc_repo = MongoDocumentRepository(db)
+            document = Document(
+                _id=str(uuid.uuid4()),
+                user_id=user_id,
+                course_id=course_id,
+                filename="text_input.txt",
+                content_text=text_input
+            )
+            doc_repo.create(document)
+            
+            logger.info(f"Text content uploaded by user {user_id} to course {course_id}")
+            return jsonify({"document_id": document.id, "filename": "text_input.txt"}), 201
+            
+        except Exception as e:
+            logger.error(f"Error processing text input: {e}", exc_info=True)
+            return jsonify({"error": "An internal error occurred while processing the text."}), 500
+    
+    # Handle file upload
+    if 'file' not in request.files:
+        return jsonify({"error": "No file or text provided"}), 400
+
+    file = request.files['file']
+    if not file or not file.filename:
+        return jsonify({"error": "No file selected"}), 400
 
     filename = secure_filename(file.filename)
     try:
@@ -49,6 +73,7 @@ def upload_file_route():
         )
         doc_repo.create(document)
 
+        logger.info(f"File '{filename}' uploaded by user {user_id} to course {course_id}")
         return jsonify({"document_id": document.id, "filename": filename}), 201
 
     except InvalidFileTypeError as e:
