@@ -4,6 +4,19 @@
 
 {% block content %}
 <div class="space-y-8 text-right">
+    {% if course %}
+    <!-- Course Context Header -->
+    <div class="mb-6">
+        <nav class="text-sm text-cozy-brown mb-2">
+            <a href="{{ url_for('library.index') }}" class="hover:text-golden-yellow transition-colors">📚 הספרייה</a>
+            <span class="mx-2">/</span>
+            <a href="{{ url_for('library.course_page', course_id=course.id) }}" class="hover:text-golden-yellow transition-colors">{{ course.icon }} {{ course.name }}</a>
+            <span class="mx-2">/</span>
+            <span class="text-dark-brown">סיכום חכם</span>
+        </nav>
+    </div>
+    {% endif %}
+    
     <!-- Header with Avner -->
     <div class="flex items-start gap-4">
         <img src="{{ url_for('serve_avner', filename='avner_reading.jpeg') }}" 
@@ -11,11 +24,42 @@
              class="w-20 h-20 rounded-full object-cover border-4 border-golden-yellow shadow-warm flex-shrink-0">
         <div>
             <h1 class="text-3xl font-bold text-dark-brown">📖 סיכום חכם</h1>
+            {% if course %}
+            <p class="text-cozy-brown mt-1 text-lg">יצירת סיכום מהחומרים של קורס {{ course.name }}</p>
+            {% else %}
             <p class="text-cozy-brown mt-1 text-lg">העלו קובץ או הדביקו טקסט, ואני אעזור לכם להבין אותו טוב יותר!</p>
+            {% endif %}
         </div>
     </div>
     
-    <!-- Input Card -->
+    {% if course and context %}
+    <!-- Course Mode: Direct Summary Generation -->
+    <div class="content-card border-2 border-golden-yellow">
+        <div class="flex items-center gap-4 mb-4">
+            <img src="{{ url_for('serve_avner', filename='avner_signing_ok.jpeg') }}" 
+                 alt="אבנר מאושר" 
+                 class="w-16 h-16 rounded-full object-cover border-4 border-golden-yellow shadow-warm">
+            <div>
+                <h2 class="text-xl font-bold text-dark-brown">✅ מוכן!</h2>
+                <p class="text-cozy-brown">משתמש ב-{{ documents|length }} מסמכים מהקורס</p>
+            </div>
+        </div>
+        <button hx-post="{{ url_for('summary_bp.trigger_summary') }}"
+                hx-vals='{"text": {{ context|tojson }}, "course_id": "{{ course.id }}"}'
+                hx-target="#task-status-container"
+                hx-swap="innerHTML"
+                class="btn-primary w-full text-lg shadow-warm">
+            ✨ הפקת סיכום
+        </button>
+    </div>
+    <div id="task-status-container" class="content-card min-h-[12rem]">
+        <div class="flex flex-col items-center justify-center text-center text-cozy-brown h-full py-8">
+            <p class="text-lg font-medium">לחץ על הכפתור למעלה כדי ליצור סיכום</p>
+        </div>
+    </div>
+    
+    {% else %}
+    <!-- Standalone Mode: Upload Required -->
     <div class="content-card border-2 border-golden-yellow">
         <div class="flex items-start gap-4 mb-6">
             <img src="{{ url_for('serve_avner', filename='avner_signing_ok.jpeg') }}" 
@@ -95,6 +139,7 @@
             <!-- Task polling status for summarization will appear here -->
         </div>
     </div>
+    {% endif %}
 </div>
 
 <script>

@@ -4,13 +4,30 @@
 
 {% block content %}
 <div class="space-y-8 text-right">
+    {% if course %}
+    <!-- Course Context Header -->
+    <div class="mb-6">
+        <nav class="text-sm text-cozy-brown mb-2">
+            <a href="{{ url_for('library.index') }}" class="hover:text-golden-yellow transition-colors">📚 הספרייה</a>
+            <span class="mx-2">/</span>
+            <a href="{{ url_for('library.course_page', course_id=course.id) }}" class="hover:text-golden-yellow transition-colors">{{ course.icon }} {{ course.name }}</a>
+            <span class="mx-2">/</span>
+            <span class="text-dark-brown">עזרה בשיעורים</span>
+        </nav>
+    </div>
+    {% endif %}
+    
     <!-- Input Card -->
     <div class="bg-white/80 p-6 rounded-2xl shadow-md">
         <div class="flex items-start space-x-4 space-x-reverse">
             <img src="{{ url_for('serve_avner', filename='avner_thinking.jpeg') }}" alt="אבנר חושב" class="h-16 w-16 flex-shrink-0">
             <div>
                 <h2 class="text-xl font-bold text-warm-brown">עזרה בשיעורי בית</h2>
+                {% if course %}
+                <p class="text-ink-brown/80 mt-1">שאל שאלות על החומר של קורס {{ course.name }}</p>
+                {% else %}
                 <p class="text-ink-brown/80 mt-1">נתקעתם עם שאלה? הדביקו אותה כאן ואני אנסה לעזור עם הסבר מפורט, צעד אחר צעד.</p>
+                {% endif %}
             </div>
         </div>
         
@@ -22,6 +39,10 @@
                   hx-indicator="#task-status-container">
                 
                 <input type="hidden" name="user_id" value="{{ current_user.id }}">
+                {% if course %}
+                <input type="hidden" name="course_id" value="{{ course.id }}">
+                <input type="hidden" name="context" value="{{ context }}">
+                {% endif %}
                 
                 <textarea name="problem_statement" class="w-full p-3 border rounded-lg text-right" rows="8" placeholder="הדביקו כאן את השאלה משיעורי הבית..."></textarea>
 
