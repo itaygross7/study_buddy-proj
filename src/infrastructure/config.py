@@ -19,6 +19,12 @@ class Settings(BaseSettings):
     # --- AI Services ---
     OPENAI_API_KEY: str = ""
     GEMINI_API_KEY: str = ""
+    
+    # AI Model Configuration
+    SB_OPENAI_MODEL: str = "gpt-4o-mini"
+    SB_GEMINI_MODEL: str = "gemini-1.5-flash"
+    SB_DEFAULT_PROVIDER: str = "gemini"
+    SB_BASE_URL: str = ""
 
     # --- Security ---
     SESSION_COOKIE_SECURE: bool = True
