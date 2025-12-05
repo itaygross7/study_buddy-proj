@@ -7,6 +7,7 @@ from flask_login import login_required, current_user
 from src.infrastructure.database import db
 from src.domain.models.db_models import Course, UserProfile, Language
 from src.api.routes_admin import get_system_config
+from src.services import auth_service
 from sb_utils.logger_utils import logger
 
 library_bp = Blueprint('library', __name__)
