@@ -1,11 +1,12 @@
 # --- Builder Stage ---
-FROM python:3.11-slim-buster as builder
+FROM python:3.11-slim-bookworm as builder
 
 # Install system dependencies for Python packages, Tesseract, and WeasyPrint
 RUN apt-get update && apt-get install -y \
     build-essential \
     libffi-dev \
     gcc \
+    curl \
     tesseract-ocr \
     libpango-1.0-0 \
     libharfbuzz0b \
@@ -24,7 +25,7 @@ RUN pip install pipenv
 RUN pipenv install --system --deploy --ignore-pipfile
 
 # Install and build frontend assets
-COPY package.json package-lock.json ./
+COPY package.json ./
 RUN npm install
 COPY tailwind.config.js .
 COPY ui/templates ./ui/templates
@@ -32,12 +33,13 @@ COPY ui/static/css/input.css ./ui/static/css/input.css
 RUN npm run tailwind:build
 
 # --- Final Stage ---
-FROM python:3.11-slim-buster
+FROM python:3.11-slim-bookworm
 
 WORKDIR /app
 
 # Install only runtime system dependencies
 RUN apt-get update && apt-get install -y \
+    curl \
     tesseract-ocr \
     libpango-1.0-0 \
     libharfbuzz0b \
@@ -52,7 +54,11 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 COPY --from=builder /app/ui/static/css/styles.css ./ui/static/css/styles.css
 COPY src ./src
 COPY ui ./ui
+COPY sb_utils ./sb_utils
+COPY services ./services
+COPY infra ./infra
 COPY app.py .
+COPY worker.py .
 
 # Set environment variables
 ENV FLASK_APP=app:create_app()

@@ -1,0 +1,1 @@
+bash: pipenv: command not found
