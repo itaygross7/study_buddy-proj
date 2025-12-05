@@ -32,7 +32,6 @@ from src.api.routes_diagram import diagram_bp
 
 babel = Babel()
 
-@babel.localeselector
 def get_locale_from_session():
     """Get language from session, default to Hebrew."""
     return session.get('lang', 'he')
@@ -53,7 +52,7 @@ def create_app():
 
     # --- Initialize Extensions ---
     init_db(app)
-    babel.init_app(app)
+    babel.init_app(app, locale_selector=get_locale_from_session)
     login_manager.init_app(app)
     init_oauth(app)
 
