@@ -38,7 +38,7 @@ def get_locale_from_session():
 
 def create_app():
     """Application factory for Flask."""
-    app = Flask(__name__, template_folder='ui/templates', static_folder='ui/static')
+    app = Flask(__name__, template_folder='templates', static_folder='static')
 
     # --- Core Configuration ---
     app.config.from_object(settings)
@@ -104,45 +104,36 @@ def create_app():
             apple_oauth_enabled=bool(settings.APPLE_CLIENT_ID)
         )
 
-    # --- Main UI Routes (Restored) ---
+    # --- Main UI Routes (Simplified) ---
     @app.route('/')
     def index():
-        return render_template('index.html')
+        return render_template('home.html')
 
-    @app.route('/tool/summary')
-    @login_required
-    def summary_tool():
-        return render_template('tool_summary.html')
+    # Simple tool routes that redirect to home with a message
+    @app.route('/summarizer')
+    def summarizer():
+        return render_template('home.html')
 
-    @app.route('/tool/flashcards')
-    @login_required
-    def flashcards_tool():
-        return render_template('tool_flashcards.html')
+    @app.route('/flashcards')
+    def flashcards():
+        return render_template('home.html')
 
-    @app.route('/tool/assess')
-    @login_required
-    def assess_tool():
-        return render_template('tool_assess.html')
+    @app.route('/assess')
+    def assess():
+        return render_template('home.html')
 
-    @app.route('/tool/homework')
-    @login_required
-    def homework_tool():
-        return render_template('tool_homework.html')
+    @app.route('/homework')
+    def homework():
+        return render_template('home.html')
 
-    @app.route('/tool/tutor')
-    @login_required
-    def tutor_tool():
-        return render_template('tool_tutor.html')
-    
-    @app.route('/tool/diagram')
-    @login_required
-    def diagram_tool():
-        return render_template('tool_diagram.html')
-    
-    @app.route('/glossary/<course_id>')
-    @login_required
-    def glossary_page(course_id):
-        return render_template('glossary.html', course_id=course_id)
+    # --- Language Switching ---
+    @app.route('/set-lang/<lang>')
+    def set_lang(lang):
+        """Switch language between Hebrew (he) and English (en)."""
+        from flask import redirect, url_for
+        if lang in ['he', 'en']:
+            session['lang'] = lang
+        return redirect(request.referrer or url_for('index'))
 
     # --- Health Checks (Restored) ---
     @app.route('/health')
@@ -170,7 +161,7 @@ def create_app():
         logger.warning(f"Not Found error for path: {request.path}")
         if request.path.startswith('/api/'):
             return jsonify({"error": "Not Found"}), 404
-        return render_template('404.html'), 404
+        return render_template('home.html'), 404
 
     @app.errorhandler(Exception)
     def handle_exception(error):
