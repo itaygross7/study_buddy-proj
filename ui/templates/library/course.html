@@ -174,7 +174,7 @@
             </a>
             
             <!-- Glossary Tool -->
-            <a href="{{ url_for('glossary_page', course_id=course.id) }}" 
+            <a href="{{ url_for('library.course_tool', course_id=course.id, tool='glossary') }}" 
                class="bg-cream rounded-xl p-5 shadow-md border-2 border-warm-yellow hover:border-golden-yellow hover:shadow-lg transition-all group">
                 <div class="text-3xl mb-2">📖</div>
                 <h3 class="font-bold text-dark-brown group-hover:text-cozy-brown">מונחון</h3>

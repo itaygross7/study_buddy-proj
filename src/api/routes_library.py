@@ -243,7 +243,7 @@ def course_tool(course_id, tool):
         return redirect(url_for('library.course_page', course_id=course_id))
 
     # Valid tools
-    valid_tools = ['summary', 'flashcards', 'assess', 'homework', 'tutor', 'diagram']
+    valid_tools = ['summary', 'flashcards', 'assess', 'homework', 'tutor', 'diagram', 'glossary']
     if tool not in valid_tools:
         flash('כלי לא קיים', 'error')
         return redirect(url_for('library.course_page', course_id=course_id))
@@ -252,6 +252,12 @@ def course_tool(course_id, tool):
     context = get_course_context(course_id, current_user.id)
     documents = get_course_documents(course_id)
 
+    # Glossary has its own template
+    if tool == 'glossary':
+        return render_template('glossary.html',
+                               course=course,
+                               course_id=course_id)
+    
     return render_template(f'tool_{tool}.html',
                            course=course,
                            documents=documents,
