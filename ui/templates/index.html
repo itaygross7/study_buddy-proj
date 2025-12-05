@@ -36,12 +36,13 @@
     </div>
     {% else %}
     <!-- Quick access for authenticated users -->
-    <div class="content-card mt-5">
-      <h2 class="text-xl font-bold text-dark-brown mb-3 text-right">🚀 גישה מהירה</h2>
-      <p class="text-cozy-brown mb-4 text-right">בחר כלי מהרשימה למטה או גש לספרייה שלך</p>
-      <a href="{{ url_for('library.index') }}" class="btn-primary w-full inline-block text-center">
+    <div class="content-card mt-5 border-2 border-golden-yellow">
+      <h2 class="text-xl font-bold text-dark-brown mb-3 text-right">🚀 התחל ללמוד!</h2>
+      <p class="text-cozy-brown mb-4 text-right">גש לספרייה שלך, נהל את הקורסים והחומרים, והשתמש בכלים החכמים</p>
+      <a href="{{ url_for('library.index') }}" class="btn-primary w-full inline-block text-center text-lg py-3">
         📚 לספרייה שלי
       </a>
+      <p class="text-sm text-warm-gray mt-3 text-center">כל הכלים מחכים לך בקורסים שלך! 🎯</p>
     </div>
     {% endif %}
   </div>
@@ -58,68 +59,83 @@
 
 <div class="tools-grid">
   <!-- Main 4 cards with varied Avner photos -->
-  <a href="{{ url_for('summary_tool') }}" class="tool-card tool-link {% if not current_user.is_authenticated %}opacity-75{% endif %}">
+  <a href="{% if current_user.is_authenticated %}{{ url_for('library.index') }}{% else %}{{ url_for('summary_tool') }}{% endif %}" class="tool-card tool-link {% if not current_user.is_authenticated %}opacity-75{% endif %}">
     <img src="{{ url_for('serve_avner', filename='avner_reading.jpeg') }}" alt="אבנר קורא" class="sticker">
     <h3>📖 מסכם חכם</h3>
     <p>קבל סיכום ממוקד וברור בדקות ספורות! 💡 חסוך זמן יקר והבן טוב יותר את החומר.</p>
     {% if not current_user.is_authenticated %}
     <div class="mt-2 text-xs text-golden-yellow font-bold">🔒 נדרשת הרשמה</div>
+    {% else %}
+    <div class="mt-2 text-xs text-success font-bold">✅ זמין בספרייה</div>
     {% endif %}
   </a>
-  <a href="{{ url_for('flashcards_tool') }}" class="tool-card tool-link {% if not current_user.is_authenticated %}opacity-75{% endif %}">
+  <a href="{% if current_user.is_authenticated %}{{ url_for('library.index') }}{% else %}{{ url_for('flashcards_tool') }}{% endif %}" class="tool-card tool-link {% if not current_user.is_authenticated %}opacity-75{% endif %}">
     <img src="{{ url_for('serve_avner', filename='avner_studing.jpeg') }}" alt="אבנר לומד" class="sticker">
     <h3>🎴 כרטיסיות לימוד</h3>
     <p>ייצור אוטומטי של כרטיסיות זכירה! 🧠 תרגל והבטח שתזכור הכל למבחן.</p>
     {% if not current_user.is_authenticated %}
     <div class="mt-2 text-xs text-golden-yellow font-bold">🔒 נדרשת הרשמה</div>
+    {% else %}
+    <div class="mt-2 text-xs text-success font-bold">✅ זמין בספרייה</div>
     {% endif %}
   </a>
-  <a href="{{ url_for('assess_tool') }}" class="tool-card tool-link {% if not current_user.is_authenticated %}opacity-75{% endif %}">
+  <a href="{% if current_user.is_authenticated %}{{ url_for('library.index') }}{% else %}{{ url_for('assess_tool') }}{% endif %}" class="tool-card tool-link {% if not current_user.is_authenticated %}opacity-75{% endif %}">
     <img src="{{ url_for('serve_avner', filename='avner_celebrating.jpeg') }}" alt="אבנר חוגג" class="sticker">
     <h3>✅ בחן את עצמך</h3>
     <p>שאלות תרגול מותאמות אישית! 🎯 בדוק את הידע שלך והתכונן למבחנים.</p>
     {% if not current_user.is_authenticated %}
     <div class="mt-2 text-xs text-golden-yellow font-bold">🔒 נדרשת הרשמה</div>
+    {% else %}
+    <div class="mt-2 text-xs text-success font-bold">✅ זמין בספרייה</div>
     {% endif %}
   </a>
-  <a href="{{ url_for('homework_tool') }}" class="tool-card tool-link {% if not current_user.is_authenticated %}opacity-75{% endif %}">
+  <a href="{% if current_user.is_authenticated %}{{ url_for('library.index') }}{% else %}{{ url_for('homework_tool') }}{% endif %}" class="tool-card tool-link {% if not current_user.is_authenticated %}opacity-75{% endif %}">
     <img src="{{ url_for('serve_avner', filename='avner_thinking.jpeg') }}" alt="אבנר חושב" class="sticker">
     <h3>📚 עוזר שיעורי בית</h3>
     <p>הסברים צעד-אחר-צעד לתרגילים! 📝 פתור כל בעיה עם הדרכה מפורטת.</p>
     {% if not current_user.is_authenticated %}
     <div class="mt-2 text-xs text-golden-yellow font-bold">🔒 נדרשת הרשמה</div>
+    {% else %}
+    <div class="mt-2 text-xs text-success font-bold">✅ זמין בספרייה</div>
     {% endif %}
   </a>
   <!-- Additional tools with more Avner variety -->
-  <a href="{{ url_for('tutor_tool') }}" class="tool-card tool-link {% if not current_user.is_authenticated %}opacity-75{% endif %}">
+  <a href="{% if current_user.is_authenticated %}{{ url_for('library.index') }}{% else %}{{ url_for('tutor_tool') }}{% endif %}" class="tool-card tool-link {% if not current_user.is_authenticated %}opacity-75{% endif %}">
     <img src="{{ url_for('serve_avner', filename='avner_signing_ok.jpeg') }}" alt="אבנר מורה" class="sticker">
     <h3>🎓 מורה פרטי AI</h3>
     <p>שאל כל שאלה על החומר! 🤖 קבל תשובות מיידיות ומדויקות בכל נושא.</p>
     {% if not current_user.is_authenticated %}
     <div class="mt-2 text-xs text-golden-yellow font-bold">🔒 נדרשת הרשמה</div>
+    {% else %}
+    <div class="mt-2 text-xs text-success font-bold">✅ זמין בספרייה</div>
     {% endif %}
   </a>
-  <a href="{{ url_for('diagram_tool') }}" class="tool-card tool-link {% if not current_user.is_authenticated %}opacity-75{% endif %}">
+  <a href="{% if current_user.is_authenticated %}{{ url_for('library.index') }}{% else %}{{ url_for('diagram_tool') }}{% endif %}" class="tool-card tool-link {% if not current_user.is_authenticated %}opacity-75{% endif %}">
     <img src="{{ url_for('serve_avner', filename='avner_angry_holding_pencile.jpeg') }}" alt="אבנר עם עיפרון" class="sticker">
     <h3>📊 יצירת תרשימים</h3>
     <p>הפוך טקסט לויזואליה! 🎨 תרשימים ברורים שעוזרים להבין מושגים מורכבים.</p>
     {% if not current_user.is_authenticated %}
     <div class="mt-2 text-xs text-golden-yellow font-bold">🔒 נדרשת הרשמה</div>
+    {% else %}
+    <div class="mt-2 text-xs text-success font-bold">✅ זמין בספרייה</div>
     {% endif %}
   </a>
-  <a href="{{ url_for('glossary_page', course_id='default') }}" class="tool-card tool-link {% if not current_user.is_authenticated %}opacity-75{% endif %}">
+  <a href="{% if current_user.is_authenticated %}{{ url_for('library.index') }}{% else %}{{ url_for('glossary_page', course_id='default') }}{% endif %}" class="tool-card tool-link {% if not current_user.is_authenticated %}opacity-75{% endif %}">
     <img src="{{ url_for('serve_avner', filename='avner_waving.jpeg') }}" alt="אבנר מנופף" class="sticker">
     <h3>📚 מונחון</h3>
     <p>מילון מונחים חכם! 📖 כל המונחים החשובים מאורגנים ונגישים במקום אחד.</p>
     {% if not current_user.is_authenticated %}
     <div class="mt-2 text-xs text-golden-yellow font-bold">🔒 נדרשת הרשמה</div>
+    {% else %}
+    <div class="mt-2 text-xs text-success font-bold">✅ זמין בספרייה</div>
     {% endif %}
   </a>
   {% if current_user.is_authenticated %}
-  <a href="{{ url_for('library.index') }}" class="tool-card tool-link">
+  <a href="{{ url_for('library.index') }}" class="tool-card tool-link border-2 border-golden-yellow">
     <img src="{{ url_for('serve_avner', filename='avner_holding_backbak.jpeg') }}" alt="אבנר עם תיק" class="sticker">
     <h3>📚 הספרייה שלי</h3>
     <p>נהל את כל הקורסים והקבצים שלך במקום אחד! 🗂️ ארגון מושלם ללמידה יעילה.</p>
+    <div class="mt-2 text-xs text-success font-bold">🚀 התחל כאן!</div>
   </a>
   {% endif %}
 </div>

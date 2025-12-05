@@ -39,11 +39,17 @@
     <img src="/avner/avner_looking_at_page_acratching_head.jpeg" 
          alt="אבנר מחכה" 
          class="w-24 h-24 rounded-full mx-auto mb-4 border-4 border-golden-yellow shadow-md">
-    <h2 class="text-xl font-bold text-dark-brown mb-3">הקורס ריק! 📭</h2>
-    <p class="text-cozy-brown mb-6 max-w-md mx-auto">
-        כדי להתחיל להשתמש בכלים, קודם צריך להעלות חומרי לימוד.<br>
-        אבנר יוכל לעזור לך רק אחרי שיכיר את החומר!
+    <h2 class="text-2xl font-bold text-dark-brown mb-3">הקורס ריק! 📭</h2>
+    <p class="text-cozy-brown mb-6 max-w-md mx-auto text-lg">
+        כדי להתחיל להשתמש בכלים החכמים, קודם צריך להעלות חומרי לימוד.<br>
+        <strong>אבנר יוכל לעזור לך רק אחרי שיכיר את החומר!</strong>
     </p>
+    
+    <div class="bg-warm-yellow/30 rounded-xl p-4 max-w-md mx-auto mb-6">
+        <p class="text-sm text-dark-brown font-medium">
+            💡 <strong>טיפ:</strong> העלה סיכומים, מצגות, או PDF של החומר - ככל שיותר מידע, כך אבנר יוכל לעזור יותר!
+        </p>
+    </div>
     
     <!-- Upload Form -->
     <div class="bg-warm-beige rounded-xl p-6 max-w-lg mx-auto text-right">
@@ -92,6 +98,16 @@
 
 {% else %}
 <!-- Course Has Content - Show Tools -->
+<div class="mb-6 bg-success/10 border-2 border-success rounded-xl p-4">
+    <div class="flex items-center gap-3">
+        <img src="/avner/avner_celebrating.jpeg" alt="אבנר שמח" class="w-12 h-12 rounded-full border-2 border-success">
+        <div>
+            <h3 class="font-bold text-dark-brown text-lg">✅ הכל מוכן!</h3>
+            <p class="text-cozy-brown text-sm">{{ documents|length }} מסמכים בקורס - כל הכלים זמינים לשימוש</p>
+        </div>
+    </div>
+</div>
+
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
     
     <!-- Main Content - Tools -->
