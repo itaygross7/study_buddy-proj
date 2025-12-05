@@ -80,10 +80,15 @@ def upload_file_route():
     if not allowed_file(filename):
         return jsonify({"error": f"File type not supported. Allowed types: {', '.join(ALLOWED_EXTENSIONS)}"}), 415
     
-    # Check file size quickly
-    file.seek(0, os.SEEK_END)
-    file_size = file.tell()
-    file.seek(0)
+    # Check file size using Content-Length header first, then seek as fallback
+    file_size = 0
+    if request.content_length:
+        file_size = request.content_length
+    else:
+        # Fallback: use seek for size detection
+        file.seek(0, os.SEEK_END)
+        file_size = file.tell()
+        file.seek(0)
     
     if file_size > MAX_FILE_SIZE:
         return jsonify({"error": "File too large. Maximum size is 50MB."}), 413

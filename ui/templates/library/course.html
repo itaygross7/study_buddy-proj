@@ -74,7 +74,15 @@
                 <p class="text-xs text-cozy-brown mt-1">PDF, Word, PowerPoint, תמונות או טקסט (עד 50MB)</p>
             </div>
             
-            <button type="submit" 
+            <!-- Upload Status with Avner Animation -->
+            <div id="upload-status" class="hidden mb-4 text-center">
+                <img id="upload-avner-img" src="/avner/loading.jpeg" 
+                     alt="אבנר מעלה" 
+                     class="w-20 h-20 rounded-full mx-auto mb-2 border-2 border-golden-yellow shadow-md animate-pulse">
+                <p id="upload-status-text" class="text-sm font-medium text-cozy-brown"></p>
+            </div>
+            
+            <button type="submit" id="upload-submit-btn"
                 class="w-full bg-golden-yellow text-dark-brown font-bold py-3 px-6 rounded-xl hover:bg-warm-yellow transition-colors shadow-md">
                 📤 העלה לקורס
             </button>
@@ -187,8 +195,11 @@
     document.getElementById('upload-form')?.addEventListener('submit', async function(e) {
         e.preventDefault();
         const formData = new FormData(this);
-        const submitBtn = this.querySelector('button[type="submit"]');
+        const submitBtn = document.getElementById('upload-submit-btn');
         const originalText = submitBtn.innerHTML;
+        const statusDiv = document.getElementById('upload-status');
+        const statusText = document.getElementById('upload-status-text');
+        const avnerImg = document.getElementById('upload-avner-img');
         
         // Check if user provided either text or file
         const textInput = formData.get('text');
@@ -199,9 +210,15 @@
             return;
         }
         
-        // Disable button and show loading
+        // Show Avner loading animation
+        statusDiv.classList.remove('hidden');
+        avnerImg.src = '/avner/loading.jpeg';
+        avnerImg.classList.add('animate-pulse');
+        statusText.textContent = 'מעלה את הקובץ...';
+        
+        // Disable button
         submitBtn.disabled = true;
-        submitBtn.innerHTML = '⏳ מעלה...';
+        submitBtn.classList.add('opacity-75');
         
         try {
             const res = await fetch('/api/upload/', {
@@ -214,22 +231,27 @@
             if (res.ok) {
                 // Check if file is being processed in background
                 if (data.status === 'processing') {
-                    submitBtn.innerHTML = '⚡ הועלה! מעבד...';
+                    avnerImg.src = '/avner/progress.jpeg';
+                    statusText.textContent = 'הקובץ הועלה! אבנר מעבד את התוכן...';
                     // Poll for completion
-                    await pollDocumentStatus(data.document_id, submitBtn);
+                    await pollDocumentStatus(data.document_id, avnerImg, statusText);
                 } else {
                     // Text input - completed immediately
-                    submitBtn.innerHTML = '✅ הועלה בהצלחה!';
-                    setTimeout(() => window.location.reload(), 500);
+                    avnerImg.src = '/avner/avner_celebrating.jpeg';
+                    avnerImg.classList.remove('animate-pulse');
+                    statusText.textContent = '✅ הועלה בהצלחה!';
+                    setTimeout(() => window.location.reload(), 800);
                 }
             } else {
+                statusDiv.classList.add('hidden');
                 submitBtn.disabled = false;
-                submitBtn.innerHTML = originalText;
+                submitBtn.classList.remove('opacity-75');
                 alert('שגיאה: ' + (data.error || 'נסה שוב'));
             }
         } catch (error) {
+            statusDiv.classList.add('hidden');
             submitBtn.disabled = false;
-            submitBtn.innerHTML = originalText;
+            submitBtn.classList.remove('opacity-75');
             alert('שגיאה בהעלאה. בדוק את החיבור לאינטרנט.');
             console.error('Upload error:', error);
         }
@@ -247,9 +269,9 @@
             return;
         }
         
-        // Disable button and show loading
+        // Disable button and show loading with Avner
         submitBtn.disabled = true;
-        submitBtn.innerHTML = '⏳ מעלה...';
+        submitBtn.innerHTML = '<img src="/avner/loading.jpeg" class="w-6 h-6 inline-block animate-pulse"> מעלה...';
         
         try {
             const res = await fetch('/api/upload/', {
@@ -262,9 +284,9 @@
             if (res.ok) {
                 // Check if file is being processed in background
                 if (data.status === 'processing') {
-                    submitBtn.innerHTML = '⚡ הועלה! מעבד...';
-                    // Poll for completion
-                    await pollDocumentStatus(data.document_id, submitBtn);
+                    submitBtn.innerHTML = '<img src="/avner/progress.jpeg" class="w-6 h-6 inline-block animate-pulse"> מעבד...';
+                    // Poll for completion - simple version without status elements
+                    await pollDocumentStatusSimple(data.document_id, submitBtn, originalText);
                 } else {
                     // Text input - completed immediately
                     submitBtn.innerHTML = '✅ הועלה!';
@@ -283,8 +305,8 @@
         }
     });
     
-    // Poll for document processing status
-    async function pollDocumentStatus(documentId, submitBtn) {
+    // Poll for document processing status with Avner animation
+    async function pollDocumentStatus(documentId, avnerImg, statusText) {
         const maxAttempts = 60; // 60 seconds max
         let attempts = 0;
         
@@ -294,18 +316,26 @@
                 const data = await res.json();
                 
                 if (data.ready) {
-                    submitBtn.innerHTML = '✅ הקובץ מוכן!';
-                    setTimeout(() => window.location.reload(), 500);
+                    avnerImg.src = '/avner/avner_celebrating.jpeg';
+                    avnerImg.classList.remove('animate-pulse');
+                    statusText.textContent = '✅ הקובץ מוכן! טוען מחדש...';
+                    setTimeout(() => window.location.reload(), 800);
                     return true;
                 }
                 
                 // Still processing
                 attempts++;
                 if (attempts >= maxAttempts) {
-                    submitBtn.innerHTML = '⏱️ מעבד ברקע...';
+                    avnerImg.src = '/avner/avner_thinking.jpeg';
+                    avnerImg.classList.remove('animate-pulse');
+                    statusText.textContent = '⏱️ העיבוד לוקח זמן... טוען מחדש.';
                     setTimeout(() => window.location.reload(), 2000);
                     return true;
                 }
+                
+                // Update status text with dots animation
+                const dots = '.'.repeat((attempts % 3) + 1);
+                statusText.textContent = `אבנר מעבד את הקובץ${dots}`;
                 
                 // Continue polling
                 setTimeout(checkStatus, 1000);
@@ -317,8 +347,52 @@
                 if (attempts < maxAttempts) {
                     setTimeout(checkStatus, 1000);
                 } else {
+                    avnerImg.src = '/avner/avner_shy.jpeg';
+                    avnerImg.classList.remove('animate-pulse');
+                    statusText.textContent = '⏱️ מעבד ברקע... טוען מחדש.';
+                    setTimeout(() => window.location.reload(), 2000);
+                }
+            }
+        };
+        
+        await checkStatus();
+    }
+    
+    // Simple polling for secondary upload forms
+    async function pollDocumentStatusSimple(documentId, submitBtn, originalText) {
+        const maxAttempts = 60;
+        let attempts = 0;
+        
+        const checkStatus = async () => {
+            try {
+                const res = await fetch(`/api/upload/status/${documentId}`);
+                const data = await res.json();
+                
+                if (data.ready) {
+                    submitBtn.innerHTML = '<img src="/avner/avner_celebrating.jpeg" class="w-6 h-6 inline-block"> הועלה!';
+                    setTimeout(() => window.location.reload(), 500);
+                    return true;
+                }
+                
+                attempts++;
+                if (attempts >= maxAttempts) {
                     submitBtn.innerHTML = '⏱️ מעבד ברקע...';
                     setTimeout(() => window.location.reload(), 2000);
+                    return true;
+                }
+                
+                setTimeout(checkStatus, 1000);
+                return false;
+                
+            } catch (error) {
+                console.error('Status check error:', error);
+                attempts++;
+                if (attempts < maxAttempts) {
+                    setTimeout(checkStatus, 1000);
+                } else {
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.disabled = false;
+                    alert('שגיאה בבדיקת סטטוס. הקובץ עדיין מעובד ברקע.');
                 }
             }
         };

@@ -58,13 +58,20 @@ def process_task(body: bytes):
                 doc_repo.update(doc)
                 logger.info(f"[Worker] Successfully processed file '{filename}' for document {document_id}")
             
-            # Clean up temp file
+            # Clean up temp file and directory
+            import shutil
             try:
                 if os.path.exists(temp_path):
                     os.remove(temp_path)
-                    temp_dir = os.path.dirname(temp_path)
-                    if os.path.exists(temp_dir) and not os.listdir(temp_dir):
-                        os.rmdir(temp_dir)
+                temp_dir = os.path.dirname(temp_path)
+                if os.path.exists(temp_dir) and os.path.isdir(temp_dir):
+                    # Use shutil.rmtree for robust cleanup
+                    try:
+                        shutil.rmtree(temp_dir)
+                    except OSError:
+                        # If rmtree fails, try removing if empty
+                        if not os.listdir(temp_dir):
+                            os.rmdir(temp_dir)
             except Exception as cleanup_error:
                 logger.warning(f"[Worker] Failed to cleanup temp file: {cleanup_error}")
             
