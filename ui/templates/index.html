@@ -1,59 +1,228 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="hero">
-  <div class="hero-left">
-    <!-- App Logo -->
-    <img src="{{ url_for('serve_avner', filename='app_logo.jpeg') }}" alt="Study Buddy Logo" class="app-logo-hero">
-  </div>
-  <div class="hero-right">
-    <h1>👋 ברוכים הבאים ל-StudyBuddy!</h1>
-    <p class="muted">🎓 פלטפורמת הלמידה החכמה שלך עם בינה מלאכותית! <br>
-    אנחנו כאן כדי לעזור לך ללמוד טוב יותר, מהר יותר וביעילות רבה יותר 🚀</p>
-    
-    <!-- Feature highlights -->
-    <div class="mt-4 space-y-2 text-right">
-      <p class="text-cozy-brown text-sm">✨ <strong>סיכומים אוטומטיים</strong> - הפוך שעות קריאה לדקות</p>
-      <p class="text-cozy-brown text-sm">🎴 <strong>כרטיסיות לימוד</strong> - זכור הכל עם קלפים חכמים</p>
-      <p class="text-cozy-brown text-sm">✅ <strong>תרגולים מותאמים</strong> - בחן את עצמך ושפר את הביצועים</p>
-      <p class="text-cozy-brown text-sm">🤖 <strong>מורה פרטי AI</strong> - תשובות מיידיות לכל שאלה</p>
+
+<!-- Hero Section - Powerful and Convincing -->
+<div class="relative overflow-hidden rounded-3xl bg-gradient-to-l from-golden-yellow via-warm-yellow to-cream p-8 md:p-12 mb-8 shadow-2xl border-4 border-golden-yellow">
+  <div class="grid md:grid-cols-2 gap-8 items-center">
+    <!-- Left: Compelling Message -->
+    <div class="text-right space-y-6">
+      <div class="inline-block bg-warm-beige px-4 py-2 rounded-full border-2 border-caramel shadow-md">
+        <span class="text-sm font-bold text-caramel">🔒 בטוח לחלוטין • המידע שלך נשאר אצלך</span>
+      </div>
+      
+      <h1 class="text-4xl md:text-5xl font-black text-dark-brown leading-tight">
+        למדו חכם, <br>
+        <span class="text-caramel">לא קשה.</span> 🦫
+      </h1>
+      
+      <p class="text-xl text-cozy-brown leading-relaxed">
+        <strong>StudyBuddy</strong> הופך את הלמידה לחוויה נעימה ויעילה - 
+        <span class="font-bold text-dark-brown">בלי מסכים מפחידים, בלי סיבוכים מיותרים.</span>
+      </p>
+      
+      <div class="bg-white/80 p-5 rounded-xl border-2 border-warm-yellow shadow-lg">
+        <p class="text-lg font-bold text-dark-brown mb-3">💡 למה StudyBuddy שונה?</p>
+        <ul class="space-y-2 text-cozy-brown">
+          <li class="flex items-start gap-2">
+            <span class="text-2xl flex-shrink-0">🏠</span>
+            <span><strong>נעים כמו בבית:</strong> ממשק חם ופשוט שכל אחד יכול להשתמש בו</span>
+          </li>
+          <li class="flex items-start gap-2">
+            <span class="text-2xl flex-shrink-0">🎯</span>
+            <span><strong>ממוקד בחומר שלך:</strong> הבינה המלאכותית לומדת <u>רק</u> מהקבצים שאתה מעלה</span>
+          </li>
+          <li class="flex items-start gap-2">
+            <span class="text-2xl flex-shrink-0">🦫</span>
+            <span><strong>אבנר תמיד כאן:</strong> חבר וירטואלי שעוזר לך ללמוד בקצב שלך</span>
+          </li>
+        </ul>
+      </div>
+      
+      {% if not current_user.is_authenticated %}
+      <div class="flex flex-col sm:flex-row gap-4 pt-4">
+        <a href="{{ url_for('auth.signup') }}" class="btn-primary px-10 py-4 inline-block text-xl font-bold shadow-2xl hover:scale-105 transition-transform text-center">
+          ✨ התחילו עכשיו - חינם!
+        </a>
+        <a href="{{ url_for('avner_chat') }}" class="btn-secondary px-8 py-4 inline-block text-lg shadow-lg hover:scale-105 transition-transform text-center">
+          💬 נסו את אבנר
+        </a>
+      </div>
+      <p class="text-sm text-warm-gray text-center">🎁 ללא צורך בכרטיס אשראי • התחילו מיד</p>
+      {% else %}
+      <a href="{{ url_for('library.index') }}" class="btn-primary w-full py-4 inline-block text-xl font-bold shadow-2xl hover:scale-105 transition-transform text-center">
+        📚 המשיכו ללמוד בספרייה שלכם
+      </a>
+      {% endif %}
     </div>
     
-    {% if not current_user.is_authenticated %}
-    <!-- CTA for non-authenticated users -->
-    <div class="content-card mt-5 border-2 border-golden-yellow">
-      <div class="text-center space-y-4">
-        <h2 class="text-2xl font-bold text-dark-brown">🎯 מוכנים להתחיל?</h2>
-        <p class="text-cozy-brown">הירשמו עכשיו וקבלו גישה לכל הכלים החכמים שלנו!</p>
-        <div class="flex gap-3 justify-center">
-          <a href="{{ url_for('auth.signup') }}" class="btn-primary px-8 py-3 inline-block">
-            ✨ הרשמה חינם
-          </a>
-          <a href="{{ url_for('auth.login') }}" class="btn-secondary px-8 py-3 inline-block">
-            🔑 כבר רשום? התחבר
-          </a>
+    <!-- Right: Avner Image -->
+    <div class="flex justify-center">
+      <div class="relative">
+        <div class="absolute inset-0 bg-golden-yellow rounded-full blur-3xl opacity-30 animate-pulse"></div>
+        <img src="{{ url_for('serve_avner', filename='avner_signing_ok.jpeg') }}" 
+             alt="אבנר מברך אתכם" 
+             class="relative w-80 h-80 rounded-full object-cover border-8 border-white shadow-2xl hover:scale-105 transition-transform">
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- What Is StudyBuddy? - Super Simple Explanation -->
+<div class="mb-12 bg-white p-10 rounded-3xl border-4 border-golden-yellow shadow-2xl">
+  <div class="text-center mb-8">
+    <h2 class="text-4xl font-black text-dark-brown mb-4">🤔 מה זה StudyBuddy בכלל?</h2>
+    <p class="text-2xl text-cozy-brown font-bold">זה ממש פשוט!</p>
+  </div>
+  
+  <div class="max-w-3xl mx-auto space-y-6">
+    <!-- Step by step explanation -->
+    <div class="bg-gradient-to-l from-cream to-warm-beige p-6 rounded-2xl border-2 border-warm-yellow">
+      <div class="flex items-start gap-4">
+        <div class="text-5xl flex-shrink-0">📚</div>
+        <div>
+          <h3 class="text-2xl font-bold text-dark-brown mb-2">יש לכם חומר לימוד?</h3>
+          <p class="text-lg text-cozy-brown">קובץ PDF? דפים של Word? מצגת PowerPoint? או סתם הרבה טקסט?</p>
         </div>
       </div>
     </div>
-    {% else %}
-    <!-- Quick access for authenticated users -->
-    <div class="content-card mt-5 border-2 border-golden-yellow">
-      <h2 class="text-xl font-bold text-dark-brown mb-3 text-right">🚀 התחל ללמוד!</h2>
-      <p class="text-cozy-brown mb-4 text-right">גש לספרייה שלך, נהל את הקורסים והחומרים, והשתמש בכלים החכמים</p>
-      <a href="{{ url_for('library.index') }}" class="btn-primary w-full inline-block text-center text-lg py-3">
-        📚 לספרייה שלי
-      </a>
-      <p class="text-sm text-warm-gray mt-3 text-center">כל הכלים מחכים לך בקורסים שלך! 🎯</p>
+    
+    <div class="text-center text-3xl">⬇️</div>
+    
+    <div class="bg-gradient-to-l from-golden-yellow to-warm-yellow p-6 rounded-2xl border-2 border-caramel shadow-lg">
+      <div class="flex items-start gap-4">
+        <div class="text-5xl flex-shrink-0">🦫</div>
+        <div>
+          <h3 class="text-2xl font-bold text-dark-brown mb-2">אבנר קורא את זה בשבילכם!</h3>
+          <p class="text-lg text-dark-brown">פשוט תעלו את הקובץ - ואבנר יקרא אותו ויבין מה כתוב שם.</p>
+        </div>
+      </div>
     </div>
-    {% endif %}
+    
+    <div class="text-center text-3xl">⬇️</div>
+    
+    <div class="bg-gradient-to-l from-cream to-warm-beige p-6 rounded-2xl border-2 border-warm-yellow">
+      <div class="flex items-start gap-4">
+        <div class="text-5xl flex-shrink-0">✨</div>
+        <div>
+          <h3 class="text-2xl font-bold text-dark-brown mb-2">ועכשיו תוכלו:</h3>
+          <ul class="text-lg text-cozy-brown space-y-2 mr-6">
+            <li>✅ לקבל סיכום קצר של הכל במקום לקרוא 50 עמודים</li>
+            <li>✅ לקבל כרטיסיות שאלה-תשובה לתרגול</li>
+            <li>✅ לשאול את אבנר שאלות על החומר</li>
+            <li>✅ לקבל הסברים פשוטים למושגים מסובכים</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="mt-8 bg-caramel/30 p-6 rounded-xl border-2 border-caramel text-center">
+    <p class="text-2xl font-black text-dark-brown">
+      🎯 זהו! זה כל מה שצריך להבין. <br>
+      <span class="text-caramel">StudyBuddy = מישהו שקורא את החומר בשבילכם ועוזר לכם ללמוד אותו.</span>
+    </p>
+  </div>
+</div>
+
+<!-- Problem-Solution Section -->
+<div class="mb-12 bg-warm-beige p-8 rounded-2xl border-2 border-warm-yellow">
+  <h2 class="text-3xl font-bold text-dark-brown text-center mb-8">😰 מכירים את התחושה הזו?</h2>
+  
+  <div class="grid md:grid-cols-2 gap-6 mb-8">
+    <!-- Problems -->
+    <div class="space-y-4">
+      <div class="bg-white p-4 rounded-xl border-l-4 border-caramel shadow-md">
+        <p class="text-cozy-brown">💤 <strong>יש לכם הרבה חומר ללמוד</strong> ואתם לא יודעים מאיפה להתחיל?</p>
+      </div>
+      <div class="bg-white p-4 rounded-xl border-l-4 border-caramel shadow-md">
+        <p class="text-cozy-brown">😵 <strong>קשה לכם להבין</strong> מושגים מסובכים בלי עזרה?</p>
+      </div>
+      <div class="bg-white p-4 rounded-xl border-l-4 border-caramel shadow-md">
+        <p class="text-cozy-brown">⏰ <strong>אין לכם זמן</strong> לקרוא עשרות עמודים לפני המבחן?</p>
+      </div>
+      <div class="bg-white p-4 rounded-xl border-l-4 border-caramel shadow-md">
+        <p class="text-cozy-brown">🤖 <strong>פוחדים מבינה מלאכותית</strong> ומחשבים מסובכים?</p>
+      </div>
+    </div>
+    
+    <!-- Solutions -->
+    <div class="bg-gradient-to-br from-golden-yellow to-warm-yellow p-6 rounded-2xl shadow-xl">
+      <h3 class="text-2xl font-bold text-dark-brown mb-4 text-center">✨ אנחנו כאן בשבילכם!</h3>
+      <div class="space-y-3 text-right">
+        <p class="text-dark-brown font-medium">📖 <strong>סיכמו שעות</strong> של קריאה לדקות ספורות</p>
+        <p class="text-dark-brown font-medium">🎴 <strong>צרו כרטיסיות</strong> זיכרון אוטומטיות לתרגול</p>
+        <p class="text-dark-brown font-medium">💡 <strong>קבלו הסברים</strong> פשוטים לכל מושג</p>
+        <p class="text-dark-brown font-medium">🏡 <strong>ממשק נוח</strong> שכל אחד יכול להשתמש בו</p>
+        <p class="text-dark-brown font-medium">🔒 <strong>בטוח לגמרי</strong> - המידע נשאר רק אצלכם</p>
+      </div>
+    </div>
+  </div>
+  
+  <div class="text-center bg-cream p-6 rounded-xl border-2 border-golden-yellow">
+    <p class="text-xl font-bold text-dark-brown">
+      🎯 StudyBuddy זה לא עוד אפליקציה - <br>
+      <span class="text-caramel">זה חבר שעוזר לכם להצליח.</span>
+    </p>
+  </div>
+</div>
+
+<!-- Meet Avner Section -->
+<div class="mb-12 bg-gradient-to-l from-cream to-warm-beige p-8 rounded-2xl border-2 border-golden-yellow shadow-xl">
+  <div class="text-center mb-6">
+    <h2 class="text-3xl font-bold text-dark-brown mb-3">🦫 הכירו את אבנר - החבר הכי טוב שלכם בלימודים</h2>
+    <p class="text-lg text-cozy-brown">קפיברה חכמה ועוזרת שתלווה אתכם בכל צעד</p>
+  </div>
+  
+  <div class="grid md:grid-cols-3 gap-6">
+    <!-- Avner Trait 1 -->
+    <div class="bg-white p-6 rounded-xl shadow-lg hover:shadow-2xl transition-shadow">
+      <div class="flex justify-center mb-4">
+        <img src="{{ url_for('serve_avner', filename='avner_reading.jpeg') }}" 
+             alt="אבנר לומד" 
+             class="w-24 h-24 rounded-full object-cover border-4 border-golden-yellow">
+      </div>
+      <h3 class="text-xl font-bold text-dark-brown text-center mb-2">📚 תמיד פה לעזור</h3>
+      <p class="text-cozy-brown text-center">אבנר זמין 24/7 לענות על שאלות, להסביר מושגים ולתמוך בך</p>
+    </div>
+    
+    <!-- Avner Trait 2 -->
+    <div class="bg-white p-6 rounded-xl shadow-lg hover:shadow-2xl transition-shadow">
+      <div class="flex justify-center mb-4">
+        <img src="{{ url_for('serve_avner', filename='baby_avner.png') }}" 
+             alt="אבנר הקטן" 
+             class="w-24 h-24 rounded-full object-cover border-4 border-golden-yellow">
+      </div>
+      <h3 class="text-xl font-bold text-dark-brown text-center mb-2">🍼 מסביר כמו לילד בן 5</h3>
+      <p class="text-cozy-brown text-center">במצב "אבנר הקטן" - הסברים פשוטים עם דוגמאות מהחיים</p>
+    </div>
+    
+    <!-- Avner Trait 3 -->
+    <div class="bg-white p-6 rounded-xl shadow-lg hover:shadow-2xl transition-shadow">
+      <div class="flex justify-center mb-4">
+        <img src="{{ url_for('serve_avner', filename='avner_celebrating.jpeg') }}" 
+             alt="אבנר חוגג" 
+             class="w-24 h-24 rounded-full object-cover border-4 border-golden-yellow">
+      </div>
+      <h3 class="text-xl font-bold text-dark-brown text-center mb-2">😄 עם הומור וסבלנות</h3>
+      <p class="text-cozy-brown text-center">קצת סרקזם של צ'נדלר, הרבה עידוד, ואווירה נעימה</p>
+    </div>
+  </div>
+  
+  <div class="mt-8 text-center">
+    <a href="{{ url_for('avner_chat') }}" class="btn-secondary px-8 py-3 inline-block text-lg shadow-lg hover:scale-105 transition-transform">
+      💬 נסו לדבר עם אבנר עכשיו
+    </a>
   </div>
 </div>
 
 <!-- Tools Section Header -->
-<div class="text-center mb-6 mt-8">
+<div class="text-center mb-8">
   <h2 class="text-3xl font-bold text-dark-brown mb-3">🛠️ הכלים החכמים שלנו</h2>
-  <p class="text-cozy-brown text-lg">גלה את כל היכולות שאבנר מציע כדי לשפר את הלמידה שלך</p>
+  <p class="text-cozy-brown text-lg">כל מה שצריך ללמידה מוצלחת - פשוט, ידידותי, יעיל</p>
   {% if not current_user.is_authenticated %}
-  <p class="text-golden-yellow font-bold mt-2">🔒 נדרש להירשם כדי להשתמש בכלים</p>
+  <div class="mt-4 inline-block bg-golden-yellow/20 px-6 py-3 rounded-full border-2 border-golden-yellow">
+    <p class="text-dark-brown font-bold">🎁 הרשמו בחינם והתחילו להשתמש מיד!</p>
+  </div>
   {% endif %}
 </div>
 
@@ -140,34 +309,155 @@
   {% endif %}
 </div>
 
-<!-- Why Choose Us Section -->
+<!-- Super Simple: What To Do Now -->
 {% if not current_user.is_authenticated %}
-<div class="mt-12 mb-8">
-  <div class="content-card border-2 border-golden-yellow">
-    <h2 class="text-2xl font-bold text-dark-brown text-center mb-6">🌟 למה לבחור ב-StudyBuddy?</h2>
-    <div class="grid md:grid-cols-3 gap-6 text-right">
-      <div class="space-y-2">
-        <div class="text-4xl text-center">⚡</div>
-        <h3 class="text-lg font-bold text-cozy-brown text-center">מהיר ויעיל</h3>
-        <p class="text-sm text-warm-gray">חסוך שעות של עבודה עם כלים אוטומטיים חכמים</p>
-      </div>
-      <div class="space-y-2">
-        <div class="text-4xl text-center">🎯</div>
-        <h3 class="text-lg font-bold text-cozy-brown text-center">מותאם אישית</h3>
-        <p class="text-sm text-warm-gray">כלים שמסתגלים לסגנון הלמידה הייחודי שלך</p>
-      </div>
-      <div class="space-y-2">
-        <div class="text-4xl text-center">🔒</div>
-        <h3 class="text-lg font-bold text-cozy-brown text-center">בטוח ופרטי</h3>
-        <p class="text-sm text-warm-gray">המידע שלך מאובטח ושמור בצורה מלאה</p>
+<div class="my-12 bg-gradient-to-br from-warm-yellow via-golden-yellow to-caramel p-10 rounded-3xl shadow-2xl border-4 border-dark-brown">
+  <div class="text-center mb-8">
+    <h2 class="text-4xl font-black text-dark-brown mb-4">👆 מה לעשות עכשיו?</h2>
+    <p class="text-2xl text-dark-brown font-bold">3 אפשרויות פשוטות:</p>
+  </div>
+  
+  <div class="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+    <!-- Option 1: Try Chat -->
+    <div class="bg-white p-8 rounded-2xl shadow-xl border-4 border-golden-yellow hover:scale-105 transition-transform">
+      <div class="text-center space-y-4">
+        <div class="text-6xl">💬</div>
+        <h3 class="text-2xl font-bold text-dark-brown">רוצים לנסות?</h3>
+        <p class="text-lg text-cozy-brown">דברו עם אבנר עכשיו - בלי הרשמה!</p>
+        <a href="{{ url_for('avner_chat') }}" class="block bg-caramel hover:bg-golden-yellow text-white font-bold py-4 px-6 rounded-xl shadow-lg transition-all text-xl">
+          👉 לחצו כאן לצ'אט
+        </a>
+        <p class="text-sm text-warm-gray">אפשר לשאול שאלות על האפליקציה</p>
       </div>
     </div>
-    <div class="text-center mt-8">
-      <a href="{{ url_for('auth.signup') }}" class="btn-primary px-10 py-4 inline-block text-lg">
-        🚀 הצטרף עכשיו בחינם!
-      </a>
+    
+    <!-- Option 2: Sign Up -->
+    <div class="bg-white p-8 rounded-2xl shadow-xl border-4 border-dark-brown hover:scale-105 transition-transform relative">
+      <div class="absolute -top-4 -right-4 bg-caramel text-white px-4 py-2 rounded-full font-bold text-sm shadow-lg rotate-12">
+        הכי מומלץ! ✨
+      </div>
+      <div class="text-center space-y-4">
+        <div class="text-6xl">🚀</div>
+        <h3 class="text-2xl font-bold text-dark-brown">מוכנים להתחיל?</h3>
+        <p class="text-lg text-cozy-brown">הירשמו והשתמשו בכל הכלים</p>
+        <a href="{{ url_for('auth.signup') }}" class="block bg-dark-brown hover:bg-caramel text-white font-bold py-4 px-6 rounded-xl shadow-lg transition-all text-xl">
+          👉 לחצו כאן להרשמה
+        </a>
+        <p class="text-sm text-warm-gray">לוקח פחות מדקה • חינם לגמרי</p>
+      </div>
+    </div>
+    
+    <!-- Option 3: Already User -->
+    <div class="bg-white p-8 rounded-2xl shadow-xl border-4 border-golden-yellow hover:scale-105 transition-transform">
+      <div class="text-center space-y-4">
+        <div class="text-6xl">🔑</div>
+        <h3 class="text-2xl font-bold text-dark-brown">כבר רשומים?</h3>
+        <p class="text-lg text-cozy-brown">התחברו והמשיכו ללמוד</p>
+        <a href="{{ url_for('auth.login') }}" class="block bg-golden-yellow hover:bg-warm-yellow text-dark-brown font-bold py-4 px-6 rounded-xl shadow-lg transition-all text-xl">
+          👉 לחצו כאן להתחברות
+        </a>
+        <p class="text-sm text-warm-gray">גישה לכל החומרים שלכם</p>
+      </div>
+    </div>
+  </div>
+  
+  <div class="mt-8 text-center">
+    <div class="inline-block bg-white/90 px-8 py-4 rounded-2xl border-2 border-dark-brown">
+      <p class="text-xl font-bold text-dark-brown">
+        ❓ לא בטוחים? <span class="text-caramel">נסו את הצ'אט קודם - זה בחינם!</span>
+      </p>
     </div>
   </div>
 </div>
 {% endif %}
+
+<!-- Security & Privacy Section -->
+<div class="my-12 bg-gradient-to-l from-cream to-warm-beige p-8 rounded-2xl border-2 border-caramel shadow-xl">
+  <div class="text-center mb-6">
+    <h2 class="text-3xl font-bold text-dark-brown mb-3">🔒 הפרטיות והביטחון שלכם - הקדימות הראשונה שלנו</h2>
+    <p class="text-lg text-cozy-brown">אנחנו מבינים שזה מפחיד - אבל אנחנו כאן בשבילכם</p>
+  </div>
+  
+  <div class="grid md:grid-cols-3 gap-6">
+    <div class="bg-white p-6 rounded-xl shadow-lg text-center">
+      <div class="text-5xl mb-3">🏠</div>
+      <h3 class="font-bold text-dark-brown mb-2">המידע שלכם נשאר אצלכם</h3>
+      <p class="text-cozy-brown text-sm">אבנר לומד רק מהחומר שאתם מעלים. בלי גישה למידע אישי, בלי שיתוף עם צדדים שלישיים.</p>
+    </div>
+    
+    <div class="bg-white p-6 rounded-xl shadow-lg text-center">
+      <div class="text-5xl mb-3">🎯</div>
+      <h3 class="font-bold text-dark-brown mb-2">ממוקד בחומר שלכם בלבד</h3>
+      <p class="text-cozy-brown text-sm">הבינה המלאכותית עובדת רק עם הקבצים שהעליתם - אין "מידע נוסף" מהאינטרנט שיבלבל אתכם.</p>
+    </div>
+    
+    <div class="bg-white p-6 rounded-xl shadow-lg text-center">
+      <div class="text-5xl mb-3">💝</div>
+      <h3 class="font-bold text-dark-brown mb-2">נבנה עבור אנשים אמיתיים</h3>
+      <p class="text-cozy-brown text-sm">לא צריך להיות מהנדס תוכנה. ממשק פשוט, נעים וחם כמו חדר לימוד ביתי.</p>
+    </div>
+  </div>
+  
+  <div class="mt-8 bg-golden-yellow/30 p-6 rounded-xl border-2 border-golden-yellow text-center">
+    <p class="text-xl font-bold text-dark-brown">
+      💡 <strong>זכרו:</strong> אתם בשליטה מלאה - אבנר כאן רק כדי לעזור לכם ללמוד טוב יותר!
+    </p>
+  </div>
+</div>
+
+<!-- How It Works -->
+<div class="my-12">
+  <h2 class="text-3xl font-bold text-dark-brown text-center mb-8">📋 איך זה עובד? (פשוט מאוד!)</h2>
+  
+  <div class="grid md:grid-cols-4 gap-6">
+    <div class="text-center">
+      <div class="bg-golden-yellow w-16 h-16 rounded-full flex items-center justify-center text-3xl font-bold text-dark-brown mx-auto mb-4 shadow-lg">1</div>
+      <h3 class="font-bold text-dark-brown mb-2">📝 הירשמו בחינם</h3>
+      <p class="text-cozy-brown text-sm">פחות מדקה - ללא צורך בכרטיס אשראי</p>
+    </div>
+    
+    <div class="text-center">
+      <div class="bg-golden-yellow w-16 h-16 rounded-full flex items-center justify-center text-3xl font-bold text-dark-brown mx-auto mb-4 shadow-lg">2</div>
+      <h3 class="font-bold text-dark-brown mb-2">📚 צרו קורס</h3>
+      <p class="text-cozy-brown text-sm">תנו שם לנושא שאתם לומדים</p>
+    </div>
+    
+    <div class="text-center">
+      <div class="bg-golden-yellow w-16 h-16 rounded-full flex items-center justify-center text-3xl font-bold text-dark-brown mx-auto mb-4 shadow-lg">3</div>
+      <h3 class="font-bold text-dark-brown mb-2">📤 העלו חומרים</h3>
+      <p class="text-cozy-brown text-sm">PDF, Word, PowerPoint או סתם טקסט</p>
+    </div>
+    
+    <div class="text-center">
+      <div class="bg-golden-yellow w-16 h-16 rounded-full flex items-center justify-center text-3xl font-bold text-dark-brown mx-auto mb-4 shadow-lg">4</div>
+      <h3 class="font-bold text-dark-brown mb-2">🚀 התחילו ללמוד!</h3>
+      <p class="text-cozy-brown text-sm">סיכומים, כרטיסיות, שאלות ועוד</p>
+    </div>
+  </div>
+</div>
+
+<!-- Final CTA -->
+{% if not current_user.is_authenticated %}
+<div class="my-12 bg-gradient-to-l from-caramel via-golden-yellow to-warm-yellow p-10 rounded-3xl shadow-2xl border-4 border-caramel text-center">
+  <img src="{{ url_for('serve_avner', filename='avner_celebrating.jpeg') }}" 
+       alt="אבנר חוגג" 
+       class="w-32 h-32 rounded-full object-cover border-6 border-white shadow-2xl mx-auto mb-6">
+  
+  <h2 class="text-4xl font-black text-dark-brown mb-4">🎉 מוכנים להצליח?</h2>
+  <p class="text-xl text-dark-brown mb-6">הצטרפו לאלפים שכבר משתמשים ב-StudyBuddy ולומדים בצורה חכמה יותר!</p>
+  
+  <div class="flex flex-col sm:flex-row gap-4 justify-center items-center mb-4">
+    <a href="{{ url_for('auth.signup') }}" class="btn-primary bg-dark-brown hover:bg-caramel px-12 py-4 text-2xl font-bold shadow-2xl hover:scale-110 transition-transform">
+      ✨ התחילו עכשיו - חינם לחלוטין!
+    </a>
+  </div>
+  
+  <div class="flex justify-center gap-8 text-dark-brown font-medium">
+    <span>✅ ללא כרטיס אשראי</span>
+    <span>✅ התחילו תוך דקה</span>
+    <span>✅ ביטול בכל עת</span>
+  </div>
+</div>
+{% endif %}
+
 {% endblock %}
