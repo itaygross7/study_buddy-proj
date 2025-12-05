@@ -32,6 +32,7 @@ class Settings(BaseSettings):
     SESSION_COOKIE_SAMESITE: str = 'Lax'
 
     # --- OAuth ---
+    BASE_URL: str = ""  # Base URL for OAuth redirects (e.g., https://yourdomain.com)
     GOOGLE_CLIENT_ID: str = ""
     GOOGLE_CLIENT_SECRET: str = ""
     APPLE_CLIENT_ID: str = ""

@@ -28,6 +28,31 @@ def test_sb_config_fields_exist():
     assert settings.SB_OPENAI_MODEL == "gpt-4o-mini", "Default OpenAI model should be gpt-4o-mini"
 
 
+def test_base_url_config_exists():
+    """Test that BASE_URL configuration field exists for OAuth redirects."""
+    # Set required environment variables
+    os.environ.setdefault('SECRET_KEY', 'test-secret-key')
+    os.environ.setdefault('MONGO_URI', 'mongodb://localhost:27017/test')
+    os.environ.setdefault('RABBITMQ_URI', 'amqp://localhost:5672/')
+    os.environ.setdefault('FLASK_ENV', 'development')
+    
+    from src.infrastructure.config import settings
+    
+    # Verify BASE_URL field exists and has correct default
+    assert hasattr(settings, 'BASE_URL'), "BASE_URL should exist for OAuth redirects"
+    assert settings.BASE_URL == "", "Default BASE_URL should be empty string"
+    
+    # Test that BASE_URL can be set via environment variable
+    os.environ['BASE_URL'] = 'https://example.com'
+    # Need to reload settings to pick up the new environment variable
+    from importlib import reload
+    import src.infrastructure.config as config_module
+    reload(config_module)
+    from src.infrastructure.config import settings as new_settings
+    
+    assert new_settings.BASE_URL == 'https://example.com', "BASE_URL should be settable via environment variable"
+
+
 def test_ai_client_initialization():
     """Test that AIClient can be initialized with the settings."""
     # Set required environment variables
