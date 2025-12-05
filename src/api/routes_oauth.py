@@ -129,7 +129,7 @@ def _get_or_create_oauth_user(email: str, name: str, provider: str):
     # Send notification to admin
     if settings.ADMIN_EMAIL and not is_admin:
         try:
-            email_service.send_new_user_notification(user)
+            email_service.send_new_user_notification(user.email, user.name)
         except Exception as e:
             logger.warning(f"Failed to send new user notification: {e}")
 
