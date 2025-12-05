@@ -252,10 +252,11 @@ def course_tool(course_id, tool):
     context = get_course_context(course_id, current_user.id)
     documents = get_course_documents(course_id)
 
-    return render_template(f'library/tool_{tool}.html',
+    return render_template(f'tool_{tool}.html',
                            course=course,
                            documents=documents,
-                           context=context)
+                           context=context,
+                           course_id=course_id)
 
 
 # ============ User Profile Routes ============

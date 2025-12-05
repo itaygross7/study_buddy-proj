@@ -203,24 +203,34 @@ def upload_files_route():
 @login_required
 def delete_file_route(file_id):
     """
-    Deletes a file from GridFS and removes its metadata.
+    Deletes a file from GridFS and removes its metadata, or deletes a document from the documents collection.
     Ensures user has ownership before deletion.
     """
     user_id = current_user.id
     
     try:
-        # Delete from GridFS
-        file_service.delete_file(file_id, user_id)
+        # First, try to delete from documents collection (course library documents)
+        doc_deleted = db.documents.delete_one({"_id": file_id, "user_id": user_id})
+        if doc_deleted.deleted_count > 0:
+            logger.info(f"Document {file_id} deleted by user {user_id}")
+            return jsonify({"message": "Document deleted successfully"}), 200
         
-        # Delete metadata
-        user_files_collection = db['user_files']
-        result = user_files_collection.delete_one({"_id": file_id, "user_id": user_id})
-        
-        if result.deleted_count == 0:
+        # If not a document, try GridFS files
+        try:
+            # Delete from GridFS
+            file_service.delete_file(file_id, user_id)
+            
+            # Delete metadata
+            user_files_collection = db['user_files']
+            result = user_files_collection.delete_one({"_id": file_id, "user_id": user_id})
+            
+            if result.deleted_count == 0:
+                return jsonify({"error": "File not found or permission denied"}), 404
+            
+            logger.info(f"File {file_id} deleted by user {user_id}")
+            return jsonify({"message": "File deleted successfully"}), 200
+        except:
             return jsonify({"error": "File not found or permission denied"}), 404
-        
-        logger.info(f"File {file_id} deleted by user {user_id}")
-        return jsonify({"message": "File deleted successfully"}), 200
         
     except PermissionError as e:
         logger.warning(f"Permission denied for file deletion: {e}")
@@ -258,3 +268,30 @@ def list_files_route():
     except Exception as e:
         logger.error(f"Failed to list files for user {user_id}: {e}", exc_info=True)
         return "<p class='text-center text-red-500'>שגיאה בטעינת הקבצים</p>", 500
+
+
+@upload_bp.route('/status/<document_id>', methods=['GET'])
+def check_document_status(document_id):
+    """
+    Check if a document has been processed and is ready to use.
+    Used for polling after file upload.
+    """
+    try:
+        doc_repo = MongoDocumentRepository(db)
+        document = doc_repo.get_by_id(document_id)
+        
+        if not document:
+            return jsonify({"error": "Document not found"}), 404
+        
+        # Check if document content has been processed (not "[Processing...]")
+        is_ready = document.content_text and document.content_text != "[Processing...]"
+        
+        return jsonify({
+            "ready": is_ready,
+            "document_id": document_id,
+            "status": "ready" if is_ready else "processing"
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error checking document status: {e}", exc_info=True)
+        return jsonify({"error": "Failed to check status"}), 500
