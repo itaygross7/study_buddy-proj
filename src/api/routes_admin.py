@@ -175,6 +175,9 @@ def dashboard():
     return render_template('admin/dashboard.html',
                            health=health,
                            stats=stats,
+                           user_count=stats.get('users', {}).get('total', 0),
+                           doc_count=stats.get('content', {}).get('documents', 0),
+                           task_count=stats.get('tasks', {}).get('completed', 0),
                            recent_users=recent_users,
                            recent_failures=recent_failures,
                            config=config)
