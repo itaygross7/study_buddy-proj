@@ -41,8 +41,9 @@
                         <img src="{{ url_for('serve_avner', filename='avner_waving.jpeg') }}" 
                              alt="אבנר ה-CapyBuddy" 
                              class="h-10 w-10 rounded-full object-cover border-2 border-warm-yellow shadow-md"
-                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                        <span class="hidden h-10 w-10 items-center justify-center bg-warm-yellow rounded-full text-dark-brown font-bold text-xl" role="img" aria-label="אבנר לוגו">🦫</span>
+                             loading="eager"
+                             onerror="this.style.display='none'; this.nextElementSibling.classList.remove('hidden'); this.nextElementSibling.classList.add('inline-flex');">
+                        <span class="hidden h-10 w-10 items-center justify-center bg-warm-yellow rounded-full text-dark-brown font-bold text-xl flex-shrink-0" role="img" aria-label="אבנר לוגו">🦫</span>
                         <span class="text-cream font-bold text-lg hidden sm:block">StudyBuddy</span>
                     </a>
                     
@@ -75,8 +76,9 @@
                         <a href="{{ url_for('library.profile') }}" 
                            class="inline-flex items-center gap-2 bg-warm-yellow text-dark-brown text-sm px-4 py-2 rounded-full font-medium shadow-md hover:bg-golden-yellow transition-colors">
                             <img src="/avner/avner_signing_ok.jpeg" 
-                                 alt="" class="h-6 w-6 rounded-full object-cover"
-                                 onerror="this.textContent='🦫';">
+                                 alt="" class="h-6 w-6 rounded-full object-cover flex-shrink-0"
+                                 loading="eager"
+                                 onerror="this.style.display='none';">
                             {{ current_user.user.name or current_user.user.email.split('@')[0] }}
                         </a>
                         <a href="{{ url_for('auth.logout') }}" 
@@ -134,8 +136,9 @@
                         <a href="{{ url_for('library.profile') }}" 
                            class="flex items-center gap-2 text-warm-yellow text-sm px-3 py-2 hover:bg-caramel rounded-lg transition-all">
                             <img src="/avner/avner_signing_ok.jpeg" 
-                                 alt="" class="h-6 w-6 rounded-full object-cover"
-                                 onerror="this.textContent='🦫';">
+                                 alt="" class="h-6 w-6 rounded-full object-cover flex-shrink-0"
+                                 loading="eager"
+                                 onerror="this.style.display='none';">
                             👤 {{ current_user.user.name or current_user.user.email.split('@')[0] }}
                         </a>
                         {% if current_user.user.role.value == 'admin' %}
@@ -177,8 +180,9 @@
                 <div class="flex items-center gap-3">
                     <img src="{{ url_for('serve_avner', filename='avner_waving.jpeg') }}" 
                          alt="אבנר ה-CapyBuddy" 
-                         class="h-10 w-10 rounded-full object-cover border-2 border-warm-yellow"
-                         onerror="this.textContent='🦫';">
+                         class="h-10 w-10 rounded-full object-cover border-2 border-warm-yellow flex-shrink-0"
+                         loading="lazy"
+                         onerror="this.style.display='none';">
                     <p class="text-cream text-sm">
                         © 2025 StudyBuddyAI · לומדים יחד עם אבנר
                     </p>

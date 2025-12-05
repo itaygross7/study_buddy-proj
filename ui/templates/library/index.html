@@ -14,7 +14,7 @@
                class="px-4 py-2 border-2 border-cozy-brown text-cozy-brown rounded-xl font-medium hover:bg-cozy-brown hover:text-cream transition-colors">
                 👤 הפרופיל שלי
             </a>
-            {% if courses|length < max_courses %}
+            {% if current_user.user.role.value == 'admin' or courses|length < max_courses %}
             <a href="{{ url_for('library.new_course') }}" 
                class="px-4 py-2 bg-golden-yellow text-dark-brown rounded-xl font-bold hover:bg-warm-yellow transition-colors shadow-md">
                 ➕ קורס חדש
@@ -87,12 +87,16 @@
     {% endfor %}
     
     <!-- Add Course Card -->
-    {% if courses|length < max_courses %}
+    {% if current_user.user.role.value == 'admin' or courses|length < max_courses %}
     <a href="{{ url_for('library.new_course') }}" 
        class="bg-warm-beige rounded-2xl p-6 border-2 border-dashed border-warm-gray hover:border-golden-yellow transition-all flex flex-col items-center justify-center min-h-[200px] group">
         <div class="text-4xl mb-2 group-hover:scale-110 transition-transform">➕</div>
         <span class="text-cozy-brown font-medium group-hover:text-dark-brown">הוסף קורס חדש</span>
+        {% if current_user.user.role.value == 'admin' %}
+        <span class="text-xs text-warm-gray mt-1">{{ courses|length }} קורסים (מנהל - ללא הגבלה)</span>
+        {% else %}
         <span class="text-xs text-warm-gray mt-1">{{ courses|length }}/{{ max_courses }}</span>
+        {% endif %}
     </a>
     {% endif %}
 </div>

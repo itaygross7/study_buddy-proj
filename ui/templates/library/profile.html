@@ -85,5 +85,38 @@
             💾 שמור שינויים
         </button>
     </form>
+    
+    <!-- Change Password Section -->
+    <div class="mt-6 bg-cream rounded-2xl p-6 shadow-md border border-warm-yellow">
+        <h2 class="text-xl font-bold text-dark-brown mb-4">🔒 שינוי סיסמה</h2>
+        
+        <form method="POST" action="{{ url_for('library.change_password') }}" id="password-form">
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-dark-brown mb-1">סיסמה נוכחית</label>
+                    <input type="password" name="current_password" required
+                        class="w-full p-3 border-2 border-warm-gray rounded-xl bg-warm-beige focus:border-golden-yellow focus:outline-none">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-dark-brown mb-1">סיסמה חדשה</label>
+                    <input type="password" name="new_password" required minlength="8"
+                        class="w-full p-3 border-2 border-warm-gray rounded-xl bg-warm-beige focus:border-golden-yellow focus:outline-none">
+                    <p class="text-xs text-cozy-brown mt-1">לפחות 8 תווים</p>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-dark-brown mb-1">אימות סיסמה חדשה</label>
+                    <input type="password" name="confirm_password" required minlength="8"
+                        class="w-full p-3 border-2 border-warm-gray rounded-xl bg-warm-beige focus:border-golden-yellow focus:outline-none">
+                </div>
+                
+                <button type="submit" 
+                    class="w-full bg-cozy-brown text-cream font-bold py-3 rounded-xl hover:bg-coffee transition-colors shadow-md">
+                    🔐 שנה סיסמה
+                </button>
+            </div>
+        </form>
+    </div>
 </div>
 {% endblock %}

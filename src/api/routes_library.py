@@ -7,6 +7,7 @@ from flask_login import login_required, current_user
 from src.infrastructure.database import db
 from src.domain.models.db_models import Course, UserProfile, Language
 from src.api.routes_admin import get_system_config
+from src.services import auth_service
 from sb_utils.logger_utils import logger
 
 library_bp = Blueprint('library', __name__)
@@ -89,7 +90,9 @@ def new_course():
     config = get_system_config()
     current_count = db.courses.count_documents({"user_id": current_user.id})
 
-    if current_count >= config.max_courses_per_user:
+    # Admin users have no course limit
+    from src.domain.models.db_models import UserRole
+    if current_user.user.role != UserRole.ADMIN and current_count >= config.max_courses_per_user:
         flash(f'הגעת למקסימום {config.max_courses_per_user} קורסים', 'error')
         return redirect(url_for('library.index'))
 
@@ -303,6 +306,41 @@ def profile():
                            profile=user_profile,
                            courses_count=courses_count,
                            documents_count=documents_count)
+
+
+@library_bp.route('/profile/change-password', methods=['POST'])
+@login_required
+def change_password():
+    """Change user password."""
+    current_password = request.form.get('current_password', '')
+    new_password = request.form.get('new_password', '')
+    confirm_password = request.form.get('confirm_password', '')
+
+    if not current_password or not new_password:
+        flash('יש למלא את כל השדות', 'error')
+        return redirect(url_for('library.profile'))
+
+    if new_password != confirm_password:
+        flash('הסיסמאות החדשות אינן תואמות', 'error')
+        return redirect(url_for('library.profile'))
+
+    if len(new_password) < 8:
+        flash('הסיסמה החדשה חייבת להכיל לפחות 8 תווים', 'error')
+        return redirect(url_for('library.profile'))
+
+    # Check if user has a password (OAuth users don't)
+    user = db.users.find_one({"_id": current_user.id})
+    if not user.get('password_hash'):
+        flash('לא ניתן לשנות סיסמה למשתמשי OAuth. אנא השתמש בשיטת ההתחברות המקורית.', 'error')
+        return redirect(url_for('library.profile'))
+
+    # Attempt to change password
+    if auth_service.change_password(db, current_user.id, current_password, new_password):
+        flash('הסיסמה שונתה בהצלחה! 🔒', 'success')
+    else:
+        flash('הסיסמה הנוכחית שגויה', 'error')
+
+    return redirect(url_for('library.profile'))
 
 
 # ============ API Endpoints ============

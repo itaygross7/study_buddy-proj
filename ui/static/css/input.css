@@ -143,6 +143,120 @@ input[type="file"]::file-selector-button:hover {
 }
 
 /* ========================================
+   Avner Avatar Animation Styles
+   ======================================== */
+
+.avner-avatar-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+.avner-size-small .avner-main-image { width: 48px; height: 48px; }
+.avner-size-medium .avner-main-image { width: 80px; height: 80px; }
+.avner-size-large .avner-main-image { width: 120px; height: 120px; }
+
+.avner-image-container {
+    position: relative;
+    display: inline-block;
+}
+
+.avner-main-image {
+    display: block;
+    border-radius: 50%;
+    object-fit: cover;
+    transition: opacity 0.15s ease-in-out, transform 0.3s ease;
+    border: 3px solid #F2C94C;
+    box-shadow: 0 2px 8px rgba(75, 46, 22, 0.2);
+}
+
+.avner-blink-image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    opacity: 0;
+    transition: opacity 0.1s ease;
+    pointer-events: none;
+    border: 3px solid #F2C94C;
+}
+
+.avner-bubble-container {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-bottom: 10px;
+    z-index: 10;
+}
+
+.avner-speech-bubble {
+    background: #FAF3D7;
+    border-radius: 12px;
+    padding: 8px 12px;
+    box-shadow: 0 2px 8px rgba(75, 46, 22, 0.15);
+    border: 2px solid #F2C94C;
+    white-space: nowrap;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.avner-speech-bubble::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-top: 8px solid #F2C94C;
+}
+
+.avner-bubble-text {
+    font-size: 0.875rem;
+    color: #4B2E16;
+    font-weight: 500;
+}
+
+.avner-bubble-hidden {
+    opacity: 0;
+    transform: translateY(5px);
+    pointer-events: none;
+}
+
+/* State animations */
+.avner-state-idle .avner-main-image {
+    animation: gentle-breathe 4s ease-in-out infinite;
+}
+
+.avner-state-thinking .avner-main-image {
+    animation: gentle-wiggle 0.8s ease-in-out infinite;
+}
+
+.avner-state-success .avner-main-image {
+    animation: bounce-celebrate 0.5s ease infinite;
+}
+
+@keyframes gentle-breathe {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+}
+
+@keyframes gentle-wiggle {
+    0%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(-2deg); }
+    75% { transform: rotate(2deg); }
+}
+
+@keyframes bounce-celebrate {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+}
+
+/* ========================================
    Avner Chat Widget - Simplified
    ======================================== */
 
@@ -350,10 +464,10 @@ input[type="file"]::file-selector-button:hover {
 @media (max-width: 767px) {
     .body-with-background {
         background-image: url('/avner/mobile_bacround.jpeg');
-        background-size: cover;
-        background-position: center;
+        background-size: contain;
+        background-position: center top;
         background-repeat: no-repeat;
-        background-attachment: fixed;
+        background-attachment: scroll;
     }
 }
 
@@ -361,10 +475,10 @@ input[type="file"]::file-selector-button:hover {
 @media (min-width: 768px) {
     .body-with-background {
         background-image: url('/avner/desktop_ui_backround.jpeg');
-        background-size: cover;
-        background-position: center;
+        background-size: contain;
+        background-position: center top;
         background-repeat: no-repeat;
-        background-attachment: fixed;
+        background-attachment: scroll;
     }
 }
 
@@ -376,7 +490,7 @@ input[type="file"]::file-selector-button:hover {
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: rgba(255, 248, 230, 0.85); /* Warm beige with transparency */
+    background-color: rgba(255, 248, 230, 0.92); /* Warm beige with more transparency to reduce image prominence */
     z-index: -1;
     pointer-events: none;
 }
