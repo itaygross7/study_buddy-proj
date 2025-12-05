@@ -1,7 +1,7 @@
 import uuid
 import os
 import tempfile
-from flask import Blueprint, request, jsonify, url_for
+from flask import Blueprint, request, jsonify, url_for, render_template
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 from datetime import datetime
@@ -132,9 +132,9 @@ def upload_files_route():
                 continue
                 
             # Validate file size
-            file.seek(0, os.SEEK_END)
+            file.seek(0, 2)  # Seek to end
             file_size = file.tell()
-            file.seek(0)
+            file.seek(0)  # Seek back to beginning
             
             if file_size > MAX_FILE_SIZE:
                 return jsonify({"error": f"File {file.filename} is too large (max 50MB)"}), 413
@@ -234,8 +234,6 @@ def list_files_route():
     user_id = current_user.id
     
     try:
-        from flask import render_template_string
-        
         user_files_collection = db['user_files']
         files = list(user_files_collection.find(
             {"user_id": user_id},
@@ -248,80 +246,8 @@ def list_files_route():
             if 'upload_date' in file:
                 file['upload_date'] = file['upload_date'].isoformat()
         
-        # Return HTML for HTMX
-        template = """
-{% if files %}
-<div class="overflow-x-auto">
-    <table class="min-w-full divide-y divide-gray-200">
-        <thead class="bg-gray-50">
-            <tr>
-                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">שם קובץ</th>
-                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">גודל</th>
-                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">תאריך</th>
-                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">סטטוס</th>
-                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">פעולות</th>
-            </tr>
-        </thead>
-        <tbody class="bg-white divide-y divide-gray-200">
-            {% for file in files %}
-            <tr>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{{ file.filename }}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
-                    {% if file.size %}
-                        {% if file.size < 1024 %}
-                            {{ file.size }} B
-                        {% elif file.size < 1048576 %}
-                            {{ "%.2f"|format(file.size / 1024) }} KB
-                        {% else %}
-                            {{ "%.2f"|format(file.size / 1048576) }} MB
-                        {% endif %}
-                    {% else %}
-                        -
-                    {% endif %}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
-                    {% if file.upload_date %}
-                        {{ file.upload_date[:10] }}
-                    {% else %}
-                        -
-                    {% endif %}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-right">
-                    {% if file.status == 'processing' %}
-                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                            מעבד
-                        </span>
-                    {% elif file.status == 'completed' %}
-                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                            הושלם
-                        </span>
-                    {% else %}
-                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
-                            {{ file.status }}
-                        </span>
-                    {% endif %}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-right">
-                    <button 
-                        hx-delete="{{ url_for('upload_bp.delete_file_route', file_id=file.file_id) }}"
-                        hx-confirm="האם אתה בטוח שברצונך למחוק את הקובץ?"
-                        hx-target="closest tr"
-                        hx-swap="outerHTML"
-                        class="text-red-600 hover:text-red-900">
-                        מחק
-                    </button>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
-{% else %}
-<p class="text-center text-gray-500">לא נמצאו קבצים</p>
-{% endif %}
-        """
-        
-        return render_template_string(template, files=files)
+        # Return HTML for HTMX using separate template file
+        return render_template('fragments/files_table.html', files=files)
         
     except Exception as e:
         logger.error(f"Failed to list files for user {user_id}: {e}", exc_info=True)

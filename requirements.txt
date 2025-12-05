@@ -2,7 +2,6 @@ flask
 gunicorn
 flask-cors
 flask-login
-flask-babel
 Flask-Babel
 celery
 pymongo
