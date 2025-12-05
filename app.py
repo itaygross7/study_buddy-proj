@@ -1,13 +1,13 @@
 import os
 import sys
-from flask import Flask, jsonify, render_template, request, send_from_directory, session
+from flask import Flask, jsonify, render_template, request, send_from_directory, session, flash, redirect, url_for
 from flask_cors import CORS
 from flask_login import current_user, login_required
 from werkzeug.exceptions import NotFound
 from flask_babel import Babel, get_locale
 
 from src.infrastructure.config import settings
-from src.infrastructure.database import init_app as init_db
+from src.infrastructure.database import init_app as init_db, db
 from sb_utils.logger_utils import logger
 from src.services import email_service, auth_service
 
@@ -32,9 +32,23 @@ from src.api.routes_diagram import diagram_bp
 
 babel = Babel()
 
+# Constants for flash messages
+NO_FILES_MESSAGE = 'יש להעלות חומר לימוד לפני השימוש בכלים. צור קורס והעלה קבצים כדי להתחיל!'
+
 def get_locale_from_session():
     """Get language from session, default to Hebrew."""
     return session.get('lang', 'he')
+
+def check_user_has_documents():
+    """Check if the current user has any uploaded documents."""
+    return db.documents.count_documents({"user_id": current_user.id}) > 0
+
+def require_uploaded_files(template_name):
+    """Decorator to check if user has uploaded files before accessing a tool."""
+    if not check_user_has_documents():
+        flash(NO_FILES_MESSAGE, 'warning')
+        return redirect(url_for('library.index'))
+    return render_template(template_name)
 
 def create_app():
     """Application factory for Flask."""
@@ -113,85 +127,40 @@ def create_app():
     @app.route('/tools/summary')
     @login_required
     def summary_tool():
-        from src.infrastructure.database import db
-        # Check if user has any documents
-        has_documents = db.documents.count_documents({"user_id": current_user.id}) > 0
-        if not has_documents:
-            from flask import flash, redirect, url_for
-            flash('יש להעלות חומר לימוד לפני השימוש בכלים. צור קורס והעלה קבצים כדי להתחיל!', 'warning')
-            return redirect(url_for('library.index'))
-        return render_template('tool_summary.html')
+        return require_uploaded_files('tool_summary.html')
 
     @app.route('/tools/flashcards')
     @login_required
     def flashcards_tool():
-        from src.infrastructure.database import db
-        # Check if user has any documents
-        has_documents = db.documents.count_documents({"user_id": current_user.id}) > 0
-        if not has_documents:
-            from flask import flash, redirect, url_for
-            flash('יש להעלות חומר לימוד לפני השימוש בכלים. צור קורס והעלה קבצים כדי להתחיל!', 'warning')
-            return redirect(url_for('library.index'))
-        return render_template('tool_flashcards.html')
+        return require_uploaded_files('tool_flashcards.html')
 
     @app.route('/tools/assess')
     @login_required
     def assess_tool():
-        from src.infrastructure.database import db
-        # Check if user has any documents
-        has_documents = db.documents.count_documents({"user_id": current_user.id}) > 0
-        if not has_documents:
-            from flask import flash, redirect, url_for
-            flash('יש להעלות חומר לימוד לפני השימוש בכלים. צור קורס והעלה קבצים כדי להתחיל!', 'warning')
-            return redirect(url_for('library.index'))
-        return render_template('tool_assess.html')
+        return require_uploaded_files('tool_assess.html')
 
     @app.route('/tools/homework')
     @login_required
     def homework_tool():
-        from src.infrastructure.database import db
-        # Check if user has any documents
-        has_documents = db.documents.count_documents({"user_id": current_user.id}) > 0
-        if not has_documents:
-            from flask import flash, redirect, url_for
-            flash('יש להעלות חומר לימוד לפני השימוש בכלים. צור קורס והעלה קבצים כדי להתחיל!', 'warning')
-            return redirect(url_for('library.index'))
-        return render_template('tool_homework.html')
+        return require_uploaded_files('tool_homework.html')
 
     @app.route('/tools/tutor')
     @login_required
     def tutor_tool():
-        from src.infrastructure.database import db
-        # Check if user has any documents
-        has_documents = db.documents.count_documents({"user_id": current_user.id}) > 0
-        if not has_documents:
-            from flask import flash, redirect, url_for
-            flash('יש להעלות חומר לימוד לפני השימוש בכלים. צור קורס והעלה קבצים כדי להתחיל!', 'warning')
-            return redirect(url_for('library.index'))
-        return render_template('tool_tutor.html')
+        return require_uploaded_files('tool_tutor.html')
 
     @app.route('/tools/diagram')
     @login_required
     def diagram_tool():
-        from src.infrastructure.database import db
-        # Check if user has any documents
-        has_documents = db.documents.count_documents({"user_id": current_user.id}) > 0
-        if not has_documents:
-            from flask import flash, redirect, url_for
-            flash('יש להעלות חומר לימוד לפני השימוש בכלים. צור קורס והעלה קבצים כדי להתחיל!', 'warning')
-            return redirect(url_for('library.index'))
-        return render_template('tool_diagram.html')
+        return require_uploaded_files('tool_diagram.html')
 
     @app.route('/glossary')
     @app.route('/glossary/<course_id>')
     @login_required
     def glossary_page(course_id='default'):
-        from src.infrastructure.database import db
-        # Check if user has any documents
-        has_documents = db.documents.count_documents({"user_id": current_user.id}) > 0
-        if not has_documents and course_id == 'default':
-            from flask import flash, redirect, url_for
-            flash('יש להעלות חומר לימוד לפני השימוש במונחון. צור קורס והעלה קבצים כדי להתחיל!', 'warning')
+        # Check if user has any documents for default glossary
+        if course_id == 'default' and not check_user_has_documents():
+            flash(NO_FILES_MESSAGE, 'warning')
             return redirect(url_for('library.index'))
         return render_template('glossary.html', course_id=course_id)
 
@@ -199,7 +168,6 @@ def create_app():
     @login_required
     def dashboard():
         # Redirect dashboard to library - new flow
-        from flask import redirect, url_for
         return redirect(url_for('library.index'))
 
     @app.route('/tasks/<task_id>')
