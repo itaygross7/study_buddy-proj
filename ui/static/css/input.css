@@ -26,6 +26,10 @@
 ==================================================================
 */
 @layer base {
+    :root {
+        --overlay-color: rgba(255, 248, 230, 0.3);
+    }
+    
     .body-with-background {
         /* Mobile background by default */
         background-image: url('../img/background_mobile.png');
@@ -42,7 +46,7 @@
         left: 0;
         right: 0;
         bottom: 0;
-        background: rgba(255, 248, 230, 0.3);
+        background: var(--overlay-color);
         pointer-events: none;
         z-index: -1;
     }
