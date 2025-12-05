@@ -214,6 +214,25 @@
 
 {% block scripts %}
 <script>
+    // Constants
+    const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+    const MAX_FILE_SIZE_MB = 50;
+    
+    // Helper function to validate file size
+    function validateFileSize(file) {
+        if (!file || file.size === 0) return { valid: false, error: 'יש לבחור קובץ להעלאה 📝' };
+        
+        if (file.size > MAX_FILE_SIZE) {
+            const fileSizeMB = (file.size / 1024 / 1024).toFixed(2);
+            return { 
+                valid: false, 
+                error: `❌ הקובץ גדול מדי! גודל מקסימלי: ${MAX_FILE_SIZE_MB}MB\nגודל הקובץ שלך: ${fileSizeMB}MB`
+            };
+        }
+        
+        return { valid: true };
+    }
+    
     // Upload form handler
     document.getElementById('upload-form')?.addEventListener('submit', async function(e) {
         e.preventDefault();
@@ -233,11 +252,11 @@
             return;
         }
         
-        // Check file size on client side
+        // Validate file size if file provided
         if (fileInput && fileInput.size > 0) {
-            const maxSize = 50 * 1024 * 1024; // 50MB
-            if (fileInput.size > maxSize) {
-                alert('❌ הקובץ גדול מדי! גודל מקסימלי: 50MB\nגודל הקובץ שלך: ' + (fileInput.size / 1024 / 1024).toFixed(2) + 'MB');
+            const validation = validateFileSize(fileInput);
+            if (!validation.valid) {
+                alert(validation.error);
                 return;
             }
         }
@@ -297,15 +316,10 @@
         const originalText = submitBtn.innerHTML;
         const fileInput = formData.get('file');
         
-        if (!fileInput || fileInput.size === 0) {
-            alert('יש לבחור קובץ להעלאה 📝');
-            return;
-        }
-        
-        // Check file size on client side
-        const maxSize = 50 * 1024 * 1024; // 50MB
-        if (fileInput.size > maxSize) {
-            alert('❌ הקובץ גדול מדי! גודל מקסימלי: 50MB\nגודל הקובץ שלך: ' + (fileInput.size / 1024 / 1024).toFixed(2) + 'MB');
+        // Validate file
+        const validation = validateFileSize(fileInput);
+        if (!validation.valid) {
+            alert(validation.error);
             return;
         }
         

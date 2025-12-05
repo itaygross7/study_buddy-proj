@@ -79,8 +79,12 @@ def upload_route():
         # Verify file size after saving
         file_size = os.path.getsize(temp_path)
         if file_size > MAX_FILE_SIZE:
-            os.remove(temp_path)
-            os.rmdir(temp_dir)
+            # Clean up temp files before returning error
+            try:
+                os.remove(temp_path)
+                os.rmdir(temp_dir)
+            except OSError as cleanup_error:
+                logger.warning(f"Failed to cleanup temp files: {cleanup_error}")
             return jsonify({"error": "File too large (max 50MB)"}), 413
 
         # Create DB records for the document and the task
