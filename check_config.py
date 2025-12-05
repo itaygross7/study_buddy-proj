@@ -1,11 +1,17 @@
 #!/usr/bin/env python3
 """
 Configuration and API Key Validation Tool
-Checks all required configurations and provides actionable feedback
+Checks all required configurations for Cloudflare Tunnel setup
 """
 import os
 import sys
-from dotenv import load_dotenv
+# Try to import dotenv, handle if missing
+try:
+    from dotenv import load_dotenv
+except ImportError:
+    print("❌ Error: python-dotenv not installed.")
+    print("Run: pip install python-dotenv")
+    sys.exit(1)
 
 # Load environment variables
 load_dotenv()
@@ -19,7 +25,7 @@ def check_env_var(name, required=True, sensitive=False):
         return False, status, ""
     
     # Check for placeholder values
-    placeholder_indicators = ['your_', 'change-this', 'example', 'here']
+    placeholder_indicators = ['your_', 'change-this', 'example', 'here', 'paste_token']
     if any(indicator in value.lower() for indicator in placeholder_indicators):
         return False, "❌ PLACEHOLDER", value if not sensitive else "***"
     
@@ -28,7 +34,7 @@ def check_env_var(name, required=True, sensitive=False):
 
 def main():
     print("=" * 70)
-    print("StudyBuddy Configuration Check")
+    print("StudyBuddy Configuration Check (Cloudflare Edition)")
     print("=" * 70)
     
     all_ok = True
@@ -41,6 +47,8 @@ def main():
         ("SECRET_KEY", True, True),
         ("DOMAIN", True, False),
         ("BASE_URL", True, False),
+        # ADDED: Essential for Cloudflare Tunnel
+        ("TUNNEL_TOKEN", True, True), 
     ]
     
     for name, required, sensitive in configs:
@@ -90,53 +98,11 @@ def main():
         all_ok = False
     
     # Email Configuration
-    print("\n📧 EMAIL CONFIGURATION (for verification)")
+    print("\n📧 EMAIL CONFIGURATION")
     print("-" * 70)
     configs = [
-        ("MAIL_SERVER", False, False),
-        ("MAIL_PORT", False, False),
-        ("MAIL_USE_TLS", False, False),
         ("MAIL_USERNAME", False, True),
         ("MAIL_PASSWORD", False, True),
-        ("MAIL_DEFAULT_SENDER", False, False),
-    ]
-    
-    email_configured = True
-    for name, required, sensitive in configs:
-        ok, status, value = check_env_var(name, required, sensitive)
-        print(f"{name:30s} {status:20s} {value}")
-        if not ok:
-            email_configured = False
-    
-    if not email_configured:
-        print("\n⚠️  Email not fully configured - verification emails won't be sent")
-    
-    # OAuth Configuration
-    print("\n🔐 OAUTH CONFIGURATION (Google Sign-In)")
-    print("-" * 70)
-    configs = [
-        ("GOOGLE_CLIENT_ID", False, True),
-        ("GOOGLE_CLIENT_SECRET", False, True),
-    ]
-    
-    google_oauth_ok = True
-    for name, required, sensitive in configs:
-        ok, status, value = check_env_var(name, required, sensitive)
-        print(f"{name:30s} {status:20s} {value}")
-        if not ok:
-            google_oauth_ok = False
-    
-    if not google_oauth_ok:
-        print("\n⚠️  Google OAuth not configured - Google Sign-In won't work")
-        print("   Get credentials from: https://console.cloud.google.com/")
-        print(f"   Redirect URI: {os.getenv('BASE_URL', 'https://yourdomain.com')}/oauth/google/callback")
-    
-    # Admin Configuration
-    print("\n👑 ADMIN CONFIGURATION")
-    print("-" * 70)
-    configs = [
-        ("ADMIN_EMAIL", False, False),
-        ("ADMIN_PASSWORD", False, True),
     ]
     
     for name, required, sensitive in configs:
@@ -147,52 +113,10 @@ def main():
     print("\n" + "=" * 70)
     if all_ok:
         print("✅ All required configurations are set!")
+        return 0
     else:
         print("❌ Some required configurations are missing or invalid!")
-        print("\nPlease check the issues above and update your .env file.")
-        print("Copy .env.example to .env and fill in your values:")
-        print("  cp .env.example .env")
-        print("  nano .env")
-    
-    print("=" * 70)
-    
-    # Test AI connections if keys are available
-    if openai_ok or gemini_ok:
-        print("\n🧪 TESTING AI CONNECTIONS")
-        print("-" * 70)
-        print("Note: This tests actual API connectivity with minimal requests")
-        print()
-        
-        if openai_ok:
-            print("Testing OpenAI connection...")
-            try:
-                import openai
-                client = openai.OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
-                # Test with models list endpoint (doesn't consume credits)
-                models = client.models.list()
-                print("✅ OpenAI connection successful!")
-            except Exception as e:
-                print(f"❌ OpenAI connection failed: {e}")
-                all_ok = False
-        
-        if gemini_ok:
-            print("Testing Gemini connection...")
-            try:
-                import google.generativeai as genai
-                genai.configure(api_key=os.getenv('GEMINI_API_KEY'))
-                # List models to test connection (minimal API usage)
-                models = genai.list_models()
-                # Check if we have access to at least one model
-                model_count = sum(1 for _ in models)
-                if model_count > 0:
-                    print("✅ Gemini connection successful!")
-                else:
-                    print("⚠️  Gemini API key valid but no models available")
-            except Exception as e:
-                print(f"❌ Gemini connection failed: {e}")
-                all_ok = False
-    
-    return 0 if all_ok else 1
+        return 1
 
 if __name__ == '__main__':
     sys.exit(main())
