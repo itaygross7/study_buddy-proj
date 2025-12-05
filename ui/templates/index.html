@@ -2,110 +2,156 @@
 {% block content %}
 <div class="hero">
   <div class="hero-left">
-    <!-- Avner big pose on left -->
-    <img src="{{ url_for('serve_avner', filename='avner_with_laptop.jpeg') }}" alt="אבנר ה-CapyBuddy יושב מול המחשב" class="avner-hero">
+    <!-- App Logo -->
+    <img src="{{ url_for('serve_avner', filename='app_logo.jpeg') }}" alt="Study Buddy Logo" class="avner-hero">
   </div>
   <div class="hero-right">
     <h1>👋 שלום! אני אבנר ה-CapyBuddy</h1>
-    <p class="muted">כאן כדי לעזור לך ללמוד בקלות ובכיף. בחר כלי, העלה קובץ או הדבק טקסט והתחל ללמוד!</p>
+    <p class="muted">🎓 פלטפורמת הלמידה החכמה שלך עם בינה מלאכותית! <br>
+    אני כאן כדי לעזור לך ללמוד טוב יותר, מהר יותר וביעילות רבה יותר 🚀</p>
     
-    <!-- Enhanced File Upload Form -->
-    <div class="content-card mt-5">
-      <form id="uploadForm" action="/api/upload/" method="post" enctype="multipart/form-data" class="space-y-4">
-        <div>
-          <label for="fileInput" class="block mb-2 font-bold text-dark-brown text-right">📁 העלה קובץ:</label>
-          <input type="file" id="fileInput" name="file" accept=".pdf,.docx,.pptx,.txt,.html,.png,.jpg,.jpeg,.gif" class="form-input">
-        </div>
-        <div class="text-center text-warm-gray font-medium">
-          <span>או</span>
-        </div>
-        <div>
-          <label for="textInput" class="block mb-2 font-bold text-dark-brown text-right">📝 הדבק טקסט:</label>
-          <textarea id="textInput" name="text" rows="4" class="form-input" placeholder="הדבק את הטקסט שלך כאן..."></textarea>
-        </div>
-        <button type="submit" class="btn-primary w-full">
-          🚀 העלה והתחל ללמוד
-        </button>
-        <div id="uploadStatus" class="mt-3 text-center hidden"></div>
-      </form>
+    <!-- Feature highlights -->
+    <div class="mt-4 space-y-2 text-right">
+      <p class="text-cozy-brown text-sm">✨ <strong>סיכומים אוטומטיים</strong> - הפוך שעות קריאה לדקות</p>
+      <p class="text-cozy-brown text-sm">🎴 <strong>כרטיסיות לימוד</strong> - זכור הכל עם קלפים חכמים</p>
+      <p class="text-cozy-brown text-sm">✅ <strong>תרגולים מותאמים</strong> - בחן את עצמך ושפר את הביצועים</p>
+      <p class="text-cozy-brown text-sm">🤖 <strong>מורה פרטי AI</strong> - תשובות מיידיות לכל שאלה</p>
     </div>
+    
+    {% if not current_user.is_authenticated %}
+    <!-- CTA for non-authenticated users -->
+    <div class="content-card mt-5 border-2 border-golden-yellow">
+      <div class="text-center space-y-4">
+        <h2 class="text-2xl font-bold text-dark-brown">🎯 מוכנים להתחיל?</h2>
+        <p class="text-cozy-brown">הירשמו עכשיו וקבלו גישה לכל הכלים החכמים שלנו!</p>
+        <div class="flex gap-3 justify-center">
+          <a href="{{ url_for('auth.signup') }}" class="btn-primary px-8 py-3 inline-block">
+            ✨ הרשמה חינם
+          </a>
+          <a href="{{ url_for('auth.login') }}" class="btn-secondary px-8 py-3 inline-block">
+            🔑 כבר רשום? התחבר
+          </a>
+        </div>
+      </div>
+    </div>
+    {% else %}
+    <!-- Quick access for authenticated users -->
+    <div class="content-card mt-5">
+      <h2 class="text-xl font-bold text-dark-brown mb-3 text-right">🚀 גישה מהירה</h2>
+      <p class="text-cozy-brown mb-4 text-right">בחר כלי מהרשימה למטה או גש לספרייה שלך</p>
+      <a href="{{ url_for('library.index') }}" class="btn-primary w-full inline-block text-center">
+        📚 לספרייה שלי
+      </a>
+    </div>
+    {% endif %}
   </div>
+</div>
+
+<!-- Tools Section Header -->
+<div class="text-center mb-6 mt-8">
+  <h2 class="text-3xl font-bold text-dark-brown mb-3">🛠️ הכלים החכמים שלנו</h2>
+  <p class="text-cozy-brown text-lg">גלה את כל היכולות שאבנר מציע כדי לשפר את הלמידה שלך</p>
+  {% if not current_user.is_authenticated %}
+  <p class="text-golden-yellow font-bold mt-2">🔒 נדרש להירשם כדי להשתמש בכלים</p>
+  {% endif %}
 </div>
 
 <div class="tools-grid">
   <!-- Main 4 cards with varied Avner photos -->
-  <a href="{{ url_for('summary_tool') }}" class="tool-card tool-link">
+  <a href="{{ url_for('summary_tool') }}" class="tool-card tool-link {% if not current_user.is_authenticated %}opacity-75{% endif %}">
     <img src="{{ url_for('serve_avner', filename='avner_reading.jpeg') }}" alt="אבנר קורא" class="sticker">
-    <h3>📖 מסכם</h3>
-    <p>קבל סיכום ידידותי וממוקד לטקסטים וקבצים שלך.</p>
+    <h3>📖 מסכם חכם</h3>
+    <p>קבל סיכום ממוקד וברור בדקות ספורות! 💡 חסוך זמן יקר והבן טוב יותר את החומר.</p>
+    {% if not current_user.is_authenticated %}
+    <div class="mt-2 text-xs text-golden-yellow font-bold">🔒 נדרשת הרשמה</div>
+    {% endif %}
   </a>
-  <a href="{{ url_for('flashcards_tool') }}" class="tool-card tool-link">
+  <a href="{{ url_for('flashcards_tool') }}" class="tool-card tool-link {% if not current_user.is_authenticated %}opacity-75{% endif %}">
     <img src="{{ url_for('serve_avner', filename='avner_studing.jpeg') }}" alt="אבנר לומד" class="sticker">
-    <h3>🎴 כרטיסיות</h3>
-    <p>ייצור כרטיסיות לזיכרון ותרגול ממוקד.</p>
+    <h3>🎴 כרטיסיות לימוד</h3>
+    <p>ייצור אוטומטי של כרטיסיות זכירה! 🧠 תרגל והבטח שתזכור הכל למבחן.</p>
+    {% if not current_user.is_authenticated %}
+    <div class="mt-2 text-xs text-golden-yellow font-bold">🔒 נדרשת הרשמה</div>
+    {% endif %}
   </a>
-  <a href="{{ url_for('assess_tool') }}" class="tool-card tool-link">
+  <a href="{{ url_for('assess_tool') }}" class="tool-card tool-link {% if not current_user.is_authenticated %}opacity-75{% endif %}">
     <img src="{{ url_for('serve_avner', filename='avner_celebrating.jpeg') }}" alt="אבנר חוגג" class="sticker">
-    <h3>✅ בחן אותי</h3>
-    <p>שאלות אימון מותאמות לרמה שלך.</p>
+    <h3>✅ בחן את עצמך</h3>
+    <p>שאלות תרגול מותאמות אישית! 🎯 בדוק את הידע שלך והתכונן למבחנים.</p>
+    {% if not current_user.is_authenticated %}
+    <div class="mt-2 text-xs text-golden-yellow font-bold">🔒 נדרשת הרשמה</div>
+    {% endif %}
   </a>
-  <a href="{{ url_for('homework_tool') }}" class="tool-card tool-link">
+  <a href="{{ url_for('homework_tool') }}" class="tool-card tool-link {% if not current_user.is_authenticated %}opacity-75{% endif %}">
     <img src="{{ url_for('serve_avner', filename='avner_thinking.jpeg') }}" alt="אבנר חושב" class="sticker">
-    <h3>📚 עוזר שיעורים</h3>
-    <p>הסברים ידידותיים וצעד־אצעד לשיעורי בית.</p>
+    <h3>📚 עוזר שיעורי בית</h3>
+    <p>הסברים צעד-אחר-צעד לתרגילים! 📝 פתור כל בעיה עם הדרכה מפורטת.</p>
+    {% if not current_user.is_authenticated %}
+    <div class="mt-2 text-xs text-golden-yellow font-bold">🔒 נדרשת הרשמה</div>
+    {% endif %}
   </a>
   <!-- Additional tools with more Avner variety -->
-  <a href="{{ url_for('tutor_tool') }}" class="tool-card tool-link">
+  <a href="{{ url_for('tutor_tool') }}" class="tool-card tool-link {% if not current_user.is_authenticated %}opacity-75{% endif %}">
     <img src="{{ url_for('serve_avner', filename='avner_signing_ok.jpeg') }}" alt="אבנר מורה" class="sticker">
     <h3>🎓 מורה פרטי AI</h3>
-    <p>שאלו אותי כל דבר על החומר שלכם.</p>
+    <p>שאל כל שאלה על החומר! 🤖 קבל תשובות מיידיות ומדויקות בכל נושא.</p>
+    {% if not current_user.is_authenticated %}
+    <div class="mt-2 text-xs text-golden-yellow font-bold">🔒 נדרשת הרשמה</div>
+    {% endif %}
   </a>
-  <a href="{{ url_for('diagram_tool') }}" class="tool-card tool-link">
+  <a href="{{ url_for('diagram_tool') }}" class="tool-card tool-link {% if not current_user.is_authenticated %}opacity-75{% endif %}">
     <img src="{{ url_for('serve_avner', filename='avner_angry_holding_pencile.jpeg') }}" alt="אבנר עם עיפרון" class="sticker">
     <h3>📊 יצירת תרשימים</h3>
-    <p>הפיכת טקסט מורכב לתרשים ויזואלי פשוט.</p>
+    <p>הפוך טקסט לויזואליה! 🎨 תרשימים ברורים שעוזרים להבין מושגים מורכבים.</p>
+    {% if not current_user.is_authenticated %}
+    <div class="mt-2 text-xs text-golden-yellow font-bold">🔒 נדרשת הרשמה</div>
+    {% endif %}
   </a>
-  <a href="{{ url_for('glossary_page', course_id='default') }}" class="tool-card tool-link">
+  <a href="{{ url_for('glossary_page', course_id='default') }}" class="tool-card tool-link {% if not current_user.is_authenticated %}opacity-75{% endif %}">
     <img src="{{ url_for('serve_avner', filename='avner_waving.jpeg') }}" alt="אבנר מנופף" class="sticker">
     <h3>📚 מונחון</h3>
-    <p>כל המונחים החשובים מהקורסים שלכם במקום אחד.</p>
+    <p>מילון מונחים חכם! 📖 כל המונחים החשובים מאורגנים ונגישים במקום אחד.</p>
+    {% if not current_user.is_authenticated %}
+    <div class="mt-2 text-xs text-golden-yellow font-bold">🔒 נדרשת הרשמה</div>
+    {% endif %}
   </a>
   {% if current_user.is_authenticated %}
   <a href="{{ url_for('library.index') }}" class="tool-card tool-link">
     <img src="{{ url_for('serve_avner', filename='avner_holding_backbak.jpeg') }}" alt="אבנר עם תיק" class="sticker">
     <h3>📚 הספרייה שלי</h3>
-    <p>ניהול קורסים וקבצים במקום מרכזי אחד.</p>
+    <p>נהל את כל הקורסים והקבצים שלך במקום אחד! 🗂️ ארגון מושלם ללמידה יעילה.</p>
   </a>
   {% endif %}
 </div>
 
-<script>
-// Enhanced upload form handler with friendly messages
-document.getElementById('uploadForm').addEventListener('submit', async function(e) {
-  e.preventDefault();
-  const formData = new FormData(this);
-  const statusDiv = document.getElementById('uploadStatus');
-  
-  statusDiv.classList.remove('hidden');
-  statusDiv.innerHTML = '<span class="text-cozy-brown font-medium">⏳ מעלה את הקובץ...</span>';
-  
-  try {
-    const response = await fetch('/api/upload/', {
-      method: 'POST',
-      body: formData
-    });
-    
-    const data = await response.json();
-    
-    if (response.ok) {
-      statusDiv.innerHTML = '<div class="success-card"><span class="font-bold">✅ הצלחה!</span> הקובץ ' + data.filename + ' הועלה בהצלחה!</div>';
-      this.reset();
-    } else {
-      statusDiv.innerHTML = '<div class="error-card"><span class="font-bold">❌ אופס!</span> ' + (data.error || 'משהו השתבש. נסה שוב.') + '</div>';
-    }
-  } catch (error) {
-    statusDiv.innerHTML = '<div class="error-card"><span class="font-bold">❌ שגיאה בהעלאה</span> - אנא בדוק את החיבור לאינטרנט ונסה שוב.</div>';
-  }
-});
-</script>
+<!-- Why Choose Us Section -->
+{% if not current_user.is_authenticated %}
+<div class="mt-12 mb-8">
+  <div class="content-card border-2 border-golden-yellow">
+    <h2 class="text-2xl font-bold text-dark-brown text-center mb-6">🌟 למה לבחור ב-StudyBuddy?</h2>
+    <div class="grid md:grid-cols-3 gap-6 text-right">
+      <div class="space-y-2">
+        <div class="text-4xl text-center">⚡</div>
+        <h3 class="text-lg font-bold text-cozy-brown text-center">מהיר ויעיל</h3>
+        <p class="text-sm text-warm-gray">חסוך שעות של עבודה עם כלים אוטומטיים חכמים</p>
+      </div>
+      <div class="space-y-2">
+        <div class="text-4xl text-center">🎯</div>
+        <h3 class="text-lg font-bold text-cozy-brown text-center">מותאם אישית</h3>
+        <p class="text-sm text-warm-gray">כלים שמסתגלים לסגנון הלמידה הייחודי שלך</p>
+      </div>
+      <div class="space-y-2">
+        <div class="text-4xl text-center">🔒</div>
+        <h3 class="text-lg font-bold text-cozy-brown text-center">בטוח ופרטי</h3>
+        <p class="text-sm text-warm-gray">המידע שלך מאובטח ושמור בצורה מלאה</p>
+      </div>
+    </div>
+    <div class="text-center mt-8">
+      <a href="{{ url_for('auth.signup') }}" class="btn-primary px-10 py-4 inline-block text-lg">
+        🚀 הצטרף עכשיו בחינם!
+      </a>
+    </div>
+  </div>
+</div>
+{% endif %}
 {% endblock %}
