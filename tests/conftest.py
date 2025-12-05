@@ -1,5 +1,17 @@
 import pytest
+import os
 from unittest.mock import MagicMock, patch
+
+
+# Set required environment variables before any imports
+@pytest.fixture(scope='session', autouse=True)
+def setup_test_env():
+    """Set up test environment variables."""
+    os.environ.setdefault('SECRET_KEY', 'test-secret-key')
+    os.environ.setdefault('MONGO_URI', 'mongodb://localhost:27017/test')
+    os.environ.setdefault('RABBITMQ_URI', 'amqp://guest:guest@localhost:5672')
+    os.environ.setdefault('FLASK_ENV', 'testing')
+    yield
 
 
 @pytest.fixture(scope='module')
