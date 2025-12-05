@@ -38,7 +38,7 @@ def get_locale_from_session():
 
 def create_app():
     """Application factory for Flask."""
-    app = Flask(__name__, template_folder='templates', static_folder='static')
+    app = Flask(__name__, template_folder='ui/templates', static_folder='ui/static')
 
     # --- Core Configuration ---
     app.config.from_object(settings)
@@ -104,27 +104,49 @@ def create_app():
             apple_oauth_enabled=bool(settings.APPLE_CLIENT_ID)
         )
 
-    # --- Main UI Routes (Simplified) ---
+    # --- Main UI Routes ---
     @app.route('/')
     def index():
-        return render_template('home.html')
+        return render_template('index.html')
 
-    # Simple tool routes that redirect to home with a message
-    @app.route('/summarizer')
-    def summarizer():
-        return render_template('home.html')
+    # Tool routes
+    @app.route('/tools/summary')
+    def summary_tool():
+        return render_template('tool_summary.html')
 
-    @app.route('/flashcards')
-    def flashcards():
-        return render_template('home.html')
+    @app.route('/tools/flashcards')
+    def flashcards_tool():
+        return render_template('tool_flashcards.html')
 
-    @app.route('/assess')
-    def assess():
-        return render_template('home.html')
+    @app.route('/tools/assess')
+    def assess_tool():
+        return render_template('tool_assess.html')
 
-    @app.route('/homework')
-    def homework():
-        return render_template('home.html')
+    @app.route('/tools/homework')
+    def homework_tool():
+        return render_template('tool_homework.html')
+
+    @app.route('/tools/tutor')
+    def tutor_tool():
+        return render_template('tool_tutor.html')
+
+    @app.route('/tools/diagram')
+    def diagram_tool():
+        return render_template('tool_diagram.html')
+
+    @app.route('/glossary')
+    @app.route('/glossary/<course_id>')
+    def glossary_page(course_id='default'):
+        return render_template('glossary.html', course_id=course_id)
+
+    @app.route('/dashboard')
+    @login_required
+    def dashboard():
+        return render_template('dashboard.html')
+
+    @app.route('/tasks/<task_id>')
+    def task_status(task_id):
+        return render_template('task_status.html', task_id=task_id)
 
     # --- Language Switching ---
     @app.route('/set-lang/<lang>')
@@ -161,7 +183,7 @@ def create_app():
         logger.warning(f"Not Found error for path: {request.path}")
         if request.path.startswith('/api/'):
             return jsonify({"error": "Not Found"}), 404
-        return render_template('home.html'), 404
+        return render_template('404.html'), 404
 
     @app.errorhandler(Exception)
     def handle_exception(error):

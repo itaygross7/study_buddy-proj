@@ -176,7 +176,14 @@
                 {% for doc in documents %}
                 <div class="flex items-center justify-between p-2 bg-warm-beige rounded-lg text-sm">
                     <span class="truncate flex-1" title="{{ doc.filename }}">{{ doc.original_filename or doc.filename }}</span>
-                    <span class="text-xs text-cozy-brown mr-2">{{ (doc.file_size / 1024)|round|int }}KB</span>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs text-cozy-brown">{{ (doc.file_size / 1024)|round|int }}KB</span>
+                        <button onclick="deleteDocument('{{ doc._id }}')" 
+                                class="text-red-600 hover:text-red-800 text-xs px-2 py-1 rounded hover:bg-red-100"
+                                title="מחק מסמך">
+                            🗑️
+                        </button>
+                    </div>
                 </div>
                 {% else %}
                 <p class="text-cozy-brown text-sm">אין מסמכים עדיין</p>
@@ -404,6 +411,30 @@
         // Open Avner chat with course context
         if (typeof toggleAvnerChat === 'function') {
             toggleAvnerChat();
+        }
+    }
+    
+    // Delete document function
+    async function deleteDocument(docId) {
+        if (!confirm('האם אתה בטוח שברצונך למחוק את המסמך? פעולה זו אינה הפיכה.')) {
+            return;
+        }
+        
+        try {
+            const res = await fetch(`/api/upload/files/${docId}`, {
+                method: 'DELETE'
+            });
+            
+            if (res.ok) {
+                alert('המסמך נמחק בהצלחה!');
+                window.location.reload();
+            } else {
+                const data = await res.json();
+                alert('שגיאה במחיקת המסמך: ' + (data.error || 'נסה שוב'));
+            }
+        } catch (error) {
+            console.error('Delete error:', error);
+            alert('שגיאה במחיקת המסמך. בדוק את החיבור לאינטרנט.');
         }
     }
 </script>

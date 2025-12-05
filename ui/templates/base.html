@@ -49,9 +49,9 @@
                     <!-- Language Switcher -->
                     <div class="text-sm">
                         {% if current_locale == 'he' %}
-                            <a href="{{ url_for('auth.set_lang', lang='en') }}" class="text-cream hover:text-warm-yellow">EN</a>
+                            <a href="{{ url_for('set_lang', lang='en') }}" class="text-cream hover:text-warm-yellow">EN</a>
                         {% else %}
-                            <a href="{{ url_for('auth.set_lang', lang='he') }}" class="text-cream hover:text-warm-yellow">עב</a>
+                            <a href="{{ url_for('set_lang', lang='he') }}" class="text-cream hover:text-warm-yellow">עב</a>
                         {% endif %}
                     </div>
                 </div>
@@ -61,9 +61,9 @@
                     <!-- Language Switcher for Mobile -->
                     <div class="text-sm">
                         {% if current_locale == 'he' %}
-                            <a href="{{ url_for('auth.set_lang', lang='en') }}" class="text-cream hover:text-warm-yellow">EN</a>
+                            <a href="{{ url_for('set_lang', lang='en') }}" class="text-cream hover:text-warm-yellow">EN</a>
                         {% else %}
-                            <a href="{{ url_for('auth.set_lang', lang='he') }}" class="text-cream hover:text-warm-yellow">עב</a>
+                            <a href="{{ url_for('set_lang', lang='he') }}" class="text-cream hover:text-warm-yellow">עב</a>
                         {% endif %}
                     </div>
                     <button type="button" id="mobile-menu-button" class="inline-flex items-center justify-center rounded-lg p-2 text-cream hover:bg-caramel">
