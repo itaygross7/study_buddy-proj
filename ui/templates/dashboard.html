@@ -37,9 +37,12 @@
     </div>
 
     <div class="bg-white p-6 rounded-lg shadow-md">
-        <h2 class="text-lg font-semibold text-right">הקבצים שלי</h2>
-        <div id="my-files-table">
-            <!-- File list will be loaded here, e.g., via another HTMX call -->
+        <h2 class="text-lg font-semibold text-right mb-4">הקבצים שלי</h2>
+        <div id="my-files-table" 
+             hx-get="{{ url_for('upload_bp.list_files_route') }}"
+             hx-trigger="load, loadFiles from:body"
+             hx-swap="innerHTML">
+            <!-- File list will be loaded here via HTMX -->
             <p class="text-center text-gray-500">טוען קבצים...</p>
         </div>
     </div>
@@ -61,8 +64,8 @@
           if(progressBar) {
               setTimeout(() => { progressBar.style.width = '0%'; }, 1000);
           }
-          // Optionally, trigger a refresh of the file list
-          htmx.trigger('#my-files-table', 'loadFiles');
+          // Trigger a refresh of the file list
+          htmx.trigger(document.body, 'loadFiles');
       }
   });
 </script>
