@@ -75,7 +75,7 @@ document.body.addEventListener('htmx:afterOnLoad', function(evt) {
             // We can create a new template for this or just inject the HTML
             actionContainer.innerHTML = `
                 <div class="flex items-center space-x-4 space-x-reverse mb-4">
-                    <img src="{{ url_for('serve_avner', filename='avner_notebook.jpeg') }}" alt="אבנר עם מחברת" class="h-16 w-16 flex-shrink-0">
+                    <img src="{{ url_for('serve_avner', filename='avner_reading.jpeg') }}" alt="אבנר עם מחברת" class="h-16 w-16 flex-shrink-0">
                     <div>
                         <h2 class="text-xl font-bold text-warm-brown">מוכנים!</h2>
                         <p class="text-ink-brown/80">המסמך <strong>${response.filename}</strong> מוכן. בואו ניצור לו סיכום!</p>
