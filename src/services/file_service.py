@@ -9,7 +9,14 @@ from src.infrastructure.database import db
 
 class FileService:
     def __init__(self):
-        self.fs = gridfs.GridFS(db)
+        self._fs = None
+
+    @property
+    def fs(self):
+        """Lazy initialization of GridFS to ensure Flask app context is available."""
+        if self._fs is None:
+            self._fs = gridfs.GridFS(db)
+        return self._fs
 
     def upload_files_to_gridfs(self, files: List[FileStorage], user_id: str) -> List[str]:
         """
