@@ -20,7 +20,7 @@
         <div class="flex items-start gap-4 mb-6">
             <img src="{{ url_for('serve_avner', filename='avner_signing_ok.jpeg') }}" 
                  alt="אבנר מנופף" 
-                 class="w-16 h-16 rounded-full object-cover border-3 border-warm-yellow shadow-md">
+                 class="w-16 h-16 rounded-full object-cover border-4 border-warm-yellow shadow-md">
             <div>
                 <h2 class="text-xl font-bold text-dark-brown">🚀 בוא נתחיל!</h2>
                 <p class="text-cozy-brown mt-1">העלה את החומר שלך ואני אכין לך סיכום מקיף</p>
@@ -81,7 +81,7 @@
         <div id="action-placeholder" class="flex flex-col items-center justify-center text-center text-cozy-brown h-full py-8">
             <img src="{{ url_for('serve_avner', filename='avner_thinking.jpeg') }}" 
                  alt="אבנר ממתין" 
-                 class="w-28 h-28 rounded-full object-cover mb-4 border-3 border-warm-beige shadow-soft">
+                 class="w-28 h-28 rounded-full object-cover mb-4 border-4 border-warm-beige shadow-soft">
             <p class="text-lg font-medium">📤 העלו קובץ או טקסט כדי להתחיל</p>
             <p class="text-sm mt-2">אני ממתין לחומר שלכם...</p>
         </div>
@@ -113,7 +113,7 @@ document.body.addEventListener('htmx:afterOnLoad', function(evt) {
                 <div class="flex items-center gap-4 mb-4">
                     <img src="{{ url_for('serve_avner', filename='avner_signing_ok.jpeg') }}" 
                          alt="אבנר מאושר" 
-                         class="w-16 h-16 rounded-full object-cover border-3 border-golden-yellow shadow-warm">
+                         class="w-16 h-16 rounded-full object-cover border-4 border-golden-yellow shadow-warm">
                     <div>
                         <h2 class="text-xl font-bold text-dark-brown">✅ מוכנים!</h2>
                         <p class="text-cozy-brown">המסמך <strong>${response.filename}</strong> מוכן. בואו ניצור לו סיכום!</p>
