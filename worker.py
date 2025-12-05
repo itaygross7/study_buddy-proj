@@ -1,4 +1,6 @@
 import json
+import os
+import shutil
 import pika
 import time
 from tenacity import retry, stop_after_attempt, wait_fixed
@@ -11,6 +13,7 @@ from src.services import glossary_service
 from src.domain.models.db_models import TaskStatus
 from src.domain.errors import DocumentNotFoundError
 from sb_utils.logger_utils import logger
+from src.utils.file_processing import process_file_from_path
 
 # --- Database Connection for Worker ---
 # This is established once when the worker starts.
@@ -39,7 +42,55 @@ def process_task(body: bytes):
     logger.info(f"[Worker] Starting processing for task {task_id} from queue '{queue_name}'")
     task_repo.update_status(task_id, TaskStatus.PROCESSING)
 
-    if queue_name == 'summarize':
+    if queue_name == 'file_processing':
+        # NEW: Handle file processing asynchronously
+        document_id = data['document_id']
+        temp_path = data['temp_path']
+        filename = data['filename']
+        
+        try:
+            # Process the file to extract text
+            text_content = process_file_from_path(temp_path, filename)
+            
+            # Update document with extracted text
+            doc = doc_repo.get_by_id(document_id)
+            if doc:
+                doc.content_text = text_content
+                doc_repo.update(doc)
+                logger.info(f"[Worker] Successfully processed file '{filename}' for document {document_id}")
+            
+            # Clean up temp file and directory
+            try:
+                if os.path.exists(temp_path):
+                    os.remove(temp_path)
+                    logger.debug(f"[Worker] Removed temp file: {temp_path}")
+                
+                temp_dir = os.path.dirname(temp_path)
+                if os.path.exists(temp_dir) and os.path.isdir(temp_dir):
+                    try:
+                        shutil.rmtree(temp_dir)
+                        logger.debug(f"[Worker] Removed temp directory: {temp_dir}")
+                    except OSError as rmtree_error:
+                        logger.warning(f"[Worker] shutil.rmtree failed for {temp_dir}: {rmtree_error}")
+                        # Fallback: try removing if empty
+                        if not os.listdir(temp_dir):
+                            os.rmdir(temp_dir)
+                            logger.debug(f"[Worker] Removed empty temp directory with rmdir: {temp_dir}")
+            except Exception as cleanup_error:
+                logger.warning(f"[Worker] Failed to cleanup temp file '{temp_path}': {cleanup_error}")
+            
+            result_id = document_id
+            
+        except Exception as e:
+            logger.error(f"[Worker] File processing failed for '{filename}': {e}", exc_info=True)
+            # Update document with error message
+            doc = doc_repo.get_by_id(document_id)
+            if doc:
+                doc.content_text = f"[Error processing file: {str(e)}]"
+                doc_repo.update(doc)
+            raise
+    
+    elif queue_name == 'summarize':
         doc = doc_repo.get_by_id(data['document_id'])
         if not doc:
             raise DocumentNotFoundError(f"Document {data['document_id']} not found.")
@@ -110,7 +161,7 @@ def main():
             channel = connection.channel()
             logger.info("Worker connected to RabbitMQ.")
 
-            queues = ['summarize', 'flashcards', 'assess', 'homework']
+            queues = ['file_processing', 'summarize', 'flashcards', 'assess', 'homework']
             for q in queues:
                 channel.queue_declare(queue=q, durable=True)
                 channel.basic_qos(prefetch_count=1)

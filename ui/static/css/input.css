@@ -464,10 +464,11 @@ input[type="file"]::file-selector-button:hover {
 @media (max-width: 767px) {
     .body-with-background {
         background-image: url('/avner/mobile_bacround.jpeg');
-        background-size: contain;
+        background-size: cover;
         background-position: center top;
         background-repeat: no-repeat;
-        background-attachment: scroll;
+        background-attachment: fixed;
+        position: relative;
     }
 }
 
@@ -475,10 +476,11 @@ input[type="file"]::file-selector-button:hover {
 @media (min-width: 768px) {
     .body-with-background {
         background-image: url('/avner/desktop_ui_backround.jpeg');
-        background-size: contain;
+        background-size: cover;
         background-position: center top;
         background-repeat: no-repeat;
-        background-attachment: scroll;
+        background-attachment: fixed;
+        position: relative;
     }
 }
 
@@ -490,7 +492,13 @@ input[type="file"]::file-selector-button:hover {
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: rgba(255, 248, 230, 0.92); /* Warm beige with more transparency to reduce image prominence */
-    z-index: -1;
+    background-color: rgba(255, 248, 230, 0.65); /* More transparent overlay so background shows through */
+    z-index: 0;
     pointer-events: none;
+}
+
+/* Ensure content is above overlay */
+.body-with-background > * {
+    position: relative;
+    z-index: 1;
 }
