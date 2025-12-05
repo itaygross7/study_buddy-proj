@@ -28,6 +28,8 @@
 @layer base {
     :root {
         --overlay-color: rgba(255, 248, 230, 0.3);
+        --logo-hero-size: 280px;
+        --logo-hero-size-mobile: 200px;
     }
     
     .body-with-background {
@@ -119,7 +121,7 @@
     }
     
     .avner-hero { 
-        max-width: 280px;
+        max-width: var(--logo-hero-size);
         height: auto;
         object-fit: contain;
         filter: drop-shadow(0 4px 12px rgba(139, 94, 52, 0.2));
@@ -127,7 +129,7 @@
     }
     
     .app-logo-hero {
-        max-width: 280px;
+        max-width: var(--logo-hero-size);
         height: auto;
         object-fit: contain;
         filter: drop-shadow(0 4px 12px rgba(139, 94, 52, 0.2));
@@ -224,11 +226,11 @@
         }
         
         .avner-hero {
-            max-width: 200px;
+            max-width: var(--logo-hero-size-mobile);
         }
         
         .app-logo-hero {
-            max-width: 200px;
+            max-width: var(--logo-hero-size-mobile);
         }
         
         .tools-grid { 
