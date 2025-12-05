@@ -1,15 +1,3 @@
-# =============================================================================
-# StudyBuddyAI Docker Compose Configuration
-# =============================================================================
-# For Ubuntu 22.04 deployment with DNS fallbacks and health checks
-#
-# Usage:
-#   docker compose up -d --build    # Start all services
-#   docker compose logs -f app      # View app logs
-#   docker compose down              # Stop all services
-#
-# =============================================================================
-
 services:
   # ===========================================================================
   # Main Flask Application
@@ -19,8 +7,9 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: studybuddy_app
-    ports:
-      - "5000:5000"
+    # SECURITY: Ports are commented out because we use the Tunnel now.
+    # ports:
+    #   - "5000:5000" 
     volumes:
       - ./src:/app/src
       - ./sb_utils:/app/sb_utils
@@ -29,7 +18,6 @@ services:
     env_file: .env
     environment:
       - FLASK_ENV=${FLASK_ENV:-production}
-    # Wait for dependencies to be healthy before starting
     depends_on:
       mongo:
         condition: service_healthy
@@ -37,22 +25,34 @@ services:
         condition: service_healthy
     restart: unless-stopped
     healthcheck:
-      # Note: curl is installed in Dockerfile for health checks
       test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 30s
-    # DNS fallback configuration
+    # DNS fallbacks for container networking
     dns:
       - 8.8.8.8
-      - 8.8.4.4
       - 1.1.1.1
     networks:
       - studybuddy_network
 
   # ===========================================================================
-  # Background Worker (RabbitMQ Consumer)
+  # Cloudflare Tunnel (Replaces Caddy & Port Forwarding)
+  # ===========================================================================
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    container_name: studybuddy_tunnel
+    restart: always
+    command: tunnel run
+    env_file: .env
+    # The token connects this container to your Cloudflare account
+    environment:
+      - TUNNEL_TOKEN=${TUNNEL_TOKEN}
+    networks:
+      - studybuddy_network
+
+  # ===========================================================================
+  # Background Worker
   # ===========================================================================
   worker:
     build:
@@ -71,11 +71,6 @@ services:
       rabbitmq:
         condition: service_healthy
     restart: unless-stopped
-    # DNS fallback configuration
-    dns:
-      - 8.8.8.8
-      - 8.8.4.4
-      - 1.1.1.1
     networks:
       - studybuddy_network
 
@@ -85,8 +80,6 @@ services:
   mongo:
     image: mongo:5.0
     container_name: studybuddy_mongo
-    ports:
-      - "27017:27017"
     volumes:
       - mongo_data:/data/db
     restart: unless-stopped
@@ -95,7 +88,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 20s
     networks:
       - studybuddy_network
 
@@ -106,8 +98,8 @@ services:
     image: rabbitmq:3.9-management
     container_name: studybuddy_rabbitmq
     ports:
-      - "5672:5672"   # AMQP protocol
-      - "15672:15672" # Management UI
+      # Only binding to localhost for security (access via SSH tunnel if needed)
+      - "127.0.0.1:15672:15672" 
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-user}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS:-password}
@@ -119,71 +111,13 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 30s
     networks:
       - studybuddy_network
 
-  # ===========================================================================
-  # Caddy Reverse Proxy (for production HTTPS)
-  # ===========================================================================
-  caddy:
-    image: caddy:2-alpine
-    container_name: studybuddy_caddy
-    ports:
-      - "80:80"
-      - "443:443"
-      - "443:443/udp"  # HTTP/3 support
-    volumes:
-      - ./infra/Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy_data:/data
-      - caddy_config:/config
-    environment:
-      - DOMAIN=${DOMAIN:-studybuddyai.my}
-    depends_on:
-      app:
-        condition: service_healthy
-    restart: unless-stopped
-    networks:
-      - studybuddy_network
-
-  # ===========================================================================
-  # Health Check Monitor
-  # ===========================================================================
-  healthcheck:
-    image: alpine:latest
-    container_name: studybuddy_healthcheck
-    command: sh -c "apk add --no-cache curl bash && /health-monitor.sh"
-    volumes:
-      - ./scripts/health-monitor.sh:/health-monitor.sh:ro
-    environment:
-      - CHECK_INTERVAL=30
-      - MAX_FAILURES=3
-    depends_on:
-      app:
-        condition: service_healthy
-    restart: unless-stopped
-    networks:
-      - studybuddy_network
-
-# =============================================================================
-# Networks
-# =============================================================================
 networks:
   studybuddy_network:
     driver: bridge
-    # Enable DNS resolution between containers
-    driver_opts:
-      com.docker.network.bridge.enable_ip_masquerade: "true"
 
-# =============================================================================
-# Volumes
-# =============================================================================
 volumes:
   mongo_data:
-    driver: local
   rabbitmq_data:
-    driver: local
-  caddy_data:
-    driver: local
-  caddy_config:
-    driver: local
