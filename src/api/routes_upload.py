@@ -65,8 +65,13 @@ def upload_route():
     if not file or not file.filename:
         return jsonify({"error": "No file selected"}), 400
 
-    if file.content_length > MAX_FILE_SIZE:
-        return jsonify({"error": "File too large"}), 413
+    # Check file size by reading it
+    file.seek(0, 2)  # Seek to end to get size
+    file_size = file.tell()
+    file.seek(0)  # Seek back to beginning
+    
+    if file_size > MAX_FILE_SIZE:
+        return jsonify({"error": "File too large (max 50MB)"}), 413
 
     try:
         # Save file to a temporary location for the worker
@@ -105,6 +110,7 @@ def upload_route():
         return jsonify({
             "message": "File upload started.",
             "status": "processing",
+            "document_id": document.id,
             "polling_url": url_for('task_bp.get_task_status_route', task_id=task.id)
         }), 202
     except Exception as e:

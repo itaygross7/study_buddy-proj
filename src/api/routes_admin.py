@@ -218,7 +218,7 @@ def toggle_user_status(user_id):
     new_status = not user.is_active
     auth_service.update_user_status(db, user_id, new_status)
 
-    status_text = 'הופעל' if new_status else 'הושבת'
+    status_text = 'הוסרה החסימה' if new_status else 'נחסם'
     flash(f'המשתמש {status_text} בהצלחה', 'success')
     logger.info(f"Admin toggled user {user_id} status to {new_status}")
 
