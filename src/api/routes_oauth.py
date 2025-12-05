@@ -146,7 +146,8 @@ def google_login():
         flash('התחברות עם Google לא מוגדרת. אנא הגדר GOOGLE_CLIENT_ID ו-GOOGLE_CLIENT_SECRET בקובץ .env', 'error')
         return redirect(url_for('auth.login'))
 
-    redirect_uri = url_for('oauth.google_callback', _external=True)
+    # Use BASE_URL from config to ensure redirect_uri matches Google Console configuration
+    redirect_uri = f"{settings.BASE_URL}/oauth/google/callback"
     logger.info(f"Initiating Google OAuth with redirect URI: {redirect_uri}")
     
     try:
@@ -209,7 +210,8 @@ def apple_login():
         flash('התחברות עם Apple לא מוגדרת', 'error')
         return redirect(url_for('auth.login'))
 
-    redirect_uri = url_for('oauth.apple_callback', _external=True)
+    # Use BASE_URL from config to ensure redirect_uri matches Apple configuration
+    redirect_uri = f"{settings.BASE_URL}/oauth/apple/callback"
     return oauth.apple.authorize_redirect(redirect_uri)
 
 

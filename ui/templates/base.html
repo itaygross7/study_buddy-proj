@@ -29,17 +29,17 @@
     </script>
     <script src="{{ url_for('static', filename='js/avner_animations.js') }}"></script>
 </head>
-<body class="h-full flex flex-col bg-warm-beige font-sans text-dark-brown">
+<body class="h-full flex flex-col bg-warm-beige font-sans text-dark-brown body-with-background">
     <!-- Navbar - Cozy Brown Theme -->
     <nav class="bg-cozy-brown shadow-lg">
         <div class="mx-auto max-w-5xl px-4">
             <div class="flex h-16 items-center justify-between">
                 <!-- Right side: Logo and nav links (RTL) -->
                 <div class="flex items-center">
-                    <!-- Logo with Avner -->
+                    <!-- Logo with Avner photo -->
                     <a href="{{ url_for('index') }}" class="flex-shrink-0 flex items-center gap-2">
-                        <img src="{{ url_for('serve_avner', filename='avner_logo.jpeg') }}" 
-                             alt="אבנר ה-CapyBuddy לוגו" 
+                        <img src="{{ url_for('serve_avner', filename='avner_waving.jpeg') }}" 
+                             alt="אבנר ה-CapyBuddy" 
                              class="h-10 w-10 rounded-full object-cover border-2 border-warm-yellow shadow-md"
                              onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                         <span class="hidden h-10 w-10 items-center justify-center bg-warm-yellow rounded-full text-dark-brown font-bold text-xl" role="img" aria-label="אבנר לוגו">🦫</span>
@@ -74,11 +74,11 @@
                         {% endif %}
                         <a href="{{ url_for('library.profile') }}" 
                            class="inline-flex items-center gap-2 bg-warm-yellow text-dark-brown text-sm px-4 py-2 rounded-full font-medium shadow-md hover:bg-golden-yellow transition-colors">
-                            <img src="/avner/avner_logo.jpeg" 
+                            <img src="/avner/avner_signing_ok.jpeg" 
                                  alt="" class="h-6 w-6 rounded-full object-cover"
                                  onerror="this.textContent='🦫';">
                             {{ current_user.user.name or current_user.user.email.split('@')[0] }}
-                        </span>
+                        </a>
                         <a href="{{ url_for('auth.logout') }}" 
                            class="text-cream hover:text-warm-yellow text-sm transition-colors">
                             התנתק
@@ -133,7 +133,7 @@
                     {% if current_user.is_authenticated %}
                         <a href="{{ url_for('library.profile') }}" 
                            class="flex items-center gap-2 text-warm-yellow text-sm px-3 py-2 hover:bg-caramel rounded-lg transition-all">
-                            <img src="/avner/avner_logo.jpeg" 
+                            <img src="/avner/avner_signing_ok.jpeg" 
                                  alt="" class="h-6 w-6 rounded-full object-cover"
                                  onerror="this.textContent='🦫';">
                             👤 {{ current_user.user.name or current_user.user.email.split('@')[0] }}
@@ -175,7 +175,7 @@
         <div class="mx-auto max-w-5xl px-4">
             <div class="flex flex-col md:flex-row items-center justify-between gap-4">
                 <div class="flex items-center gap-3">
-                    <img src="{{ url_for('serve_avner', filename='avner_logo.jpeg') }}" 
+                    <img src="{{ url_for('serve_avner', filename='avner_waving.jpeg') }}" 
                          alt="אבנר ה-CapyBuddy" 
                          class="h-10 w-10 rounded-full object-cover border-2 border-warm-yellow"
                          onerror="this.textContent='🦫';">
@@ -194,7 +194,7 @@
     <div class="avner-helper-floating" id="avner-helper">
         <!-- Simple Chat Button -->
         <button onclick="toggleAvnerChat()" class="avner-chat-button">
-            <img src="/avner/avner_waving.jpeg" alt="אבנר" class="avner-button-img">
+            <img src="/avner/avner_calling.jpeg" alt="אבנר" class="avner-button-img">
             <span class="avner-button-badge">💬</span>
         </button>
     </div>
@@ -203,7 +203,7 @@
     <div class="avner-chat-modal" id="avner-chat">
         <div class="avner-chat-header">
             <div class="flex items-center gap-2">
-                <img src="/avner/avner_waving.jpeg" alt="אבנר" class="w-10 h-10 rounded-full object-cover border-2 border-warm-yellow">
+                <img src="/avner/avner_calling.jpeg" alt="אבנר" class="w-10 h-10 rounded-full object-cover border-2 border-warm-yellow">
                 <div>
                     <span class="font-bold">צ'אט עם אבנר 🦫</span>
                     <p class="text-xs text-cream/80">אני כאן לעזור!</p>
@@ -218,7 +218,7 @@
         <div class="avner-chat-body" id="avner-chat-body">
             <!-- Welcome message -->
             <div class="flex gap-2 mb-3">
-                <img src="/avner/avner_waving.jpeg" 
+                <img src="/avner/avner_signing_ok.jpeg" 
                      alt="אבנר" class="w-8 h-8 rounded-full object-cover flex-shrink-0 border-2 border-golden-yellow">
                 <div class="bg-warm-beige rounded-xl p-3 text-sm text-dark-brown max-w-[85%]">
                     <strong>שלום! אני אבנר 🦫</strong><br>
@@ -424,7 +424,7 @@
                     // Show Avner's answer (left side)
                     chatBody.innerHTML += `
                         <div class="flex gap-2 mb-3">
-                            <img src="/avner/avner_signing_ok.jpeg" 
+                            <img src="/avner/avner_reading.jpeg" 
                                  alt="אבנר" class="w-8 h-8 rounded-full object-cover flex-shrink-0 border-2 border-golden-yellow">
                             <div class="bg-warm-beige rounded-xl p-3 text-sm text-dark-brown max-w-[85%]">
                                 ${formatMessage(data.answer)}

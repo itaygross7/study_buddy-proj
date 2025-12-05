@@ -341,3 +341,42 @@ input[type="file"]::file-selector-button:hover {
         max-width: none;
     }
 }
+
+/* ========================================
+   Background Images - Desktop & Mobile
+   ======================================== */
+
+/* Mobile background */
+@media (max-width: 767px) {
+    .body-with-background {
+        background-image: url('/avner/mobile_bacround.jpeg');
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+    }
+}
+
+/* Desktop background */
+@media (min-width: 768px) {
+    .body-with-background {
+        background-image: url('/avner/desktop_ui_backround.jpeg');
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+    }
+}
+
+/* Add subtle overlay to make text more readable on background */
+.body-with-background::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(255, 248, 230, 0.85); /* Warm beige with transparency */
+    z-index: -1;
+    pointer-events: none;
+}
