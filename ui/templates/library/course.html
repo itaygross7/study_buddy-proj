@@ -114,7 +114,7 @@
     <div class="lg:col-span-2 space-y-6">
         
         <!-- Tools Grid -->
-        <div class="grid grid-cols-2 gap-4">
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             <!-- Summary Tool -->
             <a href="{{ url_for('library.course_tool', course_id=course.id, tool='summary') }}" 
                class="bg-cream rounded-xl p-5 shadow-md border-2 border-warm-yellow hover:border-golden-yellow hover:shadow-lg transition-all group">
@@ -154,6 +154,30 @@
                 <div class="text-3xl mb-2">📚</div>
                 <h3 class="font-bold text-dark-brown group-hover:text-cozy-brown">עזרה בשיעורים</h3>
                 <p class="text-xs text-cozy-brown mt-1">עזרה בפתרון</p>
+            </a>
+            
+            <!-- Tutor Tool -->
+            <a href="{{ url_for('library.course_tool', course_id=course.id, tool='tutor') }}" 
+               class="bg-cream rounded-xl p-5 shadow-md border-2 border-warm-yellow hover:border-golden-yellow hover:shadow-lg transition-all group">
+                <div class="text-3xl mb-2">🎓</div>
+                <h3 class="font-bold text-dark-brown group-hover:text-cozy-brown">מורה פרטי</h3>
+                <p class="text-xs text-cozy-brown mt-1">שאל כל שאלה</p>
+            </a>
+            
+            <!-- Diagram Tool -->
+            <a href="{{ url_for('library.course_tool', course_id=course.id, tool='diagram') }}" 
+               class="bg-cream rounded-xl p-5 shadow-md border-2 border-warm-yellow hover:border-golden-yellow hover:shadow-lg transition-all group">
+                <div class="text-3xl mb-2">📊</div>
+                <h3 class="font-bold text-dark-brown group-hover:text-cozy-brown">תרשימים</h3>
+                <p class="text-xs text-cozy-brown mt-1">ויזואליזציה</p>
+            </a>
+            
+            <!-- Glossary Tool -->
+            <a href="{{ url_for('glossary_page', course_id=course.id) }}" 
+               class="bg-cream rounded-xl p-5 shadow-md border-2 border-warm-yellow hover:border-golden-yellow hover:shadow-lg transition-all group">
+                <div class="text-3xl mb-2">📖</div>
+                <h3 class="font-bold text-dark-brown group-hover:text-cozy-brown">מונחון</h3>
+                <p class="text-xs text-cozy-brown mt-1">מילון מונחים</p>
             </a>
         </div>
         

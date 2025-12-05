@@ -243,7 +243,7 @@ def course_tool(course_id, tool):
         return redirect(url_for('library.course_page', course_id=course_id))
 
     # Valid tools
-    valid_tools = ['summary', 'flashcards', 'assess', 'homework']
+    valid_tools = ['summary', 'flashcards', 'assess', 'homework', 'tutor', 'diagram']
     if tool not in valid_tools:
         flash('כלי לא קיים', 'error')
         return redirect(url_for('library.course_page', course_id=course_id))
