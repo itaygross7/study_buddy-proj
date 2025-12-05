@@ -91,10 +91,14 @@ def create_app():
     app.register_blueprint(tutor_bp, url_prefix='/api/tutor')
     app.register_blueprint(diagram_bp, url_prefix='/api/diagram')
 
-    # Context processor to make current_user available in templates
+    # Context processor to make current_user and settings available in templates
     @app.context_processor
     def inject_user():
-        return dict(current_user=current_user)
+        return dict(
+            current_user=current_user,
+            google_oauth_enabled=bool(settings.GOOGLE_CLIENT_ID and settings.GOOGLE_CLIENT_SECRET),
+            apple_oauth_enabled=bool(settings.APPLE_CLIENT_ID and settings.APPLE_TEAM_ID)
+        )
 
     # --- Main UI Routes ---
     @app.route('/')
