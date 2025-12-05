@@ -81,9 +81,13 @@ fi
 # Pull changes (support force push scenarios)
 log_info "Pulling changes..."
 if ! git pull origin $BRANCH 2>&1 | tee -a "$LOG_FILE"; then
-    # Check if this is a force push scenario (diverged history)
-    if git status 2>&1 | grep -q "diverged\|have diverged"; then
-        log_info "Detected force push - resetting to remote branch..."
+    # Check if this is a force push scenario using git rev-list
+    # If local has commits not in remote and vice versa, history diverged
+    LOCAL_ONLY=$(git rev-list HEAD..origin/$BRANCH 2>/dev/null | wc -l)
+    REMOTE_ONLY=$(git rev-list origin/$BRANCH..HEAD 2>/dev/null | wc -l)
+    
+    if [ "$LOCAL_ONLY" -gt 0 ] && [ "$REMOTE_ONLY" -gt 0 ]; then
+        log_info "Detected force push (diverged history) - resetting to remote branch..."
         if git reset --hard origin/$BRANCH 2>&1 | tee -a "$LOG_FILE"; then
             log_success "Successfully reset to remote branch"
         else
