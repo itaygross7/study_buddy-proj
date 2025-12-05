@@ -1,15 +1,17 @@
 import uuid
 import os
 import tempfile
-from flask import Blueprint, request, jsonify, url_for
+from flask import Blueprint, request, jsonify, url_for, render_template
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
+from datetime import datetime
 
 from src.infrastructure.database import db
 from src.infrastructure.repositories import MongoDocumentRepository, MongoTaskRepository
 from src.infrastructure.rabbitmq import publish_task
 from src.domain.models.db_models import Document, Task, TaskStatus
 from sb_utils.logger_utils import logger
+from src.services.file_service import file_service
 
 upload_bp = Blueprint('upload_bp', __name__)
 
@@ -102,3 +104,151 @@ def upload_route():
     except Exception as e:
         logger.error(f"File upload failed for user {user_id}: {e}", exc_info=True)
         return jsonify({"error": "File upload failed"}), 500
+
+
+@upload_bp.route('/files', methods=['POST'])
+@login_required
+def upload_files_route():
+    """
+    Handles multiple file uploads using GridFS streaming.
+    Files are streamed directly to GridFS without loading into memory.
+    Metadata is stored separately for fast querying.
+    RabbitMQ is used for async processing handoff.
+    """
+    user_id = current_user.id
+    course_id = request.form.get('course_id', 'default')
+    
+    # Get list of files from the request
+    files = request.files.getlist('files')
+    
+    if not files or len(files) == 0:
+        return jsonify({"error": "No files provided"}), 400
+    
+    try:
+        uploaded_files = []
+        
+        for file in files:
+            if not file or not file.filename:
+                continue
+                
+            # Validate file size
+            file.seek(0, 2)  # Seek to end
+            file_size = file.tell()
+            file.seek(0)  # Seek back to beginning
+            
+            if file_size > MAX_FILE_SIZE:
+                return jsonify({"error": f"File {file.filename} is too large (max 50MB)"}), 413
+            
+            # Stream file directly to GridFS
+            file_id = file_service.fs.put(
+                file,
+                filename=file.filename,
+                contentType=file.content_type,
+                metadata={
+                    "owner_id": user_id,
+                    "upload_date": datetime.utcnow()
+                }
+            )
+            
+            # Store metadata in a separate collection for fast querying
+            user_files_collection = db['user_files']
+            file_metadata = {
+                "_id": str(file_id),
+                "user_id": user_id,
+                "course_id": course_id,
+                "filename": file.filename,
+                "size": file_size,
+                "content_type": file.content_type,
+                "upload_date": datetime.utcnow(),
+                "status": "processing"
+            }
+            user_files_collection.insert_one(file_metadata)
+            
+            # Publish async task to RabbitMQ immediately (non-blocking)
+            publish_task(
+                queue_name='file_processing',
+                task_body={
+                    "file_id": str(file_id),
+                    "user_id": user_id,
+                    "filename": file.filename
+                }
+            )
+            
+            uploaded_files.append({
+                "file_id": str(file_id),
+                "filename": file.filename,
+                "size": file_size
+            })
+            
+            logger.info(f"File {file.filename} uploaded to GridFS by user {user_id}, file_id: {file_id}")
+        
+        return jsonify({
+            "message": f"{len(uploaded_files)} file(s) uploaded successfully",
+            "files": uploaded_files,
+            "status": "processing"
+        }), 202
+        
+    except Exception as e:
+        logger.error(f"Multi-file upload failed for user {user_id}: {e}", exc_info=True)
+        return jsonify({"error": "File upload failed"}), 500
+
+
+@upload_bp.route('/files/<file_id>', methods=['DELETE'])
+@login_required
+def delete_file_route(file_id):
+    """
+    Deletes a file from GridFS and removes its metadata.
+    Ensures user has ownership before deletion.
+    """
+    user_id = current_user.id
+    
+    try:
+        # Delete from GridFS
+        file_service.delete_file(file_id, user_id)
+        
+        # Delete metadata
+        user_files_collection = db['user_files']
+        result = user_files_collection.delete_one({"_id": file_id, "user_id": user_id})
+        
+        if result.deleted_count == 0:
+            return jsonify({"error": "File not found or permission denied"}), 404
+        
+        logger.info(f"File {file_id} deleted by user {user_id}")
+        return jsonify({"message": "File deleted successfully"}), 200
+        
+    except PermissionError as e:
+        logger.warning(f"Permission denied for file deletion: {e}")
+        return jsonify({"error": str(e)}), 403
+    except Exception as e:
+        logger.error(f"File deletion failed: {e}", exc_info=True)
+        return jsonify({"error": "File deletion failed"}), 500
+
+
+@upload_bp.route('/files', methods=['GET'])
+@login_required
+def list_files_route():
+    """
+    Lists all files uploaded by the current user.
+    Returns metadata from the user_files collection for fast querying.
+    """
+    user_id = current_user.id
+    
+    try:
+        user_files_collection = db['user_files']
+        files = list(user_files_collection.find(
+            {"user_id": user_id},
+            {"_id": 1, "filename": 1, "size": 1, "upload_date": 1, "status": 1}
+        ).sort("upload_date", -1))
+        
+        # Convert ObjectId to string and format dates
+        for file in files:
+            file['file_id'] = str(file.pop('_id'))
+            if 'upload_date' in file:
+                file['upload_date'] = file['upload_date'].isoformat()
+        
+        # Return HTML for HTMX using separate template file
+        return render_template('fragments/files_table.html', files=files)
+        
+    except Exception as e:
+        logger.error(f"Failed to list files for user {user_id}: {e}", exc_info=True)
+        return "<p class='text-center text-red-500'>שגיאה בטעינת הקבצים</p>", 500

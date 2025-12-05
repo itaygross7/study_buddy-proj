@@ -1,0 +1,69 @@
+{% if files %}
+<div class="overflow-x-auto">
+    <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+            <tr>
+                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">שם קובץ</th>
+                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">גודל</th>
+                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">תאריך</th>
+                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">סטטוס</th>
+                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">פעולות</th>
+            </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+            {% for file in files %}
+            <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{{ file.filename }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
+                    {% if file.size %}
+                        {% if file.size < 1024 %}
+                            {{ file.size }} B
+                        {% elif file.size < 1048576 %}
+                            {{ "%.2f"|format(file.size / 1024) }} KB
+                        {% else %}
+                            {{ "%.2f"|format(file.size / 1048576) }} MB
+                        {% endif %}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
+                    {% if file.upload_date %}
+                        {{ file.upload_date[:10] }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-right">
+                    {% if file.status == 'processing' %}
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                            מעבד
+                        </span>
+                    {% elif file.status == 'completed' %}
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                            הושלם
+                        </span>
+                    {% else %}
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                            {{ file.status }}
+                        </span>
+                    {% endif %}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-right">
+                    <button 
+                        hx-delete="{{ url_for('upload_bp.delete_file_route', file_id=file.file_id) }}"
+                        hx-confirm="האם אתה בטוח שברצונך למחוק את הקובץ?"
+                        hx-target="closest tr"
+                        hx-swap="outerHTML"
+                        class="text-red-600 hover:text-red-900">
+                        מחק
+                    </button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<p class="text-center text-gray-500">לא נמצאו קבצים</p>
+{% endif %}
