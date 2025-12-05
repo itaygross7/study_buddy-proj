@@ -1,29 +1,59 @@
 {% extends "base.html" %}
 
-{% block title %}העמוד לא נמצא - StudyBuddyAI{% endblock %}
+{% block title %}404 - עמוד לא נמצא{% endblock %}
 
 {% block content %}
-<div class="text-center py-16">
-    <div class="bg-cream rounded-2xl p-8 shadow-md max-w-md mx-auto border border-warm-yellow">
-        <!-- Use avner_cluless from Avner folder for 404 -->
+<div class="max-w-2xl mx-auto text-center py-16">
+    <!-- Avner looking confused -->
+    <div class="mb-8">
         <img src="{{ url_for('serve_avner', filename='avner_cluless.jpeg') }}" 
-             alt="אבנר מבולבל"
-             class="w-24 h-24 mx-auto mb-6 rounded-xl object-cover border-2 border-golden-yellow shadow-md"
+             alt="אבנר מבולבל" 
+             class="w-64 h-64 rounded-full object-cover border-8 border-golden-yellow shadow-2xl mx-auto"
              onerror="this.src='{{ url_for('serve_avner', filename='avner_dont_understand.jpeg') }}';">
+    </div>
+    
+    <!-- Error Message -->
+    <div class="space-y-6">
+        <h1 class="text-6xl font-black text-dark-brown">404</h1>
+        <h2 class="text-3xl font-bold text-cozy-brown">אופס! העמוד לא נמצא 🤷</h2>
         
-        <h2 class="text-2xl font-bold text-dark-brown mb-4">אופס! העמוד לא נמצא</h2>
-        <p class="text-coffee mb-8">
-            נראה שהעמוד שחיפשתם לא קיים.<br>
-            אולי הוא הוזז או נמחק.
-        </p>
+        <div class="bg-warm-beige p-8 rounded-2xl border-2 border-warm-yellow shadow-lg">
+            <p class="text-xl text-dark-brown mb-4">
+                נראה שהעמוד שחיפשתם לא קיים... <br>
+                <span class="text-cozy-brown">Could this BE any more missing? 😅</span>
+            </p>
+            <p class="text-lg text-cozy-brown">
+                אבל אל דאגה! אני כאן לעזור לכם למצוא את הדרך 🦫
+            </p>
+        </div>
         
-        <a href="{{ url_for('index') }}" 
-           class="inline-flex items-center gap-2 bg-golden-yellow text-dark-brown font-semibold py-3 px-6 rounded-xl btn-hover-lift transition-all duration-150 shadow-md">
-            <svg class="w-5 h-5 rotate-180" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
-            </svg>
-            חזרה לעמוד הבית
-        </a>
+        <!-- Quick Links -->
+        <div class="grid md:grid-cols-2 gap-4 mt-8">
+            <a href="{{ url_for('index') }}" class="btn-primary py-4 text-lg">
+                🏠 חזרה לעמוד הבית
+            </a>
+            {% if current_user.is_authenticated %}
+            <a href="{{ url_for('library.index') }}" class="btn-secondary py-4 text-lg">
+                📚 לספרייה שלי
+            </a>
+            {% else %}
+            <a href="{{ url_for('avner_chat') }}" class="btn-secondary py-4 text-lg">
+                💬 צ'אט עם אבנר
+            </a>
+            {% endif %}
+        </div>
+        
+        <!-- Help Text -->
+        <div class="mt-8 bg-golden-yellow/20 p-6 rounded-xl border-2 border-golden-yellow">
+            <p class="text-dark-brown font-medium">
+                💡 <strong>עצה:</strong> אם אתם מחפשים משהו ספציפי, נסו:
+            </p>
+            <ul class="mt-3 text-cozy-brown space-y-1">
+                <li>✅ לחזור לעמוד הקודם</li>
+                <li>✅ לחפש בתפריט העליון</li>
+                <li>✅ לשאול את אבנר בצ'אט</li>
+            </ul>
+        </div>
     </div>
 </div>
 {% endblock %}
