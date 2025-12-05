@@ -111,31 +111,38 @@ def create_app():
 
     # Tool routes
     @app.route('/tools/summary')
+    @login_required
     def summary_tool():
         return render_template('tool_summary.html')
 
     @app.route('/tools/flashcards')
+    @login_required
     def flashcards_tool():
         return render_template('tool_flashcards.html')
 
     @app.route('/tools/assess')
+    @login_required
     def assess_tool():
         return render_template('tool_assess.html')
 
     @app.route('/tools/homework')
+    @login_required
     def homework_tool():
         return render_template('tool_homework.html')
 
     @app.route('/tools/tutor')
+    @login_required
     def tutor_tool():
         return render_template('tool_tutor.html')
 
     @app.route('/tools/diagram')
+    @login_required
     def diagram_tool():
         return render_template('tool_diagram.html')
 
     @app.route('/glossary')
     @app.route('/glossary/<course_id>')
+    @login_required
     def glossary_page(course_id='default'):
         return render_template('glossary.html', course_id=course_id)
 

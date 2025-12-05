@@ -19,11 +19,7 @@
                 <!-- Right side: Logo and nav links (RTL) -->
                 <div class="flex items-center gap-4">
                     <a href="{{ url_for('index') }}" class="flex-shrink-0 flex items-center gap-2 group">
-                        <img src="{{ url_for('serve_avner', filename='avner_waving.jpeg') }}" alt="אבנר" class="h-12 w-12 rounded-full object-cover border-4 border-warm-yellow shadow-md group-hover:border-golden-yellow transition-all">
-                        <div class="flex flex-col">
-                            <span class="text-cream font-bold text-lg hidden sm:block">StudyBuddy</span>
-                            <span class="text-warm-yellow text-xs hidden sm:block">אבנר עוזר לך ללמוד 🦫</span>
-                        </div>
+                        <img src="{{ url_for('serve_avner', filename='app_logo.jpeg') }}" alt="StudyBuddy Logo" class="h-12 w-auto object-contain group-hover:scale-105 transition-all">
                     </a>
                     <div class="hidden md:block mr-4">
                         <div class="flex items-baseline gap-2">
@@ -112,10 +108,9 @@
         <div class="max-w-6xl mx-auto px-4">
             <div class="flex flex-col md:flex-row items-center justify-between gap-4">
                 <div class="flex items-center gap-3">
-                    <img src="{{ url_for('serve_avner', filename='avner_signing_ok.jpeg') }}" alt="אבנר" class="h-10 w-10 rounded-full border-2 border-warm-yellow">
+                    <img src="{{ url_for('serve_avner', filename='app_logo.jpeg') }}" alt="StudyBuddy Logo" class="h-10 w-auto object-contain">
                     <div class="text-cream text-sm">
-                        <p class="font-bold">StudyBuddyAI - אבנר עוזר לך ללמוד</p>
-                        <p class="text-xs text-warm-gray">למידה חכמה עם בינה מלאכותית 🦫</p>
+                        <p class="text-xs text-warm-gray">למידה חכמה עם בינה מלאכותית</p>
                     </div>
                 </div>
                 <p class="text-center text-cream text-sm">© 2024 StudyBuddyAI - כל הזכויות שמורות</p>
