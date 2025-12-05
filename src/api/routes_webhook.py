@@ -2,6 +2,7 @@
 import hmac
 import hashlib
 import subprocess
+import os
 from flask import Blueprint, request, jsonify
 from functools import wraps
 
@@ -74,14 +75,19 @@ def handle_update():
         
         # Run auto-update script in background
         try:
+            script_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'scripts', 'auto-update.sh')
+            if not os.path.exists(script_path):
+                # Fallback to relative path
+                script_path = './scripts/auto-update.sh'
+            
             result = subprocess.Popen(
-                ['/bin/bash', './scripts/auto-update.sh'],
+                ['/bin/bash', script_path],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 start_new_session=True  # Detach from parent
             )
             
-            logger.info(f"Auto-update script started (PID: {result.pid})")
+            logger.info(f"Auto-update script started (PID: {result.pid}) at path: {script_path}")
             
             return jsonify({
                 "status": "success",
