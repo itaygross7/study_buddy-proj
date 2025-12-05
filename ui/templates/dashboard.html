@@ -4,9 +4,17 @@
 
 {% block content %}
 <div class="space-y-8">
-    <h1 class="text-2xl font-bold text-right">לוח הבקרה שלך</h1>
+    <div class="flex items-start gap-4 mb-6">
+        <img src="{{ url_for('serve_avner', filename='avner_with_laptop.jpeg') }}" 
+             alt="אבנר עובד" 
+             class="w-16 h-16 rounded-full object-cover border-3 border-golden-yellow shadow-warm">
+        <div>
+            <h1 class="text-3xl font-bold text-dark-brown">לוח הבקרה שלך</h1>
+            <p class="text-cozy-brown">העלה קבצים ונהל את החומרים שלך</p>
+        </div>
+    </div>
 
-    <div class="bg-white p-6 rounded-lg shadow-md">
+    <div class="content-card">
         <form hx-post="{{ url_for('upload_bp.upload_files_route') }}"
               hx-encoding="multipart/form-data"
               hx-trigger="submit"
@@ -14,36 +22,43 @@
               hx-target="#upload-response"
               hx-indicator="#progress-container">
 
-            <h2 class="text-lg font-semibold text-right">העלאת קבצים</h2>
-            <p class="text-sm text-gray-500 text-right mb-4">ניתן לבחור מספר קבצים בבת אחת. הקבצים יועלו ברקע.</p>
+            <h2 class="text-xl font-bold text-dark-brown text-right mb-2">📤 העלאת קבצים</h2>
+            <p class="text-sm text-cozy-brown text-right mb-4">ניתן לבחור מספר קבצים בבת אחת. הקבצים יועלו ברקע.</p>
 
-            <div>
+            <div class="mb-4">
                 <input type="file" name="files" multiple
-                       class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                       class="block w-full text-sm text-gray-700 file:mr-4 file:py-3 file:px-5 file:rounded-full file:border-0 file:font-bold file:bg-golden-yellow file:text-dark-brown hover:file:bg-warm-yellow file:shadow-md file:transition-all cursor-pointer">
             </div>
 
             <!-- HTMX Progress Bar Container -->
-            <div id="progress-container" class="htmx-indicator w-full bg-gray-200 rounded-full h-2.5 mt-4">
-                <div id="progress-bar" class="bg-blue-600 h-2.5 rounded-full" style="width: 0%"></div>
+            <div id="progress-container" class="htmx-indicator w-full bg-warm-beige rounded-full h-3 mt-4 overflow-hidden">
+                <div id="progress-bar" class="bg-gradient-to-r from-golden-yellow to-warm-yellow h-3 rounded-full transition-all" style="width: 0%"></div>
             </div>
             
             <!-- Response message area -->
-            <div id="upload-response" class="mt-2 text-sm text-center"></div>
+            <div id="upload-response" class="mt-4 text-sm text-center"></div>
 
-            <button type="submit" class="mt-6 w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700">
-                העלה קבצים
+            <button type="submit" class="btn-primary w-full mt-6">
+                🚀 העלה קבצים
             </button>
         </form>
     </div>
 
-    <div class="bg-white p-6 rounded-lg shadow-md">
-        <h2 class="text-lg font-semibold text-right mb-4">הקבצים שלי</h2>
+    <div class="content-card">
+        <div class="flex items-center gap-3 mb-4">
+            <img src="{{ url_for('serve_avner', filename='avner_reading.jpeg') }}" 
+                 alt="אבנר קורא" 
+                 class="w-12 h-12 rounded-full object-cover border-2 border-golden-yellow">
+            <h2 class="text-xl font-bold text-dark-brown text-right">📚 הקבצים שלי</h2>
+        </div>
         <div id="my-files-table" 
              hx-get="{{ url_for('upload_bp.list_files_route') }}"
              hx-trigger="load, loadFiles from:body"
              hx-swap="innerHTML">
             <!-- File list will be loaded here via HTMX -->
-            <p class="text-center text-gray-500">טוען קבצים...</p>
+            <div class="info-card text-center py-8">
+                <p class="text-cozy-brown">⏳ טוען קבצים...</p>
+            </div>
         </div>
     </div>
 </div>

@@ -4,13 +4,26 @@
 
 {% block content %}
 <div class="space-y-8 text-right">
+    <!-- Header with Avner -->
+    <div class="flex items-start gap-4">
+        <img src="{{ url_for('serve_avner', filename='avner_reading.jpeg') }}" 
+             alt="אבנר קורא" 
+             class="w-20 h-20 rounded-full object-cover border-4 border-golden-yellow shadow-warm flex-shrink-0">
+        <div>
+            <h1 class="text-3xl font-bold text-dark-brown">📖 סיכום חכם</h1>
+            <p class="text-cozy-brown mt-1 text-lg">העלו קובץ או הדביקו טקסט, ואני אעזור לכם להבין אותו טוב יותר!</p>
+        </div>
+    </div>
+    
     <!-- Input Card -->
-    <div class="bg-white/80 p-6 rounded-2xl shadow-md">
-        <div class="flex items-start space-x-4 space-x-reverse">
-            <img src="{{ url_for('serve_avner', filename='avner_waving.jpeg') }}" alt="אבנר מנופף לשלום" class="h-16 w-16 flex-shrink-0">
+    <div class="content-card border-2 border-golden-yellow">
+        <div class="flex items-start gap-4 mb-6">
+            <img src="{{ url_for('serve_avner', filename='avner_signing_ok.jpeg') }}" 
+                 alt="אבנר מנופף" 
+                 class="w-16 h-16 rounded-full object-cover border-3 border-warm-yellow shadow-md">
             <div>
-                <h2 class="text-xl font-bold text-warm-brown">סיכום חכם</h2>
-                <p class="text-ink-brown/80 mt-1">העלו קובץ או הדביקו טקסט, ואני אעזור לכם להבין אותו טוב יותר.</p>
+                <h2 class="text-xl font-bold text-dark-brown">🚀 בוא נתחיל!</h2>
+                <p class="text-cozy-brown mt-1">העלה את החומר שלך ואני אכין לך סיכום מקיף</p>
             </div>
         </div>
         
@@ -19,18 +32,38 @@
                   hx-post="{{ url_for('upload_bp.upload_route') }}" 
                   hx-encoding="multipart/form-data"
                   hx-target="#upload-result"
-                  hx-swap="innerHTML">
+                  hx-swap="innerHTML"
+                  class="space-y-5">
                 
                 <input type="hidden" name="course_id" value="default">
                 
-                <textarea name="text" class="w-full p-3 border rounded-lg text-right" rows="8" placeholder="הדביקו כאן את החומר לסיכום..."></textarea>
+                <div>
+                    <label for="text" class="block text-sm font-bold text-dark-brown mb-2 text-right">
+                        📝 הדבק טקסט:
+                    </label>
+                    <textarea name="text" 
+                              id="text"
+                              class="form-input" 
+                              rows="8" 
+                              placeholder="הדביקו כאן את החומר לסיכום..."></textarea>
+                </div>
                 
-                <div class="my-4 text-center text-gray-500">או</div>
+                <div class="text-center text-warm-gray font-medium">
+                    <span>━━━━━  או  ━━━━━</span>
+                </div>
                 
-                <input type="file" name="file" class="block w-full text-sm text-ink-brown file:ml-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:font-semibold file:bg-orange-100 file:text-capy-orange hover:file:bg-orange-200"/>
+                <div>
+                    <label for="file" class="block text-sm font-bold text-dark-brown mb-2 text-right">
+                        📁 העלה קובץ:
+                    </label>
+                    <input type="file" 
+                           name="file" 
+                           id="file"
+                           class="block w-full text-sm text-dark-brown file:ml-4 file:py-3 file:px-5 file:rounded-full file:border-0 file:font-bold file:bg-golden-yellow file:text-dark-brown hover:file:bg-warm-yellow file:shadow-md file:transition-all cursor-pointer"/>
+                </div>
 
-                <button type="submit" class="mt-6 w-full bg-capy-orange text-white font-bold py-3 px-5 rounded-lg shadow-sm hover:bg-opacity-90">
-                    העלאה ועיבוד
+                <button type="submit" class="btn-primary w-full text-lg shadow-warm">
+                    🔍 העלאה ועיבוד
                 </button>
             </form>
             <div id="upload-result" class="mt-4 text-center">
@@ -40,14 +73,17 @@
     </div>
 
     <!-- Action/Result Card -->
-    <div id="action-container" class="bg-white/80 p-6 rounded-2xl shadow-md min-h-[10rem]">
+    <div id="action-container" class="content-card min-h-[12rem]">
         <div id="summary-controls" class="hidden">
             <!-- This section is now populated by the result of the file processing task -->
         </div>
         
-        <div id="action-placeholder" class="flex flex-col items-center justify-center text-center text-ink-brown/60 h-full">
-            <img src="{{ url_for('serve_avner', filename='avner_reading.jpeg') }}" alt="אבנר קורא ספר" class="h-24 mb-4">
-            <p>העלו קובץ או טקסט כדי להתחיל.</p>
+        <div id="action-placeholder" class="flex flex-col items-center justify-center text-center text-cozy-brown h-full py-8">
+            <img src="{{ url_for('serve_avner', filename='avner_thinking.jpeg') }}" 
+                 alt="אבנר ממתין" 
+                 class="w-28 h-28 rounded-full object-cover mb-4 border-3 border-warm-beige shadow-soft">
+            <p class="text-lg font-medium">📤 העלו קובץ או טקסט כדי להתחיל</p>
+            <p class="text-sm mt-2">אני ממתין לחומר שלכם...</p>
         </div>
         
         <div id="task-status-container" class="mt-4">
@@ -74,18 +110,20 @@ document.body.addEventListener('htmx:afterOnLoad', function(evt) {
             const actionContainer = document.getElementById('action-container');
             // We can create a new template for this or just inject the HTML
             actionContainer.innerHTML = `
-                <div class="flex items-center space-x-4 space-x-reverse mb-4">
-                    <img src="{{ url_for('serve_avner', filename='avner_reading.jpeg') }}" alt="אבנר עם מחברת" class="h-16 w-16 flex-shrink-0">
+                <div class="flex items-center gap-4 mb-4">
+                    <img src="{{ url_for('serve_avner', filename='avner_signing_ok.jpeg') }}" 
+                         alt="אבנר מאושר" 
+                         class="w-16 h-16 rounded-full object-cover border-3 border-golden-yellow shadow-warm">
                     <div>
-                        <h2 class="text-xl font-bold text-warm-brown">מוכנים!</h2>
-                        <p class="text-ink-brown/80">המסמך <strong>${response.filename}</strong> מוכן. בואו ניצור לו סיכום!</p>
+                        <h2 class="text-xl font-bold text-dark-brown">✅ מוכנים!</h2>
+                        <p class="text-cozy-brown">המסמך <strong>${response.filename}</strong> מוכן. בואו ניצור לו סיכום!</p>
                     </div>
                 </div>
                 <button hx-post="{{ url_for('summary_bp.trigger_summary') }}"
                         hx-vals='{"document_id": "${response.document_id}"}'
                         hx-target="#task-status-container"
                         hx-swap="innerHTML"
-                        class="w-full bg-green-600 text-white font-bold py-3 px-5 rounded-lg shadow-sm hover:bg-green-700">
+                        class="btn-primary w-full text-lg shadow-warm">
                     ✨ הפקת סיכום
                 </button>
             `;
