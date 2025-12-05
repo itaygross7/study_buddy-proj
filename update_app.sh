@@ -68,7 +68,7 @@ echo -e "${GREEN}Current branch: $CURRENT_BRANCH${NC}"
 echo -e "${GREEN}Current commit: $CURRENT_COMMIT${NC}"
 echo ""
 
-# Step 3: Fetch latest changes
+# Step 2: Fetch latest changes
 echo -e "${BLUE}Step 2: Fetching latest changes from remote...${NC}"
 git fetch origin
 
@@ -84,7 +84,7 @@ fi
 echo -e "${YELLOW}$UPDATES_AVAILABLE commit(s) available for update${NC}"
 echo ""
 
-# Step 4: Show what will be updated
+# Step 3: Show what will be updated
 echo -e "${BLUE}Step 3: Changes to be pulled:${NC}"
 git log HEAD..origin/$CURRENT_BRANCH --oneline --decorate
 echo ""
@@ -96,7 +96,7 @@ if [[ ! $REPLY =~ ^[Yy]$ ]]; then
     exit 1
 fi
 
-# Step 5: Pull changes
+# Step 4: Pull changes
 echo -e "${BLUE}Step 4: Pulling latest changes...${NC}"
 git pull origin "$CURRENT_BRANCH"
 
@@ -104,7 +104,7 @@ NEW_COMMIT=$(git rev-parse --short HEAD)
 echo -e "${GREEN}✓ Updated from $CURRENT_COMMIT to $NEW_COMMIT${NC}"
 echo ""
 
-# Step 6: Check if dependencies changed
+# Step 5: Check if dependencies changed
 echo -e "${BLUE}Step 5: Checking for dependency changes...${NC}"
 DEPS_CHANGED=0
 
@@ -131,7 +131,7 @@ else
 fi
 echo ""
 
-# Step 7: Detect deployment type and restart services
+# Step 6: Detect deployment type and restart services
 echo -e "${BLUE}Step 6: Restarting services...${NC}"
 
 # Check if running with Docker
@@ -169,7 +169,7 @@ fi
 
 echo ""
 
-# Step 8: Verify app is running
+# Step 7: Verify app is running
 echo -e "${BLUE}Step 7: Verifying application...${NC}"
 sleep 5  # Wait for services to start
 
