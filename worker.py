@@ -1,5 +1,6 @@
 import json
 import os
+import shutil
 import pika
 import time
 from tenacity import retry, stop_after_attempt, wait_fixed
@@ -59,21 +60,24 @@ def process_task(body: bytes):
                 logger.info(f"[Worker] Successfully processed file '{filename}' for document {document_id}")
             
             # Clean up temp file and directory
-            import shutil
             try:
                 if os.path.exists(temp_path):
                     os.remove(temp_path)
+                    logger.debug(f"[Worker] Removed temp file: {temp_path}")
+                
                 temp_dir = os.path.dirname(temp_path)
                 if os.path.exists(temp_dir) and os.path.isdir(temp_dir):
-                    # Use shutil.rmtree for robust cleanup
                     try:
                         shutil.rmtree(temp_dir)
-                    except OSError:
-                        # If rmtree fails, try removing if empty
+                        logger.debug(f"[Worker] Removed temp directory: {temp_dir}")
+                    except OSError as rmtree_error:
+                        logger.warning(f"[Worker] shutil.rmtree failed for {temp_dir}: {rmtree_error}")
+                        # Fallback: try removing if empty
                         if not os.listdir(temp_dir):
                             os.rmdir(temp_dir)
+                            logger.debug(f"[Worker] Removed empty temp directory with rmdir: {temp_dir}")
             except Exception as cleanup_error:
-                logger.warning(f"[Worker] Failed to cleanup temp file: {cleanup_error}")
+                logger.warning(f"[Worker] Failed to cleanup temp file '{temp_path}': {cleanup_error}")
             
             result_id = document_id
             

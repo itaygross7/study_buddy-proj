@@ -465,7 +465,7 @@ input[type="file"]::file-selector-button:hover {
     .body-with-background {
         background-image: url('/avner/mobile_bacround.jpeg');
         background-size: cover;
-        background-position: top center;
+        background-position: center top;
         background-repeat: no-repeat;
         background-attachment: fixed;
         position: relative;
@@ -477,7 +477,7 @@ input[type="file"]::file-selector-button:hover {
     .body-with-background {
         background-image: url('/avner/desktop_ui_backround.jpeg');
         background-size: cover;
-        background-position: top center;
+        background-position: center top;
         background-repeat: no-repeat;
         background-attachment: fixed;
         position: relative;
