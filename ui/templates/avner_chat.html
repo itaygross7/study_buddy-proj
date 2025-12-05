@@ -307,10 +307,12 @@
         scroll-behavior: smooth;
     }
     
-    /* Better chat bubble hover effects */
-    #chat-messages > div:hover {
-        transform: translateX(2px);
-        transition: transform 0.2s ease;
+    /* Better chat bubble hover effects (respects reduced motion) */
+    @media (prefers-reduced-motion: no-preference) {
+        #chat-messages > div:hover {
+            transform: translateX(2px);
+            transition: transform 0.2s ease;
+        }
     }
 </style>
 {% endblock %}

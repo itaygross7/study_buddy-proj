@@ -7,8 +7,7 @@
   <div class="flex justify-center mb-6">
     <img src="{{ url_for('serve_avner', filename='app_logo.jpeg') }}" 
          alt="StudyBuddy Logo" 
-         class="h-24 md:h-32 w-auto object-contain shadow-2xl rounded-xl border-4 border-white hover:scale-105 transition-transform"
-         style="z-index: 10;">
+         class="h-24 md:h-32 w-auto object-contain shadow-2xl rounded-xl border-4 border-white hover:scale-105 transition-transform z-10">
   </div>
   
   <div class="grid md:grid-cols-2 gap-8 items-center">
@@ -37,8 +36,15 @@
           </li>
           <li class="flex items-start gap-2 bg-golden-yellow/20 p-3 rounded-lg border-2 border-golden-yellow">
             <span class="text-2xl flex-shrink-0">🎯</span>
-            <span><strong>🔐 למידה רק מהחומר שלך - 100% אמין ומדויק!</strong><br>
-            הבינה המלאכותית של StudyBuddy לומדת <u>אך ורק</u> מהקבצים והחומרים שאתה מעלה - <strong>ללא שימוש במידע מהאינטרנט או ממקורות חיצוניים!</strong> זה אומר שכל תשובה מבוססת 100% על החומר שלך, מה שמבטיח דיוק מקסימלי, רלוונטיות מלאה, ואמינות גבוהה. אין מידע לא רלוונטי, אין טעויות מהאינטרנט - רק החומר שלך בדיוק!</span>
+            <div>
+              <strong>🔐 למידה רק מהחומר שלך - 100% אמין ומדויק!</strong><br>
+              <span class="text-sm">הבינה המלאכותית של StudyBuddy לומדת <u>אך ורק</u> מהקבצים והחומרים שאתה מעלה:</span>
+              <ul class="mt-2 space-y-1 text-sm mr-4">
+                <li>✓ <strong>ללא מידע מהאינטרנט</strong> - רק החומר שלך</li>
+                <li>✓ <strong>דיוק מקסימלי</strong> - תשובות מבוססות 100% על החומר שלך</li>
+                <li>✓ <strong>אמינות גבוהה</strong> - אין מידע לא רלוונטי או טעויות מהאינטרנט</li>
+              </ul>
+            </div>
           </li>
           <li class="flex items-start gap-2">
             <span class="text-2xl flex-shrink-0">🦫</span>
