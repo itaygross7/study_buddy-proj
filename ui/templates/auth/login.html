@@ -4,25 +4,22 @@
 
 {% block content %}
 <div class="min-h-[70vh] flex items-center justify-center py-12">
-    <div class="bg-cream rounded-2xl shadow-lg p-8 w-full max-w-md border-2 border-warm-yellow">
+    <div class="content-card w-full max-w-md border-2 border-golden-yellow">
         <!-- Header with Avner -->
         <div class="text-center mb-8">
-            <img src="{{ url_for('serve_avner', filename='avner_signing_ok.jpeg') }}" 
+            <img src="{{ url_for('serve_avner', filename='avner_waving.jpeg') }}" 
                  alt="אבנר מברך"
-                 class="w-20 h-20 rounded-full mx-auto mb-4 object-cover border-4 border-golden-yellow shadow-md"
+                 class="w-24 h-24 rounded-full mx-auto mb-4 object-cover border-4 border-golden-yellow shadow-warm"
                  onerror="this.style.display='none';">
-            <h1 class="text-2xl font-bold text-dark-brown">ברוכים השבים!</h1>
-            <p class="text-cozy-brown mt-2">התחברו כדי להמשיך ללמוד עם אבנר</p>
+            <h1 class="text-3xl font-bold text-dark-brown mb-2">👋 ברוכים השבים!</h1>
+            <p class="text-cozy-brown">התחברו כדי להמשיך ללמוד עם אבנר</p>
         </div>
         
         <!-- Flash Messages -->
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
-                    <div class="mb-4 p-4 rounded-xl border-2 
-                        {% if category == 'error' %}bg-red-50 border-error text-error
-                        {% elif category == 'success' %}bg-green-50 border-success text-success
-                        {% else %}bg-yellow-50 border-warning text-cozy-brown{% endif %}">
+                    <div class="mb-4 {% if category == 'error' %}error-card{% elif category == 'success' %}success-card{% else %}info-card{% endif %}">
                         {{ message }}
                     </div>
                 {% endfor %}
@@ -34,7 +31,7 @@
         <div class="space-y-3 mb-6">
             {% if google_oauth_enabled %}
             <a href="{{ url_for('oauth.google_login') }}" 
-               class="w-full flex items-center justify-center gap-3 bg-white text-gray-700 font-medium py-3 px-6 rounded-xl border-2 border-warm-gray hover:border-golden-yellow transition-all shadow-sm hover:shadow-md">
+               class="w-full flex items-center justify-center gap-3 bg-white text-gray-700 font-medium py-3 px-6 rounded-xl border-2 border-warm-gray hover:border-golden-yellow transition-all shadow-soft hover:shadow-warm">
                 <svg class="w-5 h-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
                     <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
@@ -47,7 +44,7 @@
             
             {% if apple_oauth_enabled %}
             <a href="{{ url_for('oauth.apple_login') }}" 
-               class="w-full flex items-center justify-center gap-3 bg-black text-white font-medium py-3 px-6 rounded-xl border-2 border-black hover:border-golden-yellow transition-all shadow-sm hover:shadow-md">
+               class="w-full flex items-center justify-center gap-3 bg-black text-white font-medium py-3 px-6 rounded-xl border-2 border-black hover:border-golden-yellow transition-all shadow-soft hover:shadow-warm">
                 <svg class="w-5 h-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
                     <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
                 </svg>
@@ -58,10 +55,10 @@
         
         <div class="relative my-6">
             <div class="absolute inset-0 flex items-center">
-                <div class="w-full border-t border-warm-gray"></div>
+                <div class="w-full border-t-2 border-warm-gray"></div>
             </div>
             <div class="relative flex justify-center text-sm">
-                <span class="px-4 bg-cream text-cozy-brown">או התחבר עם אימייל</span>
+                <span class="px-4 bg-white text-cozy-brown font-medium">או התחבר עם אימייל</span>
             </div>
         </div>
         {% endif %}
@@ -69,28 +66,28 @@
         <!-- Login Form -->
         <form method="POST" class="space-y-6">
             <div>
-                <label for="email" class="block text-sm font-medium text-dark-brown mb-2">
-                    אימייל
+                <label for="email" class="block text-sm font-bold text-dark-brown mb-2 text-right">
+                    📧 אימייל
                 </label>
                 <input type="email" 
                        id="email" 
                        name="email" 
                        required
                        autocomplete="email"
-                       class="w-full px-4 py-3 rounded-xl border-2 border-warm-gray bg-warm-beige text-dark-brown placeholder-cozy-brown focus:border-golden-yellow focus:outline-none focus:ring-2 focus:ring-golden-yellow transition-all"
+                       class="form-input"
                        placeholder="your@email.com">
             </div>
             
             <div>
-                <label for="password" class="block text-sm font-medium text-dark-brown mb-2">
-                    סיסמה
+                <label for="password" class="block text-sm font-bold text-dark-brown mb-2 text-right">
+                    🔒 סיסמה
                 </label>
                 <input type="password" 
                        id="password" 
                        name="password" 
                        required
                        autocomplete="current-password"
-                       class="w-full px-4 py-3 rounded-xl border-2 border-warm-gray bg-warm-beige text-dark-brown placeholder-cozy-brown focus:border-golden-yellow focus:outline-none focus:ring-2 focus:ring-golden-yellow transition-all"
+                       class="form-input"
                        placeholder="••••••••">
             </div>
             
@@ -103,9 +100,8 @@
                 </label>
             </div>
             
-            <button type="submit" 
-                    class="w-full bg-golden-yellow text-dark-brown font-bold py-3 px-6 rounded-xl btn-hover-lift transition-all shadow-md hover:bg-warm-yellow">
-                התחבר
+            <button type="submit" class="btn-primary w-full text-lg">
+                🚀 התחבר
             </button>
         </form>
         
@@ -113,8 +109,8 @@
         <div class="mt-6 text-center">
             <p class="text-cozy-brown">
                 עדיין אין לך חשבון?
-                <a href="{{ url_for('auth.signup') }}" class="text-dark-brown font-bold hover:text-golden-yellow transition-colors">
-                    הירשם עכשיו
+                <a href="{{ url_for('auth.signup') }}" class="text-dark-brown font-bold hover:text-golden-yellow transition-colors underline">
+                    הירשם עכשיו ✨
                 </a>
             </p>
         </div>
@@ -122,19 +118,16 @@
         <!-- Resend Verification -->
         <div class="mt-4 text-center">
             <details class="text-sm">
-                <summary class="text-cozy-brown cursor-pointer hover:text-dark-brown">לא קיבלת אימייל אימות?</summary>
-                <form method="POST" action="{{ url_for('auth.resend_verification') }}" class="mt-3">
-                    <div class="flex gap-2">
-                        <input type="email" 
-                               name="email" 
-                               required
-                               placeholder="הזן אימייל"
-                               class="flex-1 px-3 py-2 rounded-lg border border-warm-gray text-sm">
-                        <button type="submit" 
-                                class="px-4 py-2 bg-caramel text-cream rounded-lg text-sm font-medium hover:bg-cozy-brown transition-colors">
-                            שלח שוב
-                        </button>
-                    </div>
+                <summary class="text-cozy-brown cursor-pointer hover:text-dark-brown font-medium">לא קיבלת אימייל אימות?</summary>
+                <form method="POST" action="{{ url_for('auth.resend_verification') }}" class="mt-3 space-y-2">
+                    <input type="email" 
+                           name="email" 
+                           required
+                           placeholder="הזן אימייל"
+                           class="form-input text-sm">
+                    <button type="submit" class="btn-secondary w-full">
+                        📨 שלח שוב
+                    </button>
                 </form>
             </details>
         </div>

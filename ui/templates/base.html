@@ -12,46 +12,49 @@
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
 </head>
 <body class="h-full flex flex-col bg-warm-beige font-sans text-dark-brown body-with-background">
-    <!-- Navbar - Merged and Corrected -->
-    <nav class="bg-cozy-brown shadow-lg sticky top-0 z-50">
+    <!-- Navbar - Enhanced and Professional -->
+    <nav class="bg-cozy-brown shadow-warm-lg sticky top-0 z-50">
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div class="flex h-16 items-center justify-between">
                 <!-- Right side: Logo and nav links (RTL) -->
-                <div class="flex items-center">
-                    <a href="{{ url_for('index') }}" class="flex-shrink-0 flex items-center gap-2">
-                        <img src="{{ url_for('serve_avner', filename='avner_waving.jpeg') }}" alt="אבנר" class="h-10 w-10 rounded-full object-cover border-2 border-warm-yellow shadow-md">
-                        <span class="text-cream font-bold text-lg hidden sm:block">StudyBuddy</span>
+                <div class="flex items-center gap-4">
+                    <a href="{{ url_for('index') }}" class="flex-shrink-0 flex items-center gap-2 group">
+                        <img src="{{ url_for('serve_avner', filename='avner_waving.jpeg') }}" alt="אבנר" class="h-12 w-12 rounded-full object-cover border-4 border-warm-yellow shadow-md group-hover:border-golden-yellow transition-all">
+                        <div class="flex flex-col">
+                            <span class="text-cream font-bold text-lg hidden sm:block">StudyBuddy</span>
+                            <span class="text-warm-yellow text-xs hidden sm:block">אבנר עוזר לך ללמוד 🦫</span>
+                        </div>
                     </a>
                     <div class="hidden md:block mr-4">
-                        <div class="flex items-baseline gap-1">
-                            <a href="{{ url_for('index') }}" class="{% if request.endpoint == 'index' %}bg-caramel text-cream font-bold{% else %}text-cream hover:bg-caramel{% endif %} rounded-lg px-3 py-2 text-sm">בית</a>
+                        <div class="flex items-baseline gap-2">
+                            <a href="{{ url_for('index') }}" class="nav-link {% if request.endpoint == 'index' %}nav-link-active{% endif %}">🏠 בית</a>
                             {% if current_user.is_authenticated %}
-                            <a href="{{ url_for('library.index') }}" class="{% if 'library' in request.endpoint %}bg-caramel text-cream font-bold{% else %}text-cream hover:bg-caramel{% endif %} rounded-lg px-3 py-2 text-sm">הספרייה שלי</a>
+                            <a href="{{ url_for('library.index') }}" class="nav-link {% if 'library' in request.endpoint %}nav-link-active{% endif %}">📚 הספרייה שלי</a>
                             {% endif %}
                         </div>
                     </div>
                 </div>
                 
                 <!-- Left side: User menu, Admin, Lang Switcher -->
-                <div class="hidden md:flex items-center gap-4">
+                <div class="hidden md:flex items-center gap-3">
                     {% if current_user.is_authenticated %}
                         {% if current_user.user.role.value == 'admin' %}
-                        <a href="{{ url_for('admin.dashboard') }}" class="text-cream hover:text-warm-yellow text-sm">ניהול</a>
+                        <a href="{{ url_for('admin.dashboard') }}" class="text-cream hover:text-warm-yellow text-sm font-medium px-3 py-2 rounded-lg hover:bg-caramel transition-all">⚙️ ניהול</a>
                         {% endif %}
-                        <a href="{{ url_for('library.profile') }}" class="inline-flex items-center gap-2 bg-warm-yellow text-dark-brown text-sm px-4 py-2 rounded-full font-medium">
-                            {{ current_user.user.name or current_user.user.email.split('@')[0] }}
+                        <a href="{{ url_for('library.profile') }}" class="inline-flex items-center gap-2 bg-gradient-to-r from-golden-yellow to-warm-yellow text-dark-brown text-sm px-4 py-2 rounded-full font-bold shadow-md hover:shadow-lg transition-all btn-hover-lift">
+                            👤 {{ current_user.user.name or current_user.user.email.split('@')[0] }}
                         </a>
-                        <a href="{{ url_for('auth.logout') }}" class="text-cream hover:text-warm-yellow text-sm">התנתק</a>
+                        <a href="{{ url_for('auth.logout') }}" class="text-cream hover:text-warm-yellow text-sm font-medium px-3 py-2 rounded-lg hover:bg-caramel transition-all">🚪 התנתק</a>
                     {% else %}
-                        <a href="{{ url_for('auth.login') }}" class="text-cream hover:text-warm-yellow text-sm">התחבר</a>
-                        <a href="{{ url_for('auth.signup') }}" class="bg-warm-yellow text-dark-brown text-sm px-4 py-2 rounded-full font-medium">הרשמה</a>
+                        <a href="{{ url_for('auth.login') }}" class="text-cream hover:text-warm-yellow text-sm font-medium px-3 py-2 rounded-lg hover:bg-caramel transition-all">🔑 התחבר</a>
+                        <a href="{{ url_for('auth.signup') }}" class="bg-gradient-to-r from-golden-yellow to-warm-yellow text-dark-brown text-sm px-5 py-2 rounded-full font-bold shadow-md hover:shadow-lg transition-all btn-hover-lift">✨ הרשמה</a>
                     {% endif %}
                     <!-- Language Switcher -->
                     <div class="text-sm">
                         {% if current_locale == 'he' %}
-                            <a href="{{ url_for('set_lang', lang='en') }}" class="text-cream hover:text-warm-yellow">EN</a>
+                            <a href="{{ url_for('set_lang', lang='en') }}" class="text-cream hover:text-warm-yellow font-medium px-2 py-1 rounded transition-all">EN</a>
                         {% else %}
-                            <a href="{{ url_for('set_lang', lang='he') }}" class="text-cream hover:text-warm-yellow">עב</a>
+                            <a href="{{ url_for('set_lang', lang='he') }}" class="text-cream hover:text-warm-yellow font-medium px-2 py-1 rounded transition-all">עב</a>
                         {% endif %}
                     </div>
                 </div>
@@ -76,21 +79,21 @@
 
         <!-- Mobile menu -->
         <div class="md:hidden hidden" id="mobile-menu">
-            <div class="space-y-1 px-4 pb-4 pt-2 bg-cozy-brown rounded-b-xl">
-                <a href="{{ url_for('index') }}" class="block rounded-lg px-3 py-2 text-base text-cream hover:bg-caramel">בית</a>
+            <div class="space-y-1 px-4 pb-4 pt-2 bg-cozy-brown rounded-b-2xl border-t-2 border-caramel">
+                <a href="{{ url_for('index') }}" class="block rounded-lg px-3 py-3 text-base text-cream hover:bg-caramel transition-all font-medium">🏠 בית</a>
                 {% if current_user.is_authenticated %}
-                <a href="{{ url_for('library.index') }}" class="block rounded-lg px-3 py-2 text-base text-cream hover:bg-caramel">הספרייה שלי</a>
-                <div class="pt-2 border-t border-caramel">
-                    <a href="{{ url_for('library.profile') }}" class="block rounded-lg px-3 py-2 text-base text-warm-yellow">פרופיל</a>
+                <a href="{{ url_for('library.index') }}" class="block rounded-lg px-3 py-3 text-base text-cream hover:bg-caramel transition-all font-medium">📚 הספרייה שלי</a>
+                <div class="pt-3 border-t-2 border-caramel mt-2">
+                    <a href="{{ url_for('library.profile') }}" class="block rounded-lg px-3 py-3 text-base text-warm-yellow font-bold hover:bg-caramel transition-all">👤 פרופיל</a>
                     {% if current_user.user.role.value == 'admin' %}
-                    <a href="{{ url_for('admin.dashboard') }}" class="block rounded-lg px-3 py-2 text-base text-cream hover:bg-caramel">ניהול</a>
+                    <a href="{{ url_for('admin.dashboard') }}" class="block rounded-lg px-3 py-3 text-base text-cream hover:bg-caramel transition-all font-medium">⚙️ ניהול</a>
                     {% endif %}
-                    <a href="{{ url_for('auth.logout') }}" class="block rounded-lg px-3 py-2 text-base text-cream hover:bg-caramel">התנתק</a>
+                    <a href="{{ url_for('auth.logout') }}" class="block rounded-lg px-3 py-3 text-base text-cream hover:bg-caramel transition-all font-medium">🚪 התנתק</a>
                 </div>
                 {% else %}
-                <div class="pt-2 border-t border-caramel">
-                    <a href="{{ url_for('auth.login') }}" class="block rounded-lg px-3 py-2 text-base text-cream hover:bg-caramel">התחבר</a>
-                    <a href="{{ url_for('auth.signup') }}" class="block rounded-lg px-3 py-2 text-base text-warm-yellow font-bold">הרשמה</a>
+                <div class="pt-3 border-t-2 border-caramel mt-2">
+                    <a href="{{ url_for('auth.login') }}" class="block rounded-lg px-3 py-3 text-base text-cream hover:bg-caramel transition-all font-medium">🔑 התחבר</a>
+                    <a href="{{ url_for('auth.signup') }}" class="block rounded-lg px-3 py-3 text-base text-warm-yellow font-bold hover:bg-caramel transition-all">✨ הרשמה</a>
                 </div>
                 {% endif %}
             </div>
@@ -99,14 +102,25 @@
 
     <!-- Main content -->
     <main class="flex-grow">
-        <div class="mx-auto max-w-5xl px-4 py-6">
+        <div class="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
             {% block content %}{% endblock %}
         </div>
     </main>
 
     <!-- Footer -->
-    <footer class="bg-cozy-brown py-4">
-        <p class="text-center text-cream text-xs">© 2024 StudyBuddyAI</p>
+    <footer class="bg-cozy-brown py-6 mt-8">
+        <div class="max-w-6xl mx-auto px-4">
+            <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+                <div class="flex items-center gap-3">
+                    <img src="{{ url_for('serve_avner', filename='avner_signing_ok.jpeg') }}" alt="אבנר" class="h-10 w-10 rounded-full border-2 border-warm-yellow">
+                    <div class="text-cream text-sm">
+                        <p class="font-bold">StudyBuddyAI - אבנר עוזר לך ללמוד</p>
+                        <p class="text-xs text-warm-gray">למידה חכמה עם בינה מלאכותית 🦫</p>
+                    </div>
+                </div>
+                <p class="text-center text-cream text-sm">© 2024 StudyBuddyAI - כל הזכויות שמורות</p>
+            </div>
+        </div>
     </footer>
     
     <script>

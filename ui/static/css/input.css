@@ -20,19 +20,35 @@
 
 /* 
 ==================================================================
-  2. Custom Background Image Styles (Added)
-     - This is the new section I added to implement the cozy
-       dorm room background as you requested.
-     - It uses a mobile-first approach.
+  2. Custom Background Image Styles (Enhanced)
+     - Cozy background with subtle overlay for better readability
+     - Mobile-first approach with smooth transitions
 ==================================================================
 */
 @layer base {
+    :root {
+        --overlay-color: rgba(255, 248, 230, 0.3);
+    }
+    
     .body-with-background {
         /* Mobile background by default */
         background-image: url('../img/background_mobile.png');
         background-size: cover;
         background-position: center;
         background-attachment: fixed;
+        position: relative;
+    }
+    
+    .body-with-background::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: var(--overlay-color);
+        pointer-events: none;
+        z-index: -1;
     }
 
     /* Desktop background for larger screens */
@@ -41,50 +57,103 @@
             background-image: url('../img/background_desktop.png');
         }
     }
+    
+    /* Smooth scrolling for better UX */
+    html {
+        scroll-behavior: smooth;
+    }
+    
+    /* Better focus states for accessibility */
+    *:focus-visible {
+        outline: 2px solid theme('colors.golden-yellow');
+        outline-offset: 2px;
+        border-radius: 0.25rem;
+    }
 }
 
 /* 
 ==================================================================
-  3. Landing Page Hero & Tool Card Styles
+  3. Landing Page Hero & Tool Card Styles (Enhanced)
      - Custom styles for the hero section and tool cards
      - Maintains RTL layout and cozy aesthetic
+     - Professional but welcoming design
 ==================================================================
 */
 @layer components {
     .hero {
         display: flex;
-        gap: 20px;
+        gap: 2rem;
         align-items: center;
-        margin-bottom: 20px;
+        margin-bottom: 2.5rem;
+        padding: 1.5rem;
+        background: linear-gradient(135deg, rgba(255, 248, 230, 0.95) 0%, rgba(250, 243, 215, 0.95) 100%);
+        border-radius: 1.5rem;
+        box-shadow: 0 4px 16px rgba(139, 94, 52, 0.1);
     }
     
     .hero-left { 
-        flex: 1; 
+        flex: 1;
+        display: flex;
+        justify-content: center;
+        align-items: center;
     }
     
     .hero-right { 
         flex: 1; 
-        text-align: right; 
+        text-align: right;
+        padding: 1rem;
+    }
+    
+    .hero-right h1 {
+        font-size: 2rem;
+        font-weight: 700;
+        color: theme('colors.dark-brown');
+        margin-bottom: 1rem;
+        line-height: 1.3;
+    }
+    
+    .hero-right p.muted {
+        font-size: 1.125rem;
+        color: theme('colors.cozy-brown');
+        margin-bottom: 1.5rem;
     }
     
     .avner-hero { 
-        max-width: 320px; 
-        height: auto; 
-        object-fit: contain; 
+        max-width: 280px;
+        height: auto;
+        object-fit: contain;
+        filter: drop-shadow(0 4px 12px rgba(139, 94, 52, 0.2));
+        border-radius: 1rem;
     }
     
     .tools-grid {
         display: grid;
         grid-template-columns: repeat(4, 1fr);
-        gap: 16px;
+        gap: 1.5rem;
+        margin-top: 2rem;
     }
     
     .tool-card {
-        background: #ffffff;
-        border-radius: 12px;
-        padding: 16px;
-        box-shadow: 0 6px 18px rgba(0,0,0,0.06);
-        transition: transform 0.2s, box-shadow 0.2s;
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 1.25rem;
+        padding: 1.5rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+        transition: all 0.3s ease;
+        border: 2px solid transparent;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .tool-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, theme('colors.golden-yellow'), theme('colors.warm-yellow'));
+        opacity: 0;
+        transition: opacity 0.3s ease;
     }
     
     .tool-link {
@@ -95,31 +164,282 @@
     }
     
     .tool-link:hover .tool-card {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 24px rgba(0,0,0,0.08);
+        transform: translateY(-4px);
+        box-shadow: 0 12px 24px rgba(139, 94, 52, 0.15);
+        border-color: theme('colors.golden-yellow');
+    }
+    
+    .tool-link:hover .tool-card::before {
+        opacity: 1;
+    }
+    
+    .tool-card h3 {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: theme('colors.dark-brown');
+        margin: 1rem 0 0.5rem 0;
+        text-align: right;
+    }
+    
+    .tool-card p {
+        font-size: 0.875rem;
+        color: theme('colors.cozy-brown');
+        line-height: 1.5;
+        text-align: right;
     }
     
     .tool-card .sticker {
-        width: 120px;
-        height: auto;
+        width: 100px;
+        height: 100px;
         display: block;
-        margin-left: auto;
-        margin-right: 0;
+        margin: 0 auto 0.5rem auto;
+        object-fit: cover;
+        border-radius: 50%;
+        border: 3px solid theme('colors.warm-beige');
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     }
     
     /* Mobile responsive styles */
     @media (max-width: 768px) {
         .hero { 
-            flex-direction: column-reverse; 
+            flex-direction: column-reverse;
+            padding: 1rem;
+            gap: 1rem;
+        }
+        
+        .hero-right h1 {
+            font-size: 1.5rem;
+        }
+        
+        .hero-right p.muted {
+            font-size: 1rem;
+        }
+        
+        .avner-hero {
+            max-width: 200px;
         }
         
         .tools-grid { 
-            grid-template-columns: 1fr; 
+            grid-template-columns: 1fr;
+            gap: 1rem;
         }
         
         .tool-card .sticker { 
-            width: 180px; 
-            margin: 0 auto 8px auto; 
+            width: 80px;
+            height: 80px;
         }
+    }
+    
+    /* Tablet responsive */
+    @media (min-width: 769px) and (max-width: 1024px) {
+        .tools-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+}
+
+/* 
+==================================================================
+  4. Enhanced Button & Form Styles
+     - Professional but friendly button designs
+     - Better form input styling
+==================================================================
+*/
+@layer components {
+    /* Primary Button */
+    .btn-primary {
+        background: linear-gradient(135deg, theme('colors.golden-yellow') 0%, theme('colors.warm-yellow') 100%);
+        color: theme('colors.dark-brown');
+        font-weight: 700;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(242, 201, 76, 0.3);
+    }
+    
+    .btn-primary:hover {
+        box-shadow: 0 6px 16px rgba(242, 201, 76, 0.4);
+        transform: translateY(-2px);
+    }
+    
+    /* Secondary Button */
+    .btn-secondary {
+        background: theme('colors.cream');
+        color: theme('colors.cozy-brown');
+        font-weight: 600;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        border: 2px solid theme('colors.warm-gray');
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-secondary:hover {
+        background: theme('colors.warm-beige');
+        border-color: theme('colors.cozy-brown');
+    }
+    
+    /* Form Inputs */
+    .form-input {
+        width: 100%;
+        padding: 0.875rem 1rem;
+        border-radius: 0.75rem;
+        border: 2px solid theme('colors.warm-gray');
+        background: theme('colors.warm-beige');
+        color: theme('colors.dark-brown');
+        font-size: 1rem;
+        transition: all 0.3s ease;
+    }
+    
+    .form-input:focus {
+        outline: none;
+        border-color: theme('colors.golden-yellow');
+        box-shadow: 0 0 0 3px rgba(242, 201, 76, 0.1);
+    }
+    
+    .form-input::placeholder {
+        color: theme('colors.warm-gray');
+    }
+    
+    /* File Upload Styling */
+    .file-upload-area {
+        border: 2px dashed theme('colors.warm-gray');
+        border-radius: 1rem;
+        padding: 2rem;
+        text-align: center;
+        background: rgba(255, 255, 255, 0.7);
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    
+    .file-upload-area:hover {
+        border-color: theme('colors.golden-yellow');
+        background: rgba(255, 248, 230, 0.9);
+    }
+}
+
+/* 
+==================================================================
+  5. Card & Content Container Styles
+     - Enhanced card designs with better depth
+     - Content containers with proper spacing
+==================================================================
+*/
+@layer components {
+    .content-card {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 1.25rem;
+        padding: 2rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+        border: 1px solid rgba(191, 165, 133, 0.2);
+    }
+    
+    .content-card-hover {
+        transition: all 0.3s ease;
+    }
+    
+    .content-card-hover:hover {
+        box-shadow: 0 8px 20px rgba(139, 94, 52, 0.12);
+        transform: translateY(-2px);
+    }
+    
+    /* Info Cards */
+    .info-card {
+        background: linear-gradient(135deg, rgba(250, 243, 215, 0.6) 0%, rgba(255, 248, 230, 0.6) 100%);
+        border-radius: 1rem;
+        padding: 1.5rem;
+        border-left: 4px solid theme('colors.golden-yellow');
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    }
+    
+    /* Success Card */
+    .success-card {
+        background: rgba(174, 213, 129, 0.15);
+        border-radius: 1rem;
+        padding: 1.5rem;
+        border-left: 4px solid theme('colors.success');
+    }
+    
+    /* Warning Card */
+    .warning-card {
+        background: rgba(242, 201, 76, 0.15);
+        border-radius: 1rem;
+        padding: 1.5rem;
+        border-left: 4px solid theme('colors.warning');
+    }
+    
+    /* Error Card */
+    .error-card {
+        background: rgba(217, 119, 6, 0.15);
+        border-radius: 1rem;
+        padding: 1.5rem;
+        border-left: 4px solid theme('colors.error');
+    }
+}
+
+/* 
+==================================================================
+  6. Navigation & Header Enhancements
+     - Better navbar styling
+     - Improved mobile menu
+==================================================================
+*/
+@layer components {
+    .nav-link {
+        color: theme('colors.cream');
+        padding: 0.5rem 0.75rem;
+        border-radius: 0.5rem;
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+    
+    .nav-link:hover {
+        background: theme('colors.caramel');
+        color: theme('colors.cream');
+    }
+    
+    .nav-link-active {
+        background: theme('colors.caramel');
+        color: theme('colors.cream');
+        font-weight: 700;
+    }
+}
+
+/* 
+==================================================================
+  7. Utility Classes
+     - Custom utility classes for spacing and effects
+==================================================================
+*/
+@layer utilities {
+    .text-shadow {
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    .card-hover {
+        transition: all 0.3s ease;
+    }
+    
+    .card-hover:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(139, 94, 52, 0.15);
+    }
+    
+    .btn-hover-lift {
+        transition: all 0.3s ease;
+    }
+    
+    .btn-hover-lift:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+    }
+    
+    .gradient-text {
+        background: linear-gradient(135deg, theme('colors.golden-yellow'), theme('colors.warm-yellow'));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
     }
 }
