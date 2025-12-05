@@ -19,7 +19,8 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         case_sensitive=True,
         env_file='.env',
-        env_file_encoding='utf-8'
+        env_file_encoding='utf-8',
+        extra='ignore'  # <--- ADDED THIS LINE to fix the crash
     )
 
     # Flask
