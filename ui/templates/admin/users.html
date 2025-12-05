@@ -84,8 +84,8 @@
                                 <form method="POST" action="{{ url_for('admin.toggle_user_status', user_id=user.id) }}" class="inline">
                                     <button type="submit" 
                                             class="px-3 py-1 rounded-lg text-sm font-medium transition-colors
-                                                {% if user.is_active %}bg-warning text-dark-brown hover:bg-error hover:text-white{% else %}bg-success text-white hover:bg-green-600{% endif %}">
-                                        {% if user.is_active %}השבת{% else %}הפעל{% endif %}
+                                                {% if user.is_active %}bg-error text-white hover:bg-red-700{% else %}bg-success text-white hover:bg-green-600{% endif %}">
+                                        {% if user.is_active %}🚫 חסום{% else %}✅ הסר חסימה{% endif %}
                                     </button>
                                 </form>
                                 <form method="POST" 

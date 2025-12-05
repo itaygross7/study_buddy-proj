@@ -27,16 +27,21 @@
 */
 @layer base {
     :root {
-        --overlay-color: rgba(255, 248, 230, 0.3);
+        --overlay-color: rgba(255, 248, 230, 0.85);
         --logo-hero-size: 280px;
         --logo-hero-size-mobile: 200px;
     }
     
     .body-with-background {
-        /* Mobile background by default */
-        background-image: url('../img/background_mobile.png');
-        background-size: cover;
-        background-position: center;
+        /* Subtle pattern background with warm colors */
+        background: 
+            linear-gradient(135deg, rgba(255, 248, 230, 0.95) 25%, transparent 25%),
+            linear-gradient(225deg, rgba(250, 243, 215, 0.95) 25%, transparent 25%),
+            linear-gradient(45deg, rgba(255, 240, 200, 0.95) 25%, transparent 25%),
+            linear-gradient(315deg, rgba(248, 237, 210, 0.95) 25%, transparent 25%),
+            linear-gradient(to bottom, #FFF8E6, #FAF3D7);
+        background-size: 80px 80px, 80px 80px, 80px 80px, 80px 80px, 100% 100%;
+        background-position: 0 0, 40px 0, 40px -40px, 0 40px, 0 0;
         background-attachment: fixed;
         position: relative;
     }
@@ -53,13 +58,6 @@
         z-index: -1;
     }
 
-    /* Desktop background for larger screens */
-    @media (min-width: 768px) {
-        .body-with-background {
-            background-image: url('../img/background_desktop.png');
-        }
-    }
-    
     /* Smooth scrolling for better UX */
     html {
         scroll-behavior: smooth;

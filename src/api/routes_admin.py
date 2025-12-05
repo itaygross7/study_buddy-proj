@@ -175,6 +175,9 @@ def dashboard():
     return render_template('admin/dashboard.html',
                            health=health,
                            stats=stats,
+                           user_count=stats.get('users', {}).get('total', 0),
+                           doc_count=stats.get('content', {}).get('documents', 0),
+                           task_count=stats.get('tasks', {}).get('completed', 0),
                            recent_users=recent_users,
                            recent_failures=recent_failures,
                            config=config)
@@ -204,23 +207,23 @@ def users():
 @login_required
 @admin_required
 def toggle_user_status(user_id):
-    """Toggle user active status."""
+    """Toggle user active status (ban/unban)."""
     user = auth_service.get_user_by_id(db, user_id)
     if not user:
         flash('משתמש לא נמצא', 'error')
         return redirect(url_for('admin.users'))
 
-    # Don't allow deactivating yourself
+    # Don't allow banning yourself
     if user_id == current_user.id:
-        flash('לא ניתן לשנות את הסטטוס של עצמך', 'error')
+        flash('לא ניתן לחסום את עצמך', 'error')
         return redirect(url_for('admin.users'))
 
     new_status = not user.is_active
     auth_service.update_user_status(db, user_id, new_status)
 
-    status_text = 'הופעל' if new_status else 'הושבת'
+    status_text = 'הוסרה החסימה' if new_status else 'נחסם'
     flash(f'המשתמש {status_text} בהצלחה', 'success')
-    logger.info(f"Admin toggled user {user_id} status to {new_status}")
+    logger.info(f"Admin {'unbanned' if new_status else 'banned'} user {user_id}")
 
     return redirect(url_for('admin.users'))
 

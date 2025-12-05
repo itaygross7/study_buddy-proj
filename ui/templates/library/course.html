@@ -214,6 +214,25 @@
 
 {% block scripts %}
 <script>
+    // Constants
+    const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+    const MAX_FILE_SIZE_MB = 50;
+    
+    // Helper function to validate file size
+    function validateFileSize(file) {
+        if (!file || file.size === 0) return { valid: false, error: 'יש לבחור קובץ להעלאה 📝' };
+        
+        if (file.size > MAX_FILE_SIZE) {
+            const fileSizeMB = (file.size / 1024 / 1024).toFixed(2);
+            return { 
+                valid: false, 
+                error: `❌ הקובץ גדול מדי! גודל מקסימלי: ${MAX_FILE_SIZE_MB}MB\nגודל הקובץ שלך: ${fileSizeMB}MB`
+            };
+        }
+        
+        return { valid: true };
+    }
+    
     // Upload form handler
     document.getElementById('upload-form')?.addEventListener('submit', async function(e) {
         e.preventDefault();
@@ -229,8 +248,17 @@
         const fileInput = formData.get('file');
         
         if ((!textInput || textInput.trim() === '') && (!fileInput || fileInput.size === 0)) {
-            alert('יש להזין טקסט או לבחור קובץ להעלאה');
+            alert('יש להזין טקסט או לבחור קובץ להעלאה 📝');
             return;
+        }
+        
+        // Validate file size if file provided
+        if (fileInput && fileInput.size > 0) {
+            const validation = validateFileSize(fileInput);
+            if (!validation.valid) {
+                alert(validation.error);
+                return;
+            }
         }
         
         // Show Avner loading animation
@@ -269,13 +297,14 @@
                 statusDiv.classList.add('hidden');
                 submitBtn.disabled = false;
                 submitBtn.classList.remove('opacity-75');
-                alert('שגיאה: ' + (data.error || 'נסה שוב'));
+                const errorMsg = data.error || 'אירעה שגיאה בהעלאה. אנא נסה שוב';
+                alert('❌ שגיאה: ' + errorMsg);
             }
         } catch (error) {
             statusDiv.classList.add('hidden');
             submitBtn.disabled = false;
             submitBtn.classList.remove('opacity-75');
-            alert('שגיאה בהעלאה. בדוק את החיבור לאינטרנט.');
+            alert('❌ שגיאה בהעלאה. אנא בדוק את החיבור לאינטרנט ונסה שוב.');
             console.error('Upload error:', error);
         }
     });
@@ -287,8 +316,10 @@
         const originalText = submitBtn.innerHTML;
         const fileInput = formData.get('file');
         
-        if (!fileInput || fileInput.size === 0) {
-            alert('יש לבחור קובץ להעלאה');
+        // Validate file
+        const validation = validateFileSize(fileInput);
+        if (!validation.valid) {
+            alert(validation.error);
             return;
         }
         
@@ -318,12 +349,13 @@
             } else {
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = originalText;
-                alert('שגיאה: ' + (data.error || 'נסה שוב'));
+                const errorMsg = data.error || 'אירעה שגיאה בהעלאה. אנא נסה שוב';
+                alert('❌ שגיאה: ' + errorMsg);
             }
         } catch (error) {
             submitBtn.disabled = false;
             submitBtn.innerHTML = originalText;
-            alert('שגיאה בהעלאה. בדוק את החיבור לאינטרנט.');
+            alert('❌ שגיאה בהעלאה. אנא בדוק את החיבור לאינטרנט ונסה שוב.');
             console.error('Upload error:', error);
         }
     });

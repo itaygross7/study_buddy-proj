@@ -65,8 +65,9 @@ def upload_route():
     if not file or not file.filename:
         return jsonify({"error": "No file selected"}), 400
 
-    if file.content_length > MAX_FILE_SIZE:
-        return jsonify({"error": "File too large"}), 413
+    # Check file size more reliably
+    if file.content_length and file.content_length > MAX_FILE_SIZE:
+        return jsonify({"error": "File too large (max 50MB)"}), 413
 
     try:
         # Save file to a temporary location for the worker
@@ -74,6 +75,17 @@ def upload_route():
         temp_dir = tempfile.mkdtemp()
         temp_path = os.path.join(temp_dir, filename)
         file.save(temp_path)
+        
+        # Verify file size after saving
+        file_size = os.path.getsize(temp_path)
+        if file_size > MAX_FILE_SIZE:
+            # Clean up temp files before returning error
+            try:
+                os.remove(temp_path)
+                os.rmdir(temp_dir)
+            except OSError as cleanup_error:
+                logger.warning(f"Failed to cleanup temp files: {cleanup_error}")
+            return jsonify({"error": "File too large (max 50MB)"}), 413
 
         # Create DB records for the document and the task
         doc_repo = MongoDocumentRepository(db)
