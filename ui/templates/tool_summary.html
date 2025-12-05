@@ -1,310 +1,97 @@
 {% extends "base.html" %}
 
-{% block title %}מסכם - StudyBuddyAI{% endblock %}
+{% block title %}סיכום חכם - StudyBuddyAI{% endblock %}
 
 {% block content %}
-<!-- Header with Avner Avatar -->
-<div class="mb-6">
-    <nav class="text-sm text-cozy-brown mb-2">
-        <a href="{{ url_for('index') }}" class="hover:text-golden-yellow transition-colors">בית</a>
-        <span class="mx-2">/</span>
-        <span class="text-dark-brown">מסכם</span>
-    </nav>
-    
-    <div class="flex items-center gap-4">
-        <div id="tool-avner" class="avner-tool-avatar"></div>
-        <div>
-            <h1 class="text-2xl md:text-3xl font-bold text-dark-brown">מסכם חומר לימוד</h1>
-            <p class="text-cozy-brown text-sm mt-1">אבנר יסכם לך את החומר בצורה ברורה וקצרה</p>
+<div class="space-y-8 text-right">
+    <!-- Input Card -->
+    <div class="bg-white/80 p-6 rounded-2xl shadow-md">
+        <div class="flex items-start space-x-4 space-x-reverse">
+            <img src="{{ url_for('serve_avner', filename='avner_waving.jpeg') }}" alt="אבנר מנופף לשלום" class="h-16 w-16 flex-shrink-0">
+            <div>
+                <h2 class="text-xl font-bold text-warm-brown">סיכום חכם</h2>
+                <p class="text-ink-brown/80 mt-1">העלו קובץ או הדביקו טקסט, ואני אעזור לכם להבין אותו טוב יותר.</p>
+            </div>
+        </div>
+        
+        <div class="mt-6">
+            <form id="upload-form"
+                  hx-post="{{ url_for('upload_bp.upload_route') }}" 
+                  hx-encoding="multipart/form-data"
+                  hx-target="#upload-result"
+                  hx-swap="innerHTML">
+                
+                <input type="hidden" name="course_id" value="default">
+                
+                <textarea name="text" class="w-full p-3 border rounded-lg text-right" rows="8" placeholder="הדביקו כאן את החומר לסיכום..."></textarea>
+                
+                <div class="my-4 text-center text-gray-500">או</div>
+                
+                <input type="file" name="file" class="block w-full text-sm text-ink-brown file:ml-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:font-semibold file:bg-orange-100 file:text-capy-orange hover:file:bg-orange-200"/>
+
+                <button type="submit" class="mt-6 w-full bg-capy-orange text-white font-bold py-3 px-5 rounded-lg shadow-sm hover:bg-opacity-90">
+                    העלאה ועיבוד
+                </button>
+            </form>
+            <div id="upload-result" class="mt-4 text-center">
+                <!-- Upload status appears here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Action/Result Card -->
+    <div id="action-container" class="bg-white/80 p-6 rounded-2xl shadow-md min-h-[10rem]">
+        <div id="summary-controls" class="hidden">
+            <!-- This section is now populated by the result of the file processing task -->
+        </div>
+        
+        <div id="action-placeholder" class="flex flex-col items-center justify-center text-center text-ink-brown/60 h-full">
+            <img src="{{ url_for('serve_avner', filename='avner_reading.jpeg') }}" alt="אבנר קורא ספר" class="h-24 mb-4">
+            <p>העלו קובץ או טקסט כדי להתחיל.</p>
+        </div>
+        
+        <div id="task-status-container" class="mt-4">
+            <!-- Task polling status for summarization will appear here -->
         </div>
     </div>
 </div>
 
-<!-- What to Upload - Clear Instructions -->
-<div class="bg-warm-yellow/30 border-2 border-golden-yellow rounded-2xl p-4 mb-6">
-    <h3 class="font-bold text-dark-brown mb-2 flex items-center gap-2">
-        <span>📚</span> מה להעלות?
-    </h3>
-    <ul class="text-sm text-coffee space-y-1 list-disc list-inside">
-        <li><strong>סיכומים</strong> - סיכומי שיעורים, הרצאות, פרקים מספר</li>
-        <li><strong>מצגות</strong> - שקפים מהקורס (PDF)</li>
-        <li><strong>מאמרים</strong> - טקסטים אקדמיים או מקצועיים</li>
-        <li><strong>הערות</strong> - רשימות ונקודות שרשמת</li>
-    </ul>
-    <p class="text-xs text-cozy-brown mt-2">💡 טיפ: ככל שהחומר יותר ממוקד, הסיכום יהיה יותר מדויק!</p>
-</div>
-
-<!-- Two-pane Layout -->
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-    <!-- Right Pane: Input Area -->
-    <div class="bg-cream rounded-2xl p-6 shadow-md border border-warm-yellow">
-        <h2 class="text-xl font-bold text-dark-brown mb-4">📝 הזנת החומר</h2>
+<script>
+document.body.addEventListener('htmx:afterOnLoad', function(evt) {
+    // This event listener handles the response from the upload form
+    if (evt.target.id === 'upload-form') {
+        const response = JSON.parse(evt.detail.xhr.responseText);
         
-        <form id="summarize-form">
-            <!-- Text Area -->
-            <div class="mb-6">
-                <label for="text-input" class="block text-sm font-medium text-dark-brown mb-2">
-                    הדבק טקסט מהחומר שלך:
-                </label>
-                <textarea 
-                    id="text-input" 
-                    name="text"
-                    rows="8"
-                    class="w-full p-4 border-2 border-warm-gray rounded-xl focus:ring-2 focus:ring-golden-yellow focus:border-golden-yellow transition-all resize-none bg-warm-beige"
-                    placeholder="העתק והדבק כאן את הטקסט שברצונך לסכם...
-
-לדוגמה:
-- פרק מספר לימוד
-- סיכום הרצאה
-- מאמר או כתבה
-- רשימת נקודות חשובות"></textarea>
-            </div>
-            
-            <!-- OR Divider -->
-            <div class="flex items-center gap-4 mb-6">
-                <div class="flex-1 border-t border-warm-gray"></div>
-                <span class="text-cozy-brown text-sm font-medium">או</span>
-                <div class="flex-1 border-t border-warm-gray"></div>
-            </div>
-            
-            <!-- File Upload -->
-            <div class="mb-6">
-                <label class="block text-sm font-medium text-dark-brown mb-2">
-                    העלה קובץ:
-                </label>
-                <div class="border-2 border-dashed border-warm-gray rounded-xl p-6 hover:border-golden-yellow transition-colors bg-warm-beige text-center">
-                    <input 
-                        type="file" 
-                        id="file-input"
-                        name="file"
-                        accept=".pdf,.doc,.docx,.txt,.pptx"
-                        class="hidden"
-                        onchange="handleFileSelect(this, 'file-display')">
-                    <label for="file-input" class="cursor-pointer">
-                        <div class="text-4xl mb-2">📄</div>
-                        <p class="text-dark-brown font-medium">לחץ לבחירת קובץ</p>
-                        <p class="text-xs text-cozy-brown mt-1">PDF, Word, PowerPoint או טקסט (עד 10MB)</p>
-                    </label>
-                </div>
-                <div id="file-display" class="hidden mt-3 flex items-center gap-2 bg-warm-yellow text-dark-brown text-sm px-4 py-2 rounded-lg">
-                    <span>✓</span>
-                    <span id="file-name"></span>
-                </div>
-            </div>
-            
-            <!-- Error Message -->
-            <div id="error-message" class="hidden mb-4 p-3 bg-red-50 border-2 border-error rounded-lg text-error text-sm">
-            </div>
-            
-            <!-- Submit Button -->
-            <button 
-                type="submit"
-                id="submit-btn"
-                class="w-full bg-golden-yellow text-dark-brown font-bold py-4 px-6 rounded-xl btn-hover-lift transition-all duration-150 flex items-center justify-center gap-2 shadow-md text-lg">
-                <span>🦫 בקש מאבנר לסכם</span>
-            </button>
-            
-            <p class="text-xs text-center text-cozy-brown mt-3">
-                הסיכום יופיע בצד שמאל תוך מספר שניות
-            </p>
-        </form>
-    </div>
-    
-    <!-- Left Pane: Results Area -->
-    <div class="bg-cream rounded-2xl p-6 shadow-md border border-warm-yellow">
-        <h2 class="text-xl font-bold text-dark-brown mb-4">📋 הסיכום שלך</h2>
-        
-        <div id="results-container">
-            <!-- Empty State with Avner -->
-            <div id="empty-state" class="text-center py-8">
-                <div id="waiting-avner" class="mb-4"></div>
-                <p class="text-cozy-brown leading-relaxed">
-                    <strong>אבנר מחכה לחומר שלך!</strong><br>
-                    <span class="text-sm">הזן טקסט או העלה קובץ משמאל, ואבנר יכין לך סיכום מסודר.</span>
-                </p>
-            </div>
-            
-            <!-- Loading State -->
-            <div id="loading-state" class="hidden text-center py-8">
-                <div id="thinking-avner" class="mb-4"></div>
-                <p class="text-cozy-brown">אבנר קורא את החומר וכותב סיכום...</p>
-                <div class="mt-4 flex justify-center">
-                    <div class="avner-typing">
-                        <span></span><span></span><span></span>
+        if (response.status === 'processing' && response.polling_url) {
+            // If the file is processing, start polling the task status
+            const uploadResultDiv = document.getElementById('upload-result');
+            uploadResultDiv.setAttribute('hx-get', response.polling_url);
+            uploadResultDiv.setAttribute('hx-trigger', 'load, every 2s');
+            uploadResultDiv.setAttribute('hx-swap', 'innerHTML');
+            htmx.process(uploadResultDiv);
+        } else if (response.status === 'completed' && response.document_id) {
+            // If text was processed synchronously, show the generate button
+            const actionContainer = document.getElementById('action-container');
+            // We can create a new template for this or just inject the HTML
+            actionContainer.innerHTML = `
+                <div class="flex items-center space-x-4 space-x-reverse mb-4">
+                    <img src="{{ url_for('serve_avner', filename='avner_notebook.jpeg') }}" alt="אבנר עם מחברת" class="h-16 w-16 flex-shrink-0">
+                    <div>
+                        <h2 class="text-xl font-bold text-warm-brown">מוכנים!</h2>
+                        <p class="text-ink-brown/80">המסמך <strong>${response.filename}</strong> מוכן. בואו ניצור לו סיכום!</p>
                     </div>
                 </div>
-            </div>
-            
-            <!-- Summary Result -->
-            <div id="summary-result" class="hidden">
-                <div class="prose prose-brown max-w-none" id="summary-content">
-                    <!-- Summary will be inserted here -->
-                </div>
-                
-                <!-- Success Avner -->
-                <div class="mt-6 flex items-center gap-3 p-4 bg-green-50 rounded-xl border border-success">
-                    <div id="success-avner"></div>
-                    <p class="text-dark-brown text-sm">הסיכום מוכן! יש לך שאלות על החומר?</p>
-                </div>
-            </div>
-        </div>
-        
-        <div id="task-status-container" class="mt-4"></div>
-    </div>
-</div>
-{% endblock %}
-
-{% block scripts %}
-<script>
-    // Initialize Avner avatars
-    document.addEventListener('DOMContentLoaded', function() {
-        // Tool header avatar
-        new AvnerAvatar('tool-avner', { size: 'medium', showBubble: false });
-        
-        // Waiting avatar
-        new AvnerAvatar('waiting-avner', { size: 'large', showBubble: true });
-    });
-    
-    // File selection handler
-    function handleFileSelect(input, displayId) {
-        const display = document.getElementById(displayId);
-        const fileName = document.getElementById('file-name');
-        if (input.files && input.files.length > 0) {
-            const file = input.files[0];
-            const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
-            fileName.textContent = `${file.name} (${sizeMB}MB)`;
-            display.classList.remove('hidden');
-        } else {
-            display.classList.add('hidden');
+                <button hx-post="{{ url_for('summary_bp.trigger_summary') }}"
+                        hx-vals='{"document_id": "${response.document_id}"}'
+                        hx-target="#task-status-container"
+                        hx-swap="innerHTML"
+                        class="w-full bg-green-600 text-white font-bold py-3 px-5 rounded-lg shadow-sm hover:bg-green-700">
+                    ✨ הפקת סיכום
+                </button>
+            `;
+            htmx.process(actionContainer);
         }
     }
-    
-    // Form submission
-    document.getElementById('summarize-form').addEventListener('submit', async function(e) {
-        e.preventDefault();
-        
-        const textInput = document.getElementById('text-input').value.trim();
-        const fileInput = document.getElementById('file-input').files[0];
-        const errorDiv = document.getElementById('error-message');
-        
-        // Validation
-        if (!textInput && !fileInput) {
-            errorDiv.textContent = '⚠️ הזן טקסט או העלה קובץ כדי להמשיך';
-            errorDiv.classList.remove('hidden');
-            return;
-        }
-        
-        errorDiv.classList.add('hidden');
-        
-        // Show loading state
-        document.getElementById('empty-state').classList.add('hidden');
-        document.getElementById('loading-state').classList.remove('hidden');
-        document.getElementById('summary-result').classList.add('hidden');
-        
-        // Initialize thinking avatar
-        if (!document.getElementById('thinking-avner').hasChildNodes()) {
-            const thinkingAvner = new AvnerAvatar('thinking-avner', { size: 'large', showBubble: true });
-            thinkingAvner.setState('thinking');
-        }
-        
-        try {
-            let docId;
-            
-            if (fileInput) {
-                // Upload file
-                const formData = new FormData();
-                formData.append('file', fileInput);
-                
-                const uploadRes = await fetch('/api/upload/', {
-                    method: 'POST',
-                    body: formData
-                });
-                
-                if (!uploadRes.ok) throw new Error('שגיאה בהעלאת הקובץ');
-                const uploadData = await uploadRes.json();
-                docId = uploadData.document_id;
-            } else {
-                // Create document from text
-                const formData = new FormData();
-                const blob = new Blob([textInput], { type: 'text/plain' });
-                formData.append('file', blob, 'text_input.txt');
-                
-                const uploadRes = await fetch('/api/upload/', {
-                    method: 'POST',
-                    body: formData
-                });
-                
-                if (!uploadRes.ok) throw new Error('שגיאה בשמירת הטקסט');
-                const uploadData = await uploadRes.json();
-                docId = uploadData.document_id;
-            }
-            
-            // Trigger summary
-            const summaryRes = await fetch('/api/summary/', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ document_id: docId })
-            });
-            
-            if (!summaryRes.ok) throw new Error('שגיאה ביצירת הסיכום');
-            const summaryData = await summaryRes.json();
-            
-            // Poll for results
-            pollTaskStatus(summaryData.task_id);
-            
-        } catch (error) {
-            document.getElementById('loading-state').classList.add('hidden');
-            document.getElementById('empty-state').classList.remove('hidden');
-            errorDiv.textContent = '❌ ' + error.message;
-            errorDiv.classList.remove('hidden');
-        }
-    });
-    
-    async function pollTaskStatus(taskId) {
-        const pollInterval = setInterval(async () => {
-            try {
-                const res = await fetch(`/api/tasks/${taskId}`);
-                const data = await res.json();
-                
-                if (data.status === 'COMPLETED') {
-                    clearInterval(pollInterval);
-                    showResults(data.result_id);
-                } else if (data.status === 'FAILED') {
-                    clearInterval(pollInterval);
-                    showError(data.error_message || 'משהו השתבש, נסה שוב');
-                }
-            } catch (error) {
-                clearInterval(pollInterval);
-                showError('שגיאה בבדיקת הסטטוס');
-            }
-        }, 2000);
-    }
-    
-    async function showResults(resultId) {
-        try {
-            const res = await fetch(`/results/summary/${resultId}`);
-            const html = await res.text();
-            
-            document.getElementById('loading-state').classList.add('hidden');
-            document.getElementById('summary-result').classList.remove('hidden');
-            document.getElementById('summary-content').innerHTML = html;
-            
-            // Initialize success avatar
-            if (!document.getElementById('success-avner').hasChildNodes()) {
-                const successAvner = new AvnerAvatar('success-avner', { size: 'small', showBubble: false });
-                successAvner.setState('success');
-            }
-        } catch (error) {
-            showError('שגיאה בטעינת התוצאות');
-        }
-    }
-    
-    function showError(message) {
-        document.getElementById('loading-state').classList.add('hidden');
-        document.getElementById('empty-state').classList.remove('hidden');
-        const errorDiv = document.getElementById('error-message');
-        errorDiv.textContent = '❌ ' + message;
-        errorDiv.classList.remove('hidden');
-    }
+});
 </script>
 {% endblock %}

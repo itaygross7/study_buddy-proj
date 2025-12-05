@@ -1,196 +1,44 @@
 {% extends "base.html" %}
 
-{% block title %}Diagram Generator - StudyBuddyAI{% endblock %}
+{% block title %}יצירת תרשימים{% endblock %}
 
 {% block content %}
-<div class="container mx-auto px-4 py-8 max-w-6xl">
-    <!-- Header -->
-    <div class="bg-white rounded-xl shadow-md p-6 mb-6">
-        <div class="flex items-center gap-4">
-            <img src="{{ url_for('serve_avner', filename='avner_thinking.jpeg') }}" 
-                 alt="Avner thinking" 
-                 class="h-20 w-20 rounded-full object-cover border-4 border-warm-yellow"
-                 onerror="this.style.display='none';">
+<div class="space-y-8 text-right">
+    <!-- Input Card -->
+    <div class="bg-white/80 p-6 rounded-2xl shadow-md">
+        <div class="flex items-start space-x-4 space-x-reverse">
+            <img src="{{ url_for('serve_avner', filename='avner_diagram.jpeg') }}" alt="אבנר עם תרשים" class="h-16 w-16 flex-shrink-0">
             <div>
-                <h1 class="text-3xl font-bold text-cozy-brown mb-2">📊 Visual Diagram Generator</h1>
-                <p class="text-gray-600">Create flowcharts, mindmaps, and more with AI</p>
+                <h2 class="text-xl font-bold text-warm-brown">יצירת תרשימים</h2>
+                <p class="text-ink-brown/80 mt-1">הסבירו לי איזה תהליך או קונספט תרצו לראות בתרשים, ואני אצור אותו עבורכם בפורמט Mermaid.js.</p>
             </div>
+        </div>
+        
+        <div class="mt-6">
+            <form id="diagram-form"
+                  hx-post="{{ url_for('diagram_bp.generate_diagram') }}"
+                  hx-target="#diagram-result"
+                  hx-swap="innerHTML"
+                  hx-indicator="#diagram-spinner">
+                
+                <input type="hidden" name="user_id" value="{{ current_user.id }}">
+                
+                <textarea name="prompt" class="w-full p-3 border rounded-lg text-right" rows="5" placeholder="לדוגמה: 'צור תרשים זרימה של תהליך לוגין משתמש'"></textarea>
+
+                <button type="submit" class="mt-6 w-full bg-capy-orange text-white font-bold py-3 px-5 rounded-lg shadow-sm hover:bg-opacity-90">
+                    🎨 צור תרשים
+                    <span id="diagram-spinner" class="htmx-indicator animate-spin">⚙️</span>
+                </button>
+            </form>
         </div>
     </div>
 
-    <!-- Generator Form -->
-    <div class="bg-white rounded-xl shadow-md p-6 mb-6">
-        <div class="space-y-4">
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">What do you want to visualize?</label>
-                <input type="text" 
-                       id="topicInput"
-                       placeholder="e.g., The water cycle, Software development process, Mitosis stages..."
-                       class="w-full px-4 py-3 border-2 border-warm-yellow rounded-lg focus:outline-none focus:ring-2 focus:ring-caramel">
-            </div>
-
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Diagram Type</label>
-                <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
-                    <label class="cursor-pointer">
-                        <input type="radio" name="diagramType" value="flowchart" checked class="hidden peer">
-                        <div class="p-4 border-2 border-gray-300 rounded-lg text-center peer-checked:border-caramel peer-checked:bg-warm-yellow hover:border-caramel transition-colors">
-                            <div class="text-2xl mb-1">🔄</div>
-                            <div class="text-sm font-medium">Flowchart</div>
-                        </div>
-                    </label>
-                    <label class="cursor-pointer">
-                        <input type="radio" name="diagramType" value="mindmap" class="hidden peer">
-                        <div class="p-4 border-2 border-gray-300 rounded-lg text-center peer-checked:border-caramel peer-checked:bg-warm-yellow hover:border-caramel transition-colors">
-                            <div class="text-2xl mb-1">🧠</div>
-                            <div class="text-sm font-medium">Mind Map</div>
-                        </div>
-                    </label>
-                    <label class="cursor-pointer">
-                        <input type="radio" name="diagramType" value="timeline" class="hidden peer">
-                        <div class="p-4 border-2 border-gray-300 rounded-lg text-center peer-checked:border-caramel peer-checked:bg-warm-yellow hover:border-caramel transition-colors">
-                            <div class="text-2xl mb-1">⏳</div>
-                            <div class="text-sm font-medium">Timeline</div>
-                        </div>
-                    </label>
-                    <label class="cursor-pointer">
-                        <input type="radio" name="diagramType" value="sequence" class="hidden peer">
-                        <div class="p-4 border-2 border-gray-300 rounded-lg text-center peer-checked:border-caramel peer-checked:bg-warm-yellow hover:border-caramel transition-colors">
-                            <div class="text-2xl mb-1">↔️</div>
-                            <div class="text-sm font-medium">Sequence</div>
-                        </div>
-                    </label>
-                    <label class="cursor-pointer">
-                        <input type="radio" name="diagramType" value="class" class="hidden peer">
-                        <div class="p-4 border-2 border-gray-300 rounded-lg text-center peer-checked:border-caramel peer-checked:bg-warm-yellow hover:border-caramel transition-colors">
-                            <div class="text-2xl mb-1">📦</div>
-                            <div class="text-sm font-medium">Class</div>
-                        </div>
-                    </label>
-                    <label class="cursor-pointer">
-                        <input type="radio" name="diagramType" value="state" class="hidden peer">
-                        <div class="p-4 border-2 border-gray-300 rounded-lg text-center peer-checked:border-caramel peer-checked:bg-warm-yellow hover:border-caramel transition-colors">
-                            <div class="text-2xl mb-1">🔀</div>
-                            <div class="text-sm font-medium">State</div>
-                        </div>
-                    </label>
-                </div>
-            </div>
-
-            <button onclick="generateDiagram()" 
-                    id="generateBtn"
-                    class="w-full bg-caramel text-white px-6 py-3 rounded-lg hover:bg-cozy-brown transition-colors font-bold">
-                ✨ Generate Diagram
-            </button>
+    <!-- Result Card -->
+    <div class="bg-white/80 p-6 rounded-2xl shadow-md min-h-[10rem]">
+        <h3 class="text-lg font-semibold text-right mb-4">התרשים שלך:</h3>
+        <div id="diagram-result" class="text-center text-ink-brown/60">
+            <p>התרשים יופיע כאן לאחר היצירה.</p>
         </div>
-    </div>
-
-    <!-- Diagram Display -->
-    <div id="diagramContainer" class="hidden bg-white rounded-xl shadow-md p-6">
-        <div class="flex justify-between items-center mb-4">
-            <h2 class="text-xl font-bold text-cozy-brown">Your Diagram</h2>
-            <button onclick="copyCode()" 
-                    class="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition-colors text-sm">
-                📋 Copy Code
-            </button>
-        </div>
-        <div id="mermaidOutput" class="mermaid bg-warm-beige rounded-lg p-6 overflow-x-auto">
-            <!-- Diagram will be rendered here -->
-        </div>
-        <details class="mt-4">
-            <summary class="cursor-pointer text-sm text-gray-600 hover:text-gray-800">Show Mermaid Code</summary>
-            <pre id="mermaidCode" class="mt-2 bg-gray-100 p-4 rounded-lg text-xs overflow-x-auto"></pre>
-        </details>
-    </div>
-
-    <!-- Loading State -->
-    <div id="loadingState" class="hidden text-center py-12">
-        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-caramel mx-auto mb-4"></div>
-        <p class="text-gray-600">Generating your diagram...</p>
     </div>
 </div>
-
-<script>
-    let currentMermaidCode = '';
-
-    async function generateDiagram() {
-        const topic = document.getElementById('topicInput').value.trim();
-        const type = document.querySelector('input[name="diagramType"]:checked').value;
-
-        if (!topic) {
-            alert('Please enter a topic!');
-            return;
-        }
-
-        // Show loading
-        document.getElementById('loadingState').classList.remove('hidden');
-        document.getElementById('diagramContainer').classList.add('hidden');
-        document.getElementById('generateBtn').disabled = true;
-
-        try {
-            const response = await fetch('/api/diagram/generate', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    topic: topic,
-                    type: type
-                })
-            });
-
-            const data = await response.json();
-
-            if (data.success) {
-                currentMermaidCode = data.mermaid_code;
-                displayDiagram(currentMermaidCode);
-            } else {
-                alert('Error: ' + data.error);
-            }
-        } catch (error) {
-            console.error('Error:', error);
-            alert('Failed to generate diagram. Please try again.');
-        } finally {
-            document.getElementById('loadingState').classList.add('hidden');
-            document.getElementById('generateBtn').disabled = false;
-        }
-    }
-
-    function displayDiagram(code) {
-        const container = document.getElementById('mermaidOutput');
-        const codeDisplay = document.getElementById('mermaidCode');
-        
-        // Clear previous diagram
-        container.innerHTML = code;
-        codeDisplay.textContent = code;
-        
-        // Reinitialize Mermaid for new diagram
-        if (typeof mermaid !== 'undefined') {
-            mermaid.init(undefined, container);
-        }
-        
-        document.getElementById('diagramContainer').classList.remove('hidden');
-    }
-
-    function copyCode() {
-        navigator.clipboard.writeText(currentMermaidCode).then(() => {
-            const btn = event.target;
-            const originalText = btn.textContent;
-            btn.textContent = '✅ Copied!';
-            setTimeout(() => {
-                btn.textContent = originalText;
-            }, 2000);
-        }).catch(err => {
-            console.error('Failed to copy:', err);
-            alert('Failed to copy code');
-        });
-    }
-
-    // Allow generation on Enter key
-    document.getElementById('topicInput').addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            generateDiagram();
-        }
-    });
-</script>
 {% endblock %}

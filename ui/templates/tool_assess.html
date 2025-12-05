@@ -3,319 +3,59 @@
 {% block title %}בחן אותי - StudyBuddyAI{% endblock %}
 
 {% block content %}
-<!-- Header Bar -->
-<div class="mb-6">
-    <nav class="text-sm text-cozy-brown mb-2">
-        <a href="{{ url_for('index') }}" class="hover:text-golden-yellow transition-colors">בית</a>
-        <span class="mx-2">/</span>
-        <span class="text-dark-brown">בחן אותי</span>
-    </nav>
-    <div class="flex items-center justify-between">
-        <div class="flex items-center gap-4">
-            <h1 class="text-2xl md:text-3xl font-bold text-dark-brown">בחן אותי</h1>
-            <img src="{{ url_for('static', filename='img/avner_thinking.png') }}" 
-                 alt="אבנר חושב"
-                 class="w-10 h-10 rounded-lg object-cover border-2 border-golden-yellow shadow-md"
-                 onerror="this.style.display='none';">
+<div class="space-y-8 text-right">
+    <!-- Input Card -->
+    <div class="bg-white/80 p-6 rounded-2xl shadow-md">
+        <div class="flex items-start space-x-4 space-x-reverse">
+            <img src="{{ url_for('serve_avner', filename='avner_laptop.jpeg') }}" alt="אבנר עם לפטופ" class="h-16 w-16 flex-shrink-0">
+            <div>
+                <h2 class="text-xl font-bold text-warm-brown">בחן אותי</h2>
+                <p class="text-ink-brown/80 mt-1">העלו קובץ או הדביקו טקסט, ואני אצור לכם בוחן קצר לבדיקת הידע שלכם.</p>
+            </div>
         </div>
-        <button type="button" 
-                onclick="openAssessHelp()"
-                class="inline-flex items-center gap-1 text-cozy-brown hover:text-caramel text-sm font-medium transition-colors">
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z" />
-            </svg>
-            הסבר קצר
-        </button>
-    </div>
-</div>
-
-<!-- Two-pane Layout -->
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-    <!-- Right Pane: Input Area -->
-    <div class="bg-cream rounded-2xl p-6 shadow-md border border-warm-yellow">
-        <h2 class="text-xl font-bold text-dark-brown mb-4">העלאת חומר לימוד</h2>
         
-        <form id="assess-form">
-            <!-- Text Area -->
-            <div class="mb-6">
-                <label for="text-input" class="block text-sm font-medium text-dark-brown mb-2">
-                    טקסט ללמידה
-                </label>
-                <textarea 
-                    id="text-input" 
-                    name="text"
-                    rows="8"
-                    class="w-full p-4 border-2 border-warm-gray rounded-xl focus:ring-2 focus:ring-golden-yellow focus:border-golden-yellow transition-all resize-none bg-warm-beige"
-                    placeholder="הדביקו כאן סיכום, שיעור, מאמר או כל טקסט אחר..."
-                    aria-describedby="text-helper"></textarea>
-                <p id="text-helper" class="text-sm text-cozy-brown mt-2">
-                    או העלו קובץ מהמחשב
-                </p>
-            </div>
-            
-            <!-- File Picker -->
-            <div class="mb-6">
-                <label class="block text-sm font-medium text-dark-brown mb-2">
-                    בחרו קובץ מהמחשב
-                </label>
-                <div class="border-2 border-dashed border-warm-gray rounded-xl p-4 hover:border-golden-yellow transition-colors bg-warm-beige">
-                    <input 
-                        type="file" 
-                        id="file-input"
-                        name="file"
-                        accept=".pdf,.doc,.docx,.txt"
-                        class="w-full text-sm text-coffee"
-                        onchange="handleFileSelect(this, 'file-display')"
-                        aria-label="בחירת קובץ להעלאה">
-                    <p class="text-xs text-cozy-brown mt-2">
-                        ניתן להעלות קבצי PDF, Word או טקסט עד 10MB
-                    </p>
-                </div>
-                <div id="file-display" class="hidden mt-3 inline-flex items-center gap-2 bg-warm-yellow text-dark-brown text-sm px-3 py-2 rounded-lg">
-                </div>
-            </div>
-            
-            <!-- Privacy Note -->
-            <p class="text-xs text-cozy-brown mb-6">
-                <svg class="w-4 h-4 inline-block ml-1" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
-                </svg>
-                הערה: הטקסט לא נשמר לצמיתות – הוא משמש רק לעיבוד עבורכם בזמן השימוש.
-            </p>
-            
-            <!-- Error Message -->
-            <div id="error-message" class="hidden mb-4 p-3 bg-warm-beige border-2 border-error rounded-lg text-error text-sm">
-            </div>
-            
-            <!-- Submit Button -->
-            <button 
-                type="submit"
-                id="submit-btn"
-                class="w-full bg-golden-yellow text-dark-brown font-semibold py-3 px-6 rounded-xl btn-hover-lift transition-all duration-150 flex items-center justify-center gap-2 min-h-[48px] shadow-md">
-                <span>צור שאלות</span>
-                <svg class="w-5 h-5 htmx-indicator animate-spin" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-            </button>
-        </form>
-        
-        <div id="upload-result" class="mt-4"></div>
-    </div>
-    
-    <!-- Left Pane: Quiz Area -->
-    <div class="bg-cream rounded-2xl p-6 shadow-md border border-warm-yellow">
-        <h2 class="text-xl font-bold text-dark-brown mb-4">המבחן שלך</h2>
-        
-        <div id="results-container">
-            <!-- Empty State with Avner -->
-            <div id="empty-state" class="text-center py-12">
-                <img src="{{ url_for('static', filename='img/avner_thinking.png') }}" 
-                     alt="אבנר חושב"
-                     class="w-24 h-24 mx-auto mb-4 rounded-xl object-cover border-2 border-warm-yellow shadow-md"
-                     onerror="this.style.display='none'">
-                <p class="text-cozy-brown leading-relaxed">
-                    עוד אין שאלות.<br>
-                    העלו חומר לימוד, ואצור לכם מבחן לתרגול.
-                </p>
-            </div>
-            
-            <!-- Quiz Container -->
-            <form id="quiz-form" class="hidden space-y-6">
-                <div id="questions-container">
-                    <!-- Questions will be injected here -->
+        <div class="mt-6">
+            <form id="assess-form"
+                  hx-post="{{ url_for('assess_bp.trigger_assessment') }}"
+                  hx-swap="innerHTML"
+                  hx-target="#task-status-container"
+                  hx-indicator="#task-status-container">
+                
+                <input type="hidden" name="user_id" value="{{ current_user.id }}">
+                <input type="hidden" name="course_id" value="default">
+                
+                <textarea name="text" class="w-full p-3 border rounded-lg text-right" rows="8" placeholder="הדביקו כאן את החומר לבוחן..."></textarea>
+                
+                <div class="my-4 text-center text-gray-500">או</div>
+                
+                <input type="file" name="file" class="block w-full text-sm text-ink-brown file:ml-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:font-semibold file:bg-orange-100 file:text-capy-orange hover:file:bg-orange-200"/>
+                
+                <div class="mt-4">
+                    <label for="num_questions" class="block text-sm font-medium text-gray-700 text-right">מספר שאלות (3-10):</label>
+                    <input type="number" name="num_questions" id="num_questions" value="5" min="3" max="10" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                 </div>
                 
-                <button 
-                    type="button"
-                    onclick="checkAnswers()"
-                    class="w-full bg-cozy-brown text-cream font-semibold py-3 px-6 rounded-xl btn-hover-lift transition-all duration-150 min-h-[48px] shadow-md">
-                    בדוק תשובות
+                <div class="mt-4">
+                    <label for="question_type" class="block text-sm font-medium text-gray-700 text-right">סוג שאלות:</label>
+                    <select name="question_type" id="question_type" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                        <option value="mcq">רב-ברירה (MCQ)</option>
+                        <option value="open">שאלות פתוחות</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="mt-6 w-full bg-capy-orange text-white font-bold py-3 px-5 rounded-lg shadow-sm hover:bg-opacity-90">
+                    ✨ יצירת בוחן
                 </button>
             </form>
-            
-            <!-- Score Result -->
-            <div id="score-result" class="hidden text-center py-8">
-                <div id="score-avner" class="mb-4">
-                    <!-- Dynamic Avner based on score -->
-                </div>
-                <div id="score-text" class="text-2xl font-bold mb-4">
-                    <!-- Score display -->
-                </div>
-                <p id="score-message" class="text-coffee mb-6">
-                    <!-- Feedback message -->
-                </p>
-                <button 
-                    type="button"
-                    onclick="resetQuiz()"
-                    class="inline-flex items-center gap-2 bg-golden-yellow text-dark-brown font-semibold py-2 px-4 rounded-xl btn-hover-lift transition-all duration-150 shadow-md">
-                    נסו שוב
-                </button>
-            </div>
         </div>
-        
-        <div id="task-status-container" class="mt-4"></div>
+    </div>
+
+    <!-- Result Card -->
+    <div id="task-status-container" class="bg-white/80 p-6 rounded-2xl shadow-md min-h-[10rem]">
+        <div class="flex flex-col items-center justify-center text-center text-ink-brown/60 h-full">
+            <img src="{{ url_for('serve_avner', filename='avner_reading.jpeg') }}" alt="אבנר קורא ספר" class="h-24 mb-4">
+            <p>התוצאות יופיעו כאן לאחר יצירת הבוחן.</p>
+        </div>
     </div>
 </div>
-{% endblock %}
-
-{% block scripts %}
-<script>
-    // Help modal for assess
-    function openAssessHelp() {
-        openModal('איך להשתמש בבחן אותי?', 
-            '<ul class="list-disc list-inside space-y-2 text-right">' +
-            '<li>העלו חומר לימוד או הדביקו טקסט</li>' +
-            '<li>לחצו על "צור שאלות"</li>' +
-            '<li>ענו על השאלות ובחרו את התשובה הנכונה</li>' +
-            '<li>לחצו על "בדוק תשובות" לקבלת ציון</li>' +
-            '</ul>');
-    }
-
-    let quizData = [];
-    let userAnswers = {};
-    
-    // Form validation
-    document.getElementById('assess-form').addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        const textInput = document.getElementById('text-input').value.trim();
-        const fileInput = document.getElementById('file-input').files.length;
-        const errorDiv = document.getElementById('error-message');
-        
-        if (!textInput && !fileInput) {
-            errorDiv.textContent = 'כדי להמשיך, הזינו טקסט או בחרו קובץ מהמחשב.';
-            errorDiv.classList.remove('hidden');
-            return;
-        }
-        
-        // Check file size
-        if (fileInput) {
-            const file = document.getElementById('file-input').files[0];
-            if (file.size > 10 * 1024 * 1024) {
-                errorDiv.textContent = 'לא ניתן להעלות את הקובץ הזה. בדקו שהקובץ עד 10MB ובפורמט נתמך.';
-                errorDiv.classList.remove('hidden');
-                return;
-            }
-        }
-        
-        errorDiv.classList.add('hidden');
-        // Here you would typically trigger the assessment generation API
-    });
-    
-    // Clear error when user types or selects file
-    document.getElementById('text-input').addEventListener('input', function() {
-        document.getElementById('error-message').classList.add('hidden');
-    });
-    
-    document.getElementById('file-input').addEventListener('change', function() {
-        document.getElementById('error-message').classList.add('hidden');
-    });
-    
-    /**
-     * Render quiz questions - called when API returns assessment results.
-     * Exposed globally for HTMX response handlers.
-     * @param {Array} questions - Array of question objects with question, options, and correctIndex
-     */
-    window.renderQuiz = function(questions) {
-        quizData = questions;
-        userAnswers = {};
-        
-        const container = document.getElementById('questions-container');
-        const emptyState = document.getElementById('empty-state');
-        const quizForm = document.getElementById('quiz-form');
-        const scoreResult = document.getElementById('score-result');
-        
-        container.innerHTML = '';
-        
-        questions.forEach((q, qIndex) => {
-            const questionDiv = document.createElement('div');
-            questionDiv.className = 'p-4 border-2 border-warm-gray rounded-xl bg-warm-beige';
-            questionDiv.innerHTML = `
-                <p class="font-medium text-dark-brown mb-4">${qIndex + 1}. ${q.question}</p>
-                <div class="space-y-2">
-                    ${q.options.map((option, oIndex) => `
-                        <label class="flex items-center gap-3 p-3 rounded-lg hover:bg-cream cursor-pointer transition-colors">
-                            <input 
-                                type="radio" 
-                                name="q${qIndex}" 
-                                value="${oIndex}"
-                                onchange="userAnswers[${qIndex}] = ${oIndex}"
-                                class="w-5 h-5 text-golden-yellow border-warm-gray focus:ring-golden-yellow">
-                            <span class="text-coffee">${option}</span>
-                        </label>
-                    `).join('')}
-                </div>
-            `;
-            container.appendChild(questionDiv);
-        });
-        
-        emptyState.classList.add('hidden');
-        quizForm.classList.remove('hidden');
-        scoreResult.classList.add('hidden');
-    }
-    
-    // Check answers and show score
-    function checkAnswers() {
-        let correct = 0;
-        const total = quizData.length;
-        
-        quizData.forEach((q, index) => {
-            if (userAnswers[index] === q.correctIndex) {
-                correct++;
-            }
-        });
-        
-        const percentage = Math.round((correct / total) * 100);
-        
-        // Show score result
-        const scoreResult = document.getElementById('score-result');
-        const quizForm = document.getElementById('quiz-form');
-        const scoreAvner = document.getElementById('score-avner');
-        const scoreText = document.getElementById('score-text');
-        const scoreMessage = document.getElementById('score-message');
-        
-        quizForm.classList.add('hidden');
-        scoreResult.classList.remove('hidden');
-        
-        scoreText.textContent = `${correct} מתוך ${total} תשובות נכונות (${percentage}%)`;
-        
-        if (percentage >= 70) {
-            // High score - Avner celebrating (use dancing from Avner folder)
-            scoreAvner.innerHTML = `
-                <img src="{{ url_for('serve_avner', filename='avner_dancing.jpeg') }}" 
-                     alt="אבנר חוגג"
-                     class="w-24 h-24 mx-auto rounded-xl object-cover border-2 border-golden-yellow shadow-md"
-                     onerror="this.src='{{ url_for('static', filename='img/avner_celebrate.png') }}';">
-            `;
-            scoreText.className = 'text-2xl font-bold mb-4 text-success';
-            scoreMessage.textContent = 'אלופים! המשיכו ככה.';
-        } else {
-            // Low score - Avner supportive (use in_love from Avner folder)
-            scoreAvner.innerHTML = `
-                <img src="{{ url_for('serve_avner', filename='avner_in_love.jpeg') }}" 
-                     alt="אבנר מעודד"
-                     class="w-24 h-24 mx-auto rounded-xl object-cover border-2 border-golden-yellow shadow-md"
-                     onerror="this.src='{{ url_for('static', filename='img/avner_hearts.png') }}';">
-            `;
-            scoreText.className = 'text-2xl font-bold mb-4 text-warning';
-            scoreMessage.textContent = 'זה רק תרגול. בואו נעבור שוב על החומר ביחד.';
-        }
-    }
-    
-    // Reset quiz
-    function resetQuiz() {
-        userAnswers = {};
-        const quizForm = document.getElementById('quiz-form');
-        const scoreResult = document.getElementById('score-result');
-        
-        // Reset radio buttons
-        quizForm.querySelectorAll('input[type="radio"]').forEach(input => {
-            input.checked = false;
-        });
-        
-        quizForm.classList.remove('hidden');
-        scoreResult.classList.add('hidden');
-    }
-</script>
 {% endblock %}

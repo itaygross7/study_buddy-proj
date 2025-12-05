@@ -1,272 +1,43 @@
 {% extends "base.html" %}
 
-{% block title %}עוזר שיעורים - StudyBuddyAI{% endblock %}
+{% block title %}עזרה בשיעורי בית{% endblock %}
 
 {% block content %}
-<!-- Header Bar -->
-<div class="mb-6">
-    <nav class="text-sm text-cozy-brown mb-2">
-        <a href="{{ url_for('index') }}" class="hover:text-golden-yellow transition-colors">בית</a>
-        <span class="mx-2">/</span>
-        <span class="text-dark-brown">עוזר שיעורים</span>
-    </nav>
-    <div class="flex items-center justify-between">
-        <div class="flex items-center gap-4">
-            <h1 class="text-2xl md:text-3xl font-bold text-dark-brown">עוזר שיעורים</h1>
-            <img src="{{ url_for('static', filename='img/avner_laptop.png') }}" 
-                 alt="אבנר עובד על מחשב"
-                 class="w-10 h-10 rounded-lg object-cover border-2 border-golden-yellow shadow-md"
-                 onerror="this.style.display='none';">
+<div class="space-y-8 text-right">
+    <!-- Input Card -->
+    <div class="bg-white/80 p-6 rounded-2xl shadow-md">
+        <div class="flex items-start space-x-4 space-x-reverse">
+            <img src="{{ url_for('serve_avner', filename='avner_question.jpeg') }}" alt="אבנר חושב" class="h-16 w-16 flex-shrink-0">
+            <div>
+                <h2 class="text-xl font-bold text-warm-brown">עזרה בשיעורי בית</h2>
+                <p class="text-ink-brown/80 mt-1">נתקעתם עם שאלה? הדביקו אותה כאן ואני אנסה לעזור עם הסבר מפורט, צעד אחר צעד.</p>
+            </div>
         </div>
-        <button type="button" 
-                onclick="openHomeworkHelp()"
-                class="inline-flex items-center gap-1 text-cozy-brown hover:text-caramel text-sm font-medium transition-colors">
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z" />
-            </svg>
-            הסבר קצר
-        </button>
-    </div>
-</div>
-
-<!-- Two-pane Layout -->
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-    <!-- Right Pane: Input Area -->
-    <div class="bg-cream rounded-2xl p-6 shadow-md border border-warm-yellow">
-        <h2 class="text-xl font-bold text-dark-brown mb-4">מה הבעיה שלך?</h2>
         
-        <form id="homework-form" 
-              hx-post="{{ url_for('homework_bp.trigger_homework_helper') }}"
-              hx-target="#task-status-container"
-              hx-swap="innerHTML">
-            <!-- Text Area for Problem -->
-            <div class="mb-6">
-                <label for="problem-input" class="block text-sm font-medium text-dark-brown mb-2">
-                    תארו את השאלה או הבעיה
-                </label>
-                <textarea 
-                    id="problem-input" 
-                    name="problem_statement"
-                    rows="8"
-                    class="w-full p-4 border-2 border-warm-gray rounded-xl focus:ring-2 focus:ring-golden-yellow focus:border-golden-yellow transition-all resize-none bg-warm-beige"
-                    placeholder="הדביקו כאן את שאלת שיעורי הבית, בעיה מתמטית, או כל נושא שתרצו עזרה בו..."
-                    aria-describedby="problem-helper"></textarea>
-                <p id="problem-helper" class="text-sm text-cozy-brown mt-2">
-                    נסו להיות ספציפיים - ככל שנדע יותר, נוכל לעזור טוב יותר
-                </p>
-            </div>
-            
-            <!-- File Picker (optional) -->
-            <div class="mb-6">
-                <label class="block text-sm font-medium text-dark-brown mb-2">
-                    או העלו תמונה של השאלה (אופציונלי)
-                </label>
-                <div class="border-2 border-dashed border-warm-gray rounded-xl p-4 hover:border-golden-yellow transition-colors bg-warm-beige">
-                    <input 
-                        type="file" 
-                        id="file-input"
-                        name="file"
-                        accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg"
-                        class="w-full text-sm text-coffee"
-                        onchange="handleFileSelect(this, 'file-display')"
-                        aria-label="בחירת קובץ להעלאה">
-                    <p class="text-xs text-cozy-brown mt-2">
-                        ניתן להעלות תמונות, PDF, Word או טקסט עד 10MB
-                    </p>
-                </div>
-                <div id="file-display" class="hidden mt-3 inline-flex items-center gap-2 bg-warm-yellow text-dark-brown text-sm px-3 py-2 rounded-lg">
-                </div>
-            </div>
-            
-            <!-- Privacy Note -->
-            <p class="text-xs text-cozy-brown mb-6">
-                <svg class="w-4 h-4 inline-block ml-1" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
-                </svg>
-                הערה: השאלה לא נשמרת לצמיתות – היא משמשת רק לעיבוד עבורכם בזמן השימוש.
-            </p>
-            
-            <!-- Error Message -->
-            <div id="error-message" class="hidden mb-4 p-3 bg-warm-beige border-2 border-error rounded-lg text-error text-sm">
-            </div>
-            
-            <!-- Submit Button -->
-            <button 
-                type="submit"
-                id="submit-btn"
-                class="w-full bg-golden-yellow text-dark-brown font-semibold py-3 px-6 rounded-xl btn-hover-lift transition-all duration-150 flex items-center justify-center gap-2 min-h-[48px] shadow-md">
-                <span>עזור לי עם השיעורים</span>
-                <svg class="w-5 h-5 htmx-indicator animate-spin" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-            </button>
-        </form>
-    </div>
-    
-    <!-- Left Pane: Results Area -->
-    <div class="bg-cream rounded-2xl p-6 shadow-md border border-warm-yellow">
-        <h2 class="text-xl font-bold text-dark-brown mb-4">הפתרון שלב אחר שלב</h2>
-        
-        <div id="results-container">
-            <!-- Empty State with Avner -->
-            <div id="empty-state" class="text-center py-12">
-                <img src="{{ url_for('static', filename='img/avner_laptop.png') }}" 
-                     alt="אבנר ממתין לעזור"
-                     class="w-24 h-24 mx-auto mb-4 rounded-xl object-cover border-2 border-warm-yellow shadow-md"
-                     onerror="this.style.display='none'">
-                <p class="text-cozy-brown leading-relaxed">
-                    עוד לא שאלתם שאלה.<br>
-                    תארו את הבעיה שלכם, ואעזור לכם לפתור אותה צעד אחר צעד.
-                </p>
-            </div>
-            
-            <!-- Solution Steps Container -->
-            <div id="solution-container" class="hidden">
-                <!-- Step Timeline -->
-                <div class="space-y-6">
-                    <!-- Step 1: Understanding -->
-                    <div class="step-item relative pr-8 pb-6 border-r-2 border-golden-yellow">
-                        <div class="absolute right-[-9px] top-0 w-4 h-4 bg-golden-yellow rounded-full shadow-md"></div>
-                        <div class="flex items-center gap-2 mb-2">
-                            <span class="bg-golden-yellow text-dark-brown text-xs font-bold px-2 py-1 rounded">שלב 1</span>
-                            <h3 class="font-bold text-dark-brown">הבנת השאלה</h3>
-                        </div>
-                        <div id="step-understanding" class="text-coffee">
-                            <!-- Understanding content will be injected here -->
-                        </div>
-                    </div>
-                    
-                    <!-- Step 2: Breakdown -->
-                    <div class="step-item relative pr-8 pb-6 border-r-2 border-golden-yellow">
-                        <div class="absolute right-[-9px] top-0 w-4 h-4 bg-golden-yellow rounded-full shadow-md"></div>
-                        <div class="flex items-center gap-2 mb-2">
-                            <span class="bg-golden-yellow text-dark-brown text-xs font-bold px-2 py-1 rounded">שלב 2</span>
-                            <h3 class="font-bold text-dark-brown">פירוק למשימות קטנות</h3>
-                        </div>
-                        <div id="step-breakdown" class="text-coffee">
-                            <!-- Breakdown content will be injected here -->
-                        </div>
-                    </div>
-                    
-                    <!-- Step 3: Tips -->
-                    <div class="step-item relative pr-8">
-                        <div class="absolute right-[-9px] top-0 w-4 h-4 bg-golden-yellow rounded-full shadow-md"></div>
-                        <div class="flex items-center gap-2 mb-2">
-                            <span class="bg-golden-yellow text-dark-brown text-xs font-bold px-2 py-1 rounded">שלב 3</span>
-                            <h3 class="font-bold text-dark-brown">טיפים לכתיבה/פתרון</h3>
-                        </div>
-                        <div id="step-tips" class="text-coffee">
-                            <!-- Tips content will be injected here -->
-                        </div>
-                    </div>
-                </div>
+        <div class="mt-6">
+            <form id="homework-form"
+                  hx-post="{{ url_for('homework_bp.trigger_homework_helper') }}"
+                  hx-swap="innerHTML"
+                  hx-target="#task-status-container"
+                  hx-indicator="#task-status-container">
                 
-                <!-- Avner Speech Bubble -->
-                <div class="mt-8">
-                    <div class="flex items-end gap-3">
-                        <img src="{{ url_for('static', filename='img/avner_teaching.png') }}" 
-                             alt="אבנר מלמד"
-                             class="w-12 h-12 rounded-full object-cover border-2 border-golden-yellow"
-                             onerror="this.style.display='none';">
-                        <div class="speech-bubble flex-1 bg-warm-beige border border-warm-yellow">
-                            <p class="text-dark-brown">
-                                אם משהו לא ברור, אפשר לשאול שאלות נוספות!
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div>
+                <input type="hidden" name="user_id" value="{{ current_user.id }}">
+                
+                <textarea name="problem_statement" class="w-full p-3 border rounded-lg text-right" rows="8" placeholder="הדביקו כאן את השאלה משיעורי הבית..."></textarea>
+
+                <button type="submit" class="mt-6 w-full bg-capy-orange text-white font-bold py-3 px-5 rounded-lg shadow-sm hover:bg-opacity-90">
+                    💡 בקשת עזרה
+                </button>
+            </form>
         </div>
-        
-        <div id="task-status-container" class="mt-4"></div>
+    </div>
+
+    <!-- Result Card -->
+    <div id="task-status-container" class="bg-white/80 p-6 rounded-2xl shadow-md min-h-[10rem]">
+        <div class="flex flex-col items-center justify-center text-center text-ink-brown/60 h-full">
+            <img src="{{ url_for('serve_avner', filename='avner_reading.jpeg') }}" alt="אבנר קורא ספר" class="h-24 mb-4">
+            <p>ההסבר יופיע כאן.</p>
+        </div>
     </div>
 </div>
-{% endblock %}
-
-{% block scripts %}
-<script>
-    // Help modal for homework
-    function openHomeworkHelp() {
-        openModal('איך להשתמש בעוזר שיעורים?', 
-            '<ul class="list-disc list-inside space-y-2 text-right">' +
-            '<li>הדביקו את השאלה או הבעיה שלכם</li>' +
-            '<li>לחצו על "עזור לי עם השיעורים"</li>' +
-            '<li>קבלו הסבר שלב-אחר-שלב</li>' +
-            '<li>קראו את הטיפים לכתיבה ופתרון</li>' +
-            '</ul>');
-    }
-
-    // Form validation
-    document.getElementById('homework-form').addEventListener('submit', function(e) {
-        const problemInput = document.getElementById('problem-input').value.trim();
-        const fileInput = document.getElementById('file-input').files.length;
-        const errorDiv = document.getElementById('error-message');
-        
-        if (!problemInput && !fileInput) {
-            e.preventDefault();
-            errorDiv.textContent = 'כדי להמשיך, תארו את הבעיה שלכם או העלו תמונה.';
-            errorDiv.classList.remove('hidden');
-            return false;
-        }
-        
-        // Check file size
-        if (fileInput) {
-            const file = document.getElementById('file-input').files[0];
-            if (file.size > 10 * 1024 * 1024) {
-                e.preventDefault();
-                errorDiv.textContent = 'לא ניתן להעלות את הקובץ הזה. בדקו שהקובץ עד 10MB ובפורמט נתמך.';
-                errorDiv.classList.remove('hidden');
-                return false;
-            }
-        }
-        
-        errorDiv.classList.add('hidden');
-        document.getElementById('empty-state').classList.add('hidden');
-    });
-    
-    // Clear error when user types or selects file
-    document.getElementById('problem-input').addEventListener('input', function() {
-        document.getElementById('error-message').classList.add('hidden');
-    });
-    
-    document.getElementById('file-input').addEventListener('change', function() {
-        document.getElementById('error-message').classList.add('hidden');
-    });
-    
-    /**
-     * Render solution steps - called when API returns homework help results.
-     * This function is exposed globally so it can be called from HTMX response handlers
-     * or injected script tags in the task_status template.
-     * @param {Object} solution - The solution object with understanding, breakdown, and tips
-     */
-    window.renderSolution = function(solution) {
-        const emptyState = document.getElementById('empty-state');
-        const solutionContainer = document.getElementById('solution-container');
-        const stepUnderstanding = document.getElementById('step-understanding');
-        const stepBreakdown = document.getElementById('step-breakdown');
-        const stepTips = document.getElementById('step-tips');
-        
-        stepUnderstanding.innerHTML = solution.understanding || 'מנתחים את השאלה...';
-        
-        if (solution.breakdown && Array.isArray(solution.breakdown)) {
-            stepBreakdown.innerHTML = '<ul class="list-disc list-inside space-y-1">' + 
-                solution.breakdown.map(item => `<li>${item}</li>`).join('') + 
-                '</ul>';
-        } else {
-            stepBreakdown.innerHTML = solution.breakdown || '';
-        }
-        
-        if (solution.tips && Array.isArray(solution.tips)) {
-            stepTips.innerHTML = '<ul class="list-disc list-inside space-y-1">' + 
-                solution.tips.map(tip => `<li>${tip}</li>`).join('') + 
-                '</ul>';
-        } else {
-            stepTips.innerHTML = solution.tips || '';
-        }
-        
-        emptyState.classList.add('hidden');
-        solutionContainer.classList.remove('hidden');
-    }
-</script>
 {% endblock %}

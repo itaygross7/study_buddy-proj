@@ -1,82 +1,58 @@
-from dotenv import load_dotenv
+import os
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import Field
-import secrets
-
-load_dotenv()
-
-
-def _generate_default_secret_key():
-    """Generate a secure default secret key for development only."""
-    return secrets.token_hex(32)
-
 
 class Settings(BaseSettings):
     """
-    Pydantic-based settings management.
-    Reads environment variables and provides them to the application.
+    Application settings loaded from environment variables.
     """
-    model_config = SettingsConfigDict(
-        case_sensitive=True,
-        env_file='.env',
-        env_file_encoding='utf-8',
-        extra='ignore'  # <--- ADDED THIS LINE to fix the crash
-    )
+    model_config = SettingsConfigDict(env_file='.env', env_file_encoding='utf-8', extra='ignore')
 
-    # Flask
-    FLASK_ENV: str = Field(default='development')
-    SECRET_KEY: str = Field(default_factory=_generate_default_secret_key)
+    # --- Core App Settings ---
+    FLASK_ENV: str = "production"
+    SECRET_KEY: str
+    DEBUG: bool = False
 
-    # Domain Configuration
-    DOMAIN: str = Field(default='studybuddyai.my')  # Your domain
-    BASE_URL: str = Field(default='https://studybuddyai.my')  # Full base URL for links
+    # --- Infrastructure ---
+    MONGO_URI: str
+    RABBITMQ_URI: str
 
-    # Infrastructure
-    MONGO_URI: str = Field(default='mongodb://localhost:27017/studybuddy')
-    RABBITMQ_URI: str = Field(default='amqp://guest:guest@localhost:5672/')
+    # --- AI Services ---
+    OPENAI_API_KEY: str = ""
+    GEMINI_API_KEY: str = ""
 
-    # AI Services - API Keys
-    OPENAI_API_KEY: str = Field(default='')
-    GEMINI_API_KEY: str = Field(default='')
+    # --- Security ---
+    SESSION_COOKIE_SECURE: bool = True
+    SESSION_COOKIE_HTTPONLY: bool = True
+    SESSION_COOKIE_SAMESITE: str = 'Lax'
 
-    # AI Services - Model Configuration (SB_* prefix for StudyBuddy)
-    SB_OPENAI_MODEL: str = Field(default='gpt-4o-mini')
-    SB_GEMINI_MODEL: str = Field(default='gemini-1.5-flash')
-    SB_DEFAULT_PROVIDER: str = Field(default='gemini')
-    SB_BASE_URL: str = Field(default='')  # Optional custom base URL for API
+    # --- OAuth ---
+    GOOGLE_CLIENT_ID: str = ""
+    GOOGLE_CLIENT_SECRET: str = ""
+    APPLE_CLIENT_ID: str = ""
+    APPLE_TEAM_ID: str = ""
+    APPLE_KEY_ID: str = ""
+    APPLE_PRIVATE_KEY: str = ""
 
-    # Logging
-    LOG_LEVEL: str = Field(default='INFO')
+    # --- Email Service ---
+    MAIL_SERVER: str = ""
+    MAIL_PORT: int = 587
+    MAIL_USE_TLS: bool = True
+    MAIL_USERNAME: str = ""
+    MAIL_PASSWORD: str = ""
+    MAIL_DEFAULT_SENDER: str = "noreply@studybuddy.ai"
+    ADMIN_EMAIL: str = ""
 
-    # Admin Configuration
-    ADMIN_EMAIL: str = Field(default='')  # Admin email address
-    ADMIN_PASSWORD: str = Field(default='')  # Initial admin password (optional, for first-time setup)
+    # --- Logging ---
+    LOG_LEVEL: str = "INFO"
 
-    # Email Configuration (SMTP)
-    MAIL_SERVER: str = Field(default='smtp.gmail.com')
-    MAIL_PORT: int = Field(default=587)
-    MAIL_USE_TLS: bool = Field(default=True)
-    MAIL_USERNAME: str = Field(default='')
-    MAIL_PASSWORD: str = Field(default='')
-    MAIL_DEFAULT_SENDER: str = Field(default='')
-
-    # OAuth Configuration - Google
-    GOOGLE_CLIENT_ID: str = Field(default='')
-    GOOGLE_CLIENT_SECRET: str = Field(default='')
-
-    # OAuth Configuration - Apple (optional)
-    APPLE_CLIENT_ID: str = Field(default='')  # Service ID
-    APPLE_TEAM_ID: str = Field(default='')
-    APPLE_KEY_ID: str = Field(default='')
-    APPLE_PRIVATE_KEY: str = Field(default='')  # Contents of .p8 file
-
-    # Security
-    SESSION_COOKIE_SECURE: bool = Field(default=False)  # Set to True in production with HTTPS
-    SESSION_COOKIE_HTTPONLY: bool = Field(default=True)
-    SESSION_COOKIE_SAMESITE: str = Field(default='Lax')
-    
-    # Webhook Configuration (for auto-updates)
-    WEBHOOK_SECRET: str = Field(default='')  # GitHub webhook secret for auto-updates
-
-
+# Load settings
 settings = Settings()
+
+# Production readiness checks
+if settings.FLASK_ENV == "production":
+    if not settings.SECRET_KEY or settings.SECRET_KEY == "change-this-to-a-very-secret-key-in-production":
+        raise ValueError("CRITICAL: SECRET_KEY is not set for production.")
+    if settings.DEBUG:
+        raise ValueError("CRITICAL: DEBUG mode must be disabled in production.")
+    if not settings.ADMIN_EMAIL:
+        print("WARNING: ADMIN_EMAIL is not set. Error notifications will not be sent.")

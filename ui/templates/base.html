@@ -1,167 +1,98 @@
 <!DOCTYPE html>
-<html lang="he" dir="rtl" class="h-full">
+<html lang="{{ 'en' if current_locale == 'en' else 'he' }}" dir="{{ 'ltr' if current_locale == 'en' else 'rtl' }}" class="h-full">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}StudyBuddyAI{% endblock %}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
     <script src="https://unpkg.com/htmx.org@1.9.10" integrity="sha384-D1Kt99CQMDuVetoL1lrYwg5t+9QdHe7NLX/SoJYkXDFfX37iInKRy5xLSi8nO7UC" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
-    <script>
-        // Initialize Mermaid.js for diagram rendering
-        if (typeof mermaid !== 'undefined') {
-            mermaid.initialize({ 
-                startOnLoad: true,
-                theme: 'default',
-                themeVariables: {
-                    primaryColor: '#F2C94C',
-                    primaryTextColor: '#5C4033',
-                    primaryBorderColor: '#8B6F47',
-                    lineColor: '#8B6F47',
-                    secondaryColor: '#FFE5CC',
-                    tertiaryColor: '#FFF8E7'
-                }
-            });
-        }
-    </script>
-    <script src="{{ url_for('static', filename='js/avner_animations.js') }}"></script>
 </head>
 <body class="h-full flex flex-col bg-warm-beige font-sans text-dark-brown body-with-background">
-    <!-- Navbar - Cozy Brown Theme -->
-    <nav class="bg-cozy-brown shadow-lg">
-        <div class="mx-auto max-w-5xl px-4">
+    <!-- Navbar - Merged and Corrected -->
+    <nav class="bg-cozy-brown shadow-lg sticky top-0 z-50">
+        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div class="flex h-16 items-center justify-between">
                 <!-- Right side: Logo and nav links (RTL) -->
                 <div class="flex items-center">
-                    <!-- Logo with Avner photo -->
                     <a href="{{ url_for('index') }}" class="flex-shrink-0 flex items-center gap-2">
-                        <img src="{{ url_for('serve_avner', filename='avner_waving.jpeg') }}" 
-                             alt="אבנר ה-CapyBuddy" 
-                             class="h-10 w-10 rounded-full object-cover border-2 border-warm-yellow shadow-md"
-                             loading="eager"
-                             onerror="this.style.display='none'; this.nextElementSibling.classList.remove('hidden'); this.nextElementSibling.classList.add('inline-flex');">
-                        <span class="hidden h-10 w-10 items-center justify-center bg-warm-yellow rounded-full text-dark-brown font-bold text-xl flex-shrink-0" role="img" aria-label="אבנר לוגו">🦫</span>
+                        <img src="{{ url_for('serve_avner', filename='avner_waving.jpeg') }}" alt="אבנר" class="h-10 w-10 rounded-full object-cover border-2 border-warm-yellow shadow-md">
                         <span class="text-cream font-bold text-lg hidden sm:block">StudyBuddy</span>
                     </a>
-                    
-                    <!-- Desktop nav links - Simplified -->
-                    <div class="hidden md:block mr-8">
+                    <div class="hidden md:block mr-4">
                         <div class="flex items-baseline gap-1">
-                            <a href="{{ url_for('index') }}" 
-                               class="{% if request.endpoint == 'index' %}bg-caramel text-cream font-bold{% else %}text-cream hover:bg-caramel hover:text-white{% endif %} rounded-lg px-3 py-2 text-sm transition-all duration-150">
-                                🏠 בית
-                            </a>
+                            <a href="{{ url_for('index') }}" class="{% if request.endpoint == 'index' %}bg-caramel text-cream font-bold{% else %}text-cream hover:bg-caramel{% endif %} rounded-lg px-3 py-2 text-sm">בית</a>
                             {% if current_user.is_authenticated %}
-                            <a href="{{ url_for('library.index') }}" 
-                               class="{% if 'library' in request.endpoint|default('') %}bg-caramel text-cream font-bold{% else %}text-cream hover:bg-caramel hover:text-white{% endif %} rounded-lg px-3 py-2 text-sm transition-all duration-150">
-                                📚 הספרייה שלי
-                            </a>
+                            <a href="{{ url_for('library.index') }}" class="{% if 'library' in request.endpoint %}bg-caramel text-cream font-bold{% else %}text-cream hover:bg-caramel{% endif %} rounded-lg px-3 py-2 text-sm">הספרייה שלי</a>
                             {% endif %}
                         </div>
                     </div>
                 </div>
                 
-                <!-- Left side: User menu (desktop) -->
-                <div class="hidden md:flex items-center gap-3">
+                <!-- Left side: User menu, Admin, Lang Switcher -->
+                <div class="hidden md:flex items-center gap-4">
                     {% if current_user.is_authenticated %}
                         {% if current_user.user.role.value == 'admin' %}
-                        <a href="{{ url_for('admin.dashboard') }}" 
-                           class="text-cream hover:text-warm-yellow text-sm transition-colors">
-                            ⚙️ ניהול
-                        </a>
+                        <a href="{{ url_for('admin.dashboard') }}" class="text-cream hover:text-warm-yellow text-sm">ניהול</a>
                         {% endif %}
-                        <a href="{{ url_for('library.profile') }}" 
-                           class="inline-flex items-center gap-2 bg-warm-yellow text-dark-brown text-sm px-4 py-2 rounded-full font-medium shadow-md hover:bg-golden-yellow transition-colors">
-                            <img src="/avner/avner_signing_ok.jpeg" 
-                                 alt="" class="h-6 w-6 rounded-full object-cover flex-shrink-0"
-                                 loading="eager"
-                                 onerror="this.style.display='none';">
+                        <a href="{{ url_for('library.profile') }}" class="inline-flex items-center gap-2 bg-warm-yellow text-dark-brown text-sm px-4 py-2 rounded-full font-medium">
                             {{ current_user.user.name or current_user.user.email.split('@')[0] }}
                         </a>
-                        <a href="{{ url_for('auth.logout') }}" 
-                           class="text-cream hover:text-warm-yellow text-sm transition-colors">
-                            התנתק
-                        </a>
+                        <a href="{{ url_for('auth.logout') }}" class="text-cream hover:text-warm-yellow text-sm">התנתק</a>
                     {% else %}
-                        <a href="{{ url_for('auth.login') }}" 
-                           class="text-cream hover:text-warm-yellow text-sm transition-colors">
-                            התחבר
-                        </a>
-                        <a href="{{ url_for('auth.signup') }}" 
-                           class="bg-warm-yellow text-dark-brown text-sm px-4 py-2 rounded-full font-medium shadow-md hover:bg-golden-yellow transition-colors">
-                            הרשמה
-                        </a>
+                        <a href="{{ url_for('auth.login') }}" class="text-cream hover:text-warm-yellow text-sm">התחבר</a>
+                        <a href="{{ url_for('auth.signup') }}" class="bg-warm-yellow text-dark-brown text-sm px-4 py-2 rounded-full font-medium">הרשמה</a>
                     {% endif %}
+                    <!-- Language Switcher -->
+                    <div class="text-sm">
+                        {% if current_locale == 'he' %}
+                            <a href="{{ url_for('auth.set_lang', lang='en') }}" class="text-cream hover:text-warm-yellow">EN</a>
+                        {% else %}
+                            <a href="{{ url_for('auth.set_lang', lang='he') }}" class="text-cream hover:text-warm-yellow">עב</a>
+                        {% endif %}
+                    </div>
                 </div>
                 
                 <!-- Mobile hamburger button -->
-                <div class="md:hidden">
-                    <button type="button" 
-                            id="mobile-menu-button"
-                            class="inline-flex items-center justify-center rounded-lg p-2 text-cream hover:bg-caramel hover:text-white focus:outline-none focus:ring-2 focus:ring-inset focus:ring-warm-yellow"
-                            aria-controls="mobile-menu" 
-                            aria-expanded="false">
-                        <span class="sr-only">פתח תפריט ראשי</span>
-                        <!-- Hamburger icon -->
-                        <svg class="block h-6 w-6" id="menu-icon-open" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-                        </svg>
-                        <!-- Close icon -->
-                        <svg class="hidden h-6 w-6" id="menu-icon-close" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
+                <div class="md:hidden flex items-center gap-2">
+                    <!-- Language Switcher for Mobile -->
+                    <div class="text-sm">
+                        {% if current_locale == 'he' %}
+                            <a href="{{ url_for('auth.set_lang', lang='en') }}" class="text-cream hover:text-warm-yellow">EN</a>
+                        {% else %}
+                            <a href="{{ url_for('auth.set_lang', lang='he') }}" class="text-cream hover:text-warm-yellow">עב</a>
+                        {% endif %}
+                    </div>
+                    <button type="button" id="mobile-menu-button" class="inline-flex items-center justify-center rounded-lg p-2 text-cream hover:bg-caramel">
+                        <svg id="menu-icon-open" class="block h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg>
+                        <svg id="menu-icon-close" class="hidden h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                     </button>
                 </div>
             </div>
         </div>
 
         <!-- Mobile menu -->
-        <div class="md:hidden hidden mobile-menu-enter" id="mobile-menu">
-            <div class="space-y-1 px-4 pb-4 pt-2 bg-coffee rounded-b-xl">
-                <a href="{{ url_for('index') }}" 
-                   class="{% if request.endpoint == 'index' %}bg-caramel text-cream font-bold{% else %}text-cream hover:bg-caramel hover:text-white{% endif %} block rounded-lg px-3 py-2 text-base transition-all duration-150">
-                    בית
-                </a>
+        <div class="md:hidden hidden" id="mobile-menu">
+            <div class="space-y-1 px-4 pb-4 pt-2 bg-cozy-brown rounded-b-xl">
+                <a href="{{ url_for('index') }}" class="block rounded-lg px-3 py-2 text-base text-cream hover:bg-caramel">בית</a>
                 {% if current_user.is_authenticated %}
-                <a href="{{ url_for('library.index') }}" 
-                   class="{% if 'library' in request.endpoint|default('') %}bg-caramel text-cream font-bold{% else %}text-cream hover:bg-caramel hover:text-white{% endif %} block rounded-lg px-3 py-2 text-base transition-all duration-150">
-                    📚 הספרייה שלי
-                </a>
-                {% endif %}
+                <a href="{{ url_for('library.index') }}" class="block rounded-lg px-3 py-2 text-base text-cream hover:bg-caramel">הספרייה שלי</a>
                 <div class="pt-2 border-t border-caramel">
-                    {% if current_user.is_authenticated %}
-                        <a href="{{ url_for('library.profile') }}" 
-                           class="flex items-center gap-2 text-warm-yellow text-sm px-3 py-2 hover:bg-caramel rounded-lg transition-all">
-                            <img src="/avner/avner_signing_ok.jpeg" 
-                                 alt="" class="h-6 w-6 rounded-full object-cover flex-shrink-0"
-                                 loading="eager"
-                                 onerror="this.style.display='none';">
-                            👤 {{ current_user.user.name or current_user.user.email.split('@')[0] }}
-                        </a>
-                        {% if current_user.user.role.value == 'admin' %}
-                        <a href="{{ url_for('admin.dashboard') }}" 
-                           class="text-cream hover:bg-caramel block rounded-lg px-3 py-2 text-base transition-all duration-150">
-                            ⚙️ ניהול
-                        </a>
-                        {% endif %}
-                        <a href="{{ url_for('auth.logout') }}" 
-                           class="text-cream hover:bg-caramel block rounded-lg px-3 py-2 text-base transition-all duration-150">
-                            🚪 התנתק
-                        </a>
-                    {% else %}
-                        <a href="{{ url_for('auth.login') }}" 
-                           class="text-cream hover:bg-caramel block rounded-lg px-3 py-2 text-base transition-all duration-150">
-                            🔑 התחבר
-                        </a>
-                        <a href="{{ url_for('auth.signup') }}" 
-                           class="text-warm-yellow hover:bg-caramel block rounded-lg px-3 py-2 text-base font-bold transition-all duration-150">
-                            ✨ הרשמה חינם
-                        </a>
+                    <a href="{{ url_for('library.profile') }}" class="block rounded-lg px-3 py-2 text-base text-warm-yellow">פרופיל</a>
+                    {% if current_user.user.role.value == 'admin' %}
+                    <a href="{{ url_for('admin.dashboard') }}" class="block rounded-lg px-3 py-2 text-base text-cream hover:bg-caramel">ניהול</a>
                     {% endif %}
+                    <a href="{{ url_for('auth.logout') }}" class="block rounded-lg px-3 py-2 text-base text-cream hover:bg-caramel">התנתק</a>
                 </div>
+                {% else %}
+                <div class="pt-2 border-t border-caramel">
+                    <a href="{{ url_for('auth.login') }}" class="block rounded-lg px-3 py-2 text-base text-cream hover:bg-caramel">התחבר</a>
+                    <a href="{{ url_for('auth.signup') }}" class="block rounded-lg px-3 py-2 text-base text-warm-yellow font-bold">הרשמה</a>
+                </div>
+                {% endif %}
             </div>
         </div>
     </nav>
@@ -173,121 +104,13 @@
         </div>
     </main>
 
-    <!-- Footer - Cozy Brown Theme -->
-    <footer class="bg-cozy-brown py-6">
-        <div class="mx-auto max-w-5xl px-4">
-            <div class="flex flex-col md:flex-row items-center justify-between gap-4">
-                <div class="flex items-center gap-3">
-                    <img src="{{ url_for('serve_avner', filename='avner_waving.jpeg') }}" 
-                         alt="אבנר ה-CapyBuddy" 
-                         class="h-10 w-10 rounded-full object-cover border-2 border-warm-yellow flex-shrink-0"
-                         loading="lazy"
-                         onerror="this.style.display='none';">
-                    <p class="text-cream text-sm">
-                        © 2025 StudyBuddyAI · לומדים יחד עם אבנר
-                    </p>
-                </div>
-                <p class="text-warm-gray text-xs">
-                    חדר למידה חמים ונעים
-                </p>
-            </div>
-        </div>
+    <!-- Footer -->
+    <footer class="bg-cozy-brown py-4">
+        <p class="text-center text-cream text-xs">© 2024 StudyBuddyAI</p>
     </footer>
     
-    <!-- Avner Chat Widget - Simple Chat Interface -->
-    <div class="avner-helper-floating" id="avner-helper">
-        <!-- Simple Chat Button -->
-        <button onclick="toggleAvnerChat()" class="avner-chat-button">
-            <img src="/avner/avner_calling.jpeg" alt="אבנר" class="avner-button-img">
-            <span class="avner-button-badge">💬</span>
-        </button>
-    </div>
-    
-    <!-- Avner Chat Modal - Simplified -->
-    <div class="avner-chat-modal" id="avner-chat">
-        <div class="avner-chat-header">
-            <div class="flex items-center gap-2">
-                <img src="/avner/avner_calling.jpeg" alt="אבנר" class="w-10 h-10 rounded-full object-cover border-2 border-warm-yellow">
-                <div>
-                    <span class="font-bold">צ'אט עם אבנר 🦫</span>
-                    <p class="text-xs text-cream/80">אני כאן לעזור!</p>
-                </div>
-            </div>
-            <button onclick="toggleAvnerChat()" class="text-cream hover:text-warm-yellow p-1">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                </svg>
-            </button>
-        </div>
-        <div class="avner-chat-body" id="avner-chat-body">
-            <!-- Welcome message -->
-            <div class="flex gap-2 mb-3">
-                <img src="/avner/avner_signing_ok.jpeg" 
-                     alt="אבנר" class="w-8 h-8 rounded-full object-cover flex-shrink-0 border-2 border-golden-yellow">
-                <div class="bg-warm-beige rounded-xl p-3 text-sm text-dark-brown max-w-[85%]">
-                    <strong>שלום! אני אבנר 🦫</strong><br>
-                    אני כאן לעזור! אפשר לשאול אותי:
-                    <ul class="mt-2 space-y-1 text-xs">
-                        <li>🔧 איך להשתמש באפליקציה</li>
-                        <li>📚 מה זה ספרייה/קורס</li>
-                        <li>💡 טיפים ללמידה</li>
-                        {% if current_user.is_authenticated %}
-                        <li>❓ שאלות על החומר שהעלית</li>
-                        {% else %}
-                        <li>🔐 התחבר כדי לשאול על חומר לימוד</li>
-                        {% endif %}
-                    </ul>
-                </div>
-            </div>
-        </div>
-        <div class="avner-chat-input">
-            <input type="text" 
-                   id="avner-question" 
-                   placeholder="שאל את אבנר..."
-                   onkeypress="if(event.key==='Enter' && !event.shiftKey){event.preventDefault();askAvner();}">
-            <button onclick="askAvner()" id="send-btn">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
-                </svg>
-            </button>
-        </div>
-    </div>
-
-    <!-- Reusable Modal Component - Cozy Theme -->
-    <div id="help-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-        <div class="bg-cream rounded-2xl shadow-xl max-w-md w-full mx-4 p-6 relative border-2 border-caramel">
-            <button type="button" 
-                    class="absolute top-4 left-4 text-cozy-brown hover:text-dark-brown transition-colors"
-                    onclick="closeModal()"
-                    aria-label="סגור">
-                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-            </button>
-            <div class="flex items-center gap-3 mb-4">
-                <img src="{{ url_for('static', filename='img/avner_teaching.png') }}" 
-                     alt="אבנר מסביר" 
-                     class="w-12 h-12 rounded-full object-cover border-2 border-warm-yellow"
-                     onerror="this.style.display='none';">
-                <h3 id="modal-title" class="text-xl font-bold text-dark-brown"></h3>
-            </div>
-            <div id="modal-content" class="text-dark-brown leading-relaxed"></div>
-            <div class="mt-6 flex flex-col gap-3">
-                <button type="button" 
-                        onclick="closeModal()"
-                        class="w-full bg-golden-yellow text-dark-brown font-semibold py-3 px-4 rounded-xl hover:bg-warm-yellow transition-all duration-150 shadow-md">
-                    הבנתי
-                </button>
-                <label class="flex items-center gap-2 text-sm text-cozy-brown cursor-pointer justify-center">
-                    <input type="checkbox" class="rounded border-cozy-brown text-golden-yellow focus:ring-golden-yellow">
-                    <span>הצג שוב בפעם הבאה</span>
-                </label>
-            </div>
-        </div>
-    </div>
-
     <script>
-        // Mobile menu toggle
+        // Mobile menu toggle script (Restored)
         const mobileMenuButton = document.getElementById('mobile-menu-button');
         const mobileMenu = document.getElementById('mobile-menu');
         const menuIconOpen = document.getElementById('menu-icon-open');
@@ -295,191 +118,12 @@
         
         if (mobileMenuButton && mobileMenu) {
             mobileMenuButton.addEventListener('click', function() {
-                const expanded = mobileMenuButton.getAttribute('aria-expanded') === 'true';
-                mobileMenuButton.setAttribute('aria-expanded', !expanded);
                 mobileMenu.classList.toggle('hidden');
                 menuIconOpen.classList.toggle('hidden');
                 menuIconClose.classList.toggle('hidden');
             });
         }
-
-        // Modal functions
-        function openModal(title, content) {
-            const modal = document.getElementById('help-modal');
-            const modalTitle = document.getElementById('modal-title');
-            const modalContent = document.getElementById('modal-content');
-            
-            modalTitle.textContent = title;
-            modalContent.innerHTML = content;
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-            document.body.style.overflow = 'hidden';
-        }
-
-        function closeModal() {
-            const modal = document.getElementById('help-modal');
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
-            document.body.style.overflow = '';
-        }
-
-        // Close modal on backdrop click
-        document.getElementById('help-modal').addEventListener('click', function(e) {
-            if (e.target === this) {
-                closeModal();
-            }
-        });
-
-        // Close modal on Escape key
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                closeModal();
-                // Also close Avner chat
-                const avnerChat = document.getElementById('avner-chat');
-                if (avnerChat) avnerChat.classList.remove('open');
-            }
-        });
-
-        // File picker enhancement
-        function handleFileSelect(input, displayId) {
-            const display = document.getElementById(displayId);
-            if (input.files && input.files.length > 0) {
-                const file = input.files[0];
-                const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
-                display.textContent = `קובץ שנבחר: ${file.name} (${sizeMB}MB)`;
-                display.classList.remove('hidden');
-            } else {
-                display.classList.add('hidden');
-            }
-        }
-
-        // Avner Chat - Simple Version
-        let chatOpen = false;
-        
-        function toggleAvnerChat() {
-            const chat = document.getElementById('avner-chat');
-            if (chat) {
-                chatOpen = !chatOpen;
-                chat.classList.toggle('open', chatOpen);
-            }
-        }
-        
-        async function askAvner() {
-            const input = document.getElementById('avner-question');
-            const chatBody = document.getElementById('avner-chat-body');
-            const sendBtn = document.getElementById('send-btn');
-            const question = input.value.trim();
-            
-            if (!question) return;
-            
-            // Disable input while processing
-            input.disabled = true;
-            sendBtn.disabled = true;
-            
-            // Add user message to the right
-            chatBody.innerHTML += `
-                <div class="flex gap-2 mb-3 justify-end">
-                    <div class="bg-golden-yellow rounded-xl p-3 text-sm text-dark-brown max-w-[85%]">
-                        ${escapeHtml(question)}
-                    </div>
-                </div>
-            `;
-            
-            input.value = '';
-            chatBody.scrollTop = chatBody.scrollHeight;
-            
-            // Show typing indicator on the left
-            const typingId = 'typing-' + Date.now();
-            chatBody.innerHTML += `
-                <div class="flex gap-2 mb-3" id="${typingId}">
-                    <img src="/avner/avner_thinking.jpeg" 
-                         alt="אבנר חושב" class="w-8 h-8 rounded-full object-cover flex-shrink-0 border-2 border-golden-yellow">
-                    <div class="avner-typing">
-                        <span></span><span></span><span></span>
-                    </div>
-                </div>
-            `;
-            chatBody.scrollTop = chatBody.scrollHeight;
-            
-            try {
-                const response = await fetch('/api/avner/ask', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ question: question })
-                });
-                
-                const data = await response.json();
-                
-                // Remove typing indicator
-                document.getElementById(typingId)?.remove();
-                
-                if (data.error) {
-                    // Show error message from Avner (left side)
-                    chatBody.innerHTML += `
-                        <div class="flex gap-2 mb-3">
-                            <img src="/avner/avner_shy.jpeg" 
-                                 alt="אבנר" class="w-8 h-8 rounded-full object-cover flex-shrink-0 border-2 border-golden-yellow">
-                            <div class="bg-red-50 border border-red-200 rounded-xl p-3 text-sm text-red-700 max-w-[85%]">
-                                ${escapeHtml(data.error)}
-                            </div>
-                        </div>
-                    `;
-                } else {
-                    // Show Avner's answer (left side)
-                    chatBody.innerHTML += `
-                        <div class="flex gap-2 mb-3">
-                            <img src="/avner/avner_reading.jpeg" 
-                                 alt="אבנר" class="w-8 h-8 rounded-full object-cover flex-shrink-0 border-2 border-golden-yellow">
-                            <div class="bg-warm-beige rounded-xl p-3 text-sm text-dark-brown max-w-[85%]">
-                                ${formatMessage(data.answer)}
-                            </div>
-                        </div>
-                    `;
-                }
-                
-                chatBody.scrollTop = chatBody.scrollHeight;
-                
-            } catch (error) {
-                // Remove typing indicator
-                document.getElementById(typingId)?.remove();
-                
-                // Show error from Avner (left side)
-                chatBody.innerHTML += `
-                    <div class="flex gap-2 mb-3">
-                        <img src="/avner/avner_shy.jpeg" 
-                             alt="אבנר" class="w-8 h-8 rounded-full object-cover flex-shrink-0 border-2 border-golden-yellow">
-                        <div class="bg-red-50 border border-red-200 rounded-xl p-3 text-sm text-red-700 max-w-[85%]">
-                            אופס! משהו השתבש. נסה שוב 🦫
-                        </div>
-                    </div>
-                `;
-                chatBody.scrollTop = chatBody.scrollHeight;
-            } finally {
-                // Re-enable input
-                input.disabled = false;
-                sendBtn.disabled = false;
-                input.focus();
-            }
-        }
-        
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-        
-        function formatMessage(text) {
-            // First escape HTML to prevent XSS
-            const escaped = escapeHtml(text);
-            // Then apply safe formatting using DOM manipulation
-            const temp = document.createElement('div');
-            temp.innerHTML = escaped
-                .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-                .replace(/\n/g, '<br>');
-            return temp.innerHTML;
-        }
     </script>
-
     {% block scripts %}{% endblock %}
 </body>
 </html>

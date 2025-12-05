@@ -5,7 +5,6 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-
 class MongoClientWrapper:
     """
     Thin wrapper around MongoClient to centralize indexes and safe patterns.

@@ -1,307 +1,70 @@
 {% extends "base.html" %}
 
-{% block title %}StudyBuddyAI - לומדים יחד עם אבנר{% endblock %}
+{% block title %}ברוכים הבאים לפינת הלימודים שלכם!{% endblock %}
 
 {% block content %}
-<!-- Hero Section - Cozy Study Room Feel -->
-<section class="py-8 md:py-12">
-    <div class="flex flex-col-reverse md:flex-row items-center gap-8 md:gap-12">
-        <!-- Right column: Text content (RTL) -->
-        <div class="flex-1 text-center md:text-right">
-            <h1 class="text-3xl md:text-4xl font-bold text-dark-brown mb-4">
-                ברוכים הבאים ל-StudyBuddy 🦫
-            </h1>
-            <p class="text-xl text-cozy-brown mb-4">
-                לומדים יחד עם אבנר – עוזר הלמידה החמים שלכם
-            </p>
-            <p class="text-coffee mb-8 leading-relaxed">
-                העלו את חומרי הלימוד שלכם, ואבנר יעזור לכם עם סיכומים, כרטיסיות זיכרון, שאלות תרגול ועוד - הכל במקום אחד מסודר!
-            </p>
-            <div class="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
-                {% if current_user.is_authenticated %}
-                <!-- Logged in - go to library -->
-                <a href="{{ url_for('library.index') }}" 
-                   class="inline-flex items-center justify-center gap-2 bg-golden-yellow text-dark-brown font-bold py-3 px-6 rounded-xl btn-hover-lift transition-all duration-150 shadow-md text-lg">
-                    📚 לספרייה שלי
-                    <svg class="w-5 h-5 rotate-180" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-                    </svg>
-                </a>
-                {% else %}
-                <!-- Not logged in - signup/login -->
-                <a href="{{ url_for('auth.signup') }}" 
-                   class="inline-flex items-center justify-center gap-2 bg-golden-yellow text-dark-brown font-bold py-3 px-6 rounded-xl btn-hover-lift transition-all duration-150 shadow-md text-lg">
-                    ✨ הרשמה חינם
-                    <svg class="w-5 h-5 rotate-180" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-                    </svg>
-                </a>
-                <a href="{{ url_for('auth.login') }}" 
-                   class="inline-flex items-center justify-center gap-2 border-2 border-cozy-brown text-cozy-brown font-semibold py-3 px-6 rounded-xl hover:bg-cozy-brown hover:text-cream transition-all duration-150">
-                    🔑 יש לי חשבון
-                </a>
-                {% endif %}
-            </div>
+<div class="bg-white/70 rounded-2xl shadow-md overflow-hidden">
+    <div class="grid grid-cols-1 md:grid-cols-2 items-center">
+        <div class="hidden md:flex justify-center p-8">
+            <img src="{{ url_for('serve_avner', filename='avner_hero.png') }}" alt="אבנר הקאפיבארה" class="max-h-80" loading="lazy">
         </div>
-        
-        <!-- Left column: App logo / Welcome image -->
-        <div class="flex-1 flex justify-center">
-            <div class="bg-cream rounded-3xl p-6 shadow-lg max-w-sm border-2 border-warm-yellow">
-                <img src="/avner/app_logo.jpeg" 
-                     alt="StudyBuddy - אבנר ה-CapyBuddy"
-                     class="w-full h-auto rounded-2xl shadow-md">
-            </div>
+        <div class="p-8 md:p-12 text-right">
+            <h1 class="text-4xl font-bold tracking-tight text-warm-brown">פינת הלימודים החמה שלכם.</h1>
+            <p class="mt-4 text-lg text-ink-brown/80">
+                היי, אני אבנר, הקאפי-באדי שלכם 🧡 אני כאן כדי לעזור לכם לסכם חומר, ליצור כרטיסיות, לתרגל עם בחנים, להכין שיעורי בית, ועוד. בואו נתחיל!
+            </p>
+            <a href="#tools" class="mt-8 inline-block bg-capy-orange text-white font-bold py-3 px-6 rounded-lg shadow-sm hover:bg-opacity-90 transition-transform hover:scale-105">
+                יאללה, ללמוד!
+            </a>
         </div>
     </div>
-</section>
+</div>
 
-<!-- How It Works - Simple Steps -->
-<section class="py-12 bg-cream rounded-3xl my-8 border-2 border-warm-yellow">
-    <h2 class="text-2xl md:text-3xl font-bold text-dark-brown text-center mb-8">
-        איך זה עובד? 🤔
-    </h2>
-    
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 px-6">
-        <!-- Step 1 -->
-        <div class="text-center">
-            <div class="w-16 h-16 bg-golden-yellow rounded-full flex items-center justify-center mx-auto mb-4 shadow-md text-2xl font-bold text-dark-brown">1</div>
-            <img src="/avner/avner_waving.jpeg" alt="הרשמה" class="w-16 h-16 rounded-full mx-auto mb-3 object-cover border-2 border-golden-yellow">
-            <h3 class="font-bold text-dark-brown mb-2">נרשמים</h3>
-            <p class="text-sm text-coffee">הרשמה מהירה עם אימייל או Google</p>
-        </div>
-        
-        <!-- Step 2 -->
-        <div class="text-center">
-            <div class="w-16 h-16 bg-golden-yellow rounded-full flex items-center justify-center mx-auto mb-4 shadow-md text-2xl font-bold text-dark-brown">2</div>
-            <img src="/avner/avner_holding_backbak.jpeg" alt="קורס" class="w-16 h-16 rounded-full mx-auto mb-3 object-cover border-2 border-golden-yellow">
-            <h3 class="font-bold text-dark-brown mb-2">יוצרים קורס</h3>
-            <p class="text-sm text-coffee">מוסיפים קורס לכל נושא שלומדים</p>
-        </div>
-        
-        <!-- Step 3 -->
-        <div class="text-center">
-            <div class="w-16 h-16 bg-golden-yellow rounded-full flex items-center justify-center mx-auto mb-4 shadow-md text-2xl font-bold text-dark-brown">3</div>
-            <img src="/avner/avner_with_laptop.jpeg" alt="העלאה" class="w-16 h-16 rounded-full mx-auto mb-3 object-cover border-2 border-golden-yellow">
-            <h3 class="font-bold text-dark-brown mb-2">מעלים חומר</h3>
-            <p class="text-sm text-coffee">סיכומים, מצגות, PDF - הכל עובד!</p>
-        </div>
-        
-        <!-- Step 4 -->
-        <div class="text-center">
-            <div class="w-16 h-16 bg-golden-yellow rounded-full flex items-center justify-center mx-auto mb-4 shadow-md text-2xl font-bold text-dark-brown">4</div>
-            <img src="/avner/avner_celebrating.jpeg" alt="למידה" class="w-16 h-16 rounded-full mx-auto mb-3 object-cover border-2 border-golden-yellow">
-            <h3 class="font-bold text-dark-brown mb-2">לומדים!</h3>
-            <p class="text-sm text-coffee">משתמשים בכלים ושואלים את אבנר</p>
-        </div>
-    </div>
-</section>
-
-<!-- Tools Grid Section - Cozy Cards -->
-<section id="tools-section" class="py-12">
-    <h2 class="text-2xl md:text-3xl font-bold text-dark-brown text-center mb-3">
-        הכלים של אבנר 🛠️
-    </h2>
-    <p class="text-center text-cozy-brown mb-8">כל הכלים זמינים אחרי שמעלים חומר לקורס</p>
-    
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div id="tools" class="mt-12">
+    <h2 class="text-2xl font-bold text-center text-warm-brown mb-8">במה אוכל לעזור היום?</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <!-- Summarizer Card -->
-        <div class="bg-cream rounded-2xl p-6 shadow-md border border-warm-yellow">
-            <div class="flex items-start gap-4 mb-4">
-                <img src="/avner/avner_looking_at_page_acratching_head.jpeg" alt="אבנר קורא ספר"
-                     class="w-16 h-16 rounded-xl object-cover shadow-md border-2 border-golden-yellow">
-                <div>
-                    <h3 class="text-xl font-bold text-dark-brown">📝 מסכם</h3>
-                    <p class="text-sm text-cozy-brown">הופך טקסט ארוך לסיכום קצר וברור</p>
-                </div>
-            </div>
-            <ul class="text-coffee text-sm space-y-1 list-disc list-inside">
-                <li>מסכם טקסטים ארוכים לנקודות עיקריות</li>
-                <li>מדגיש מושגים חשובים</li>
-                <li>אפשר לשאול שאלות על הסיכום</li>
-            </ul>
-        </div>
-        
-        <!-- Flashcards Card -->
-        <div class="bg-cream rounded-2xl p-6 shadow-md border border-warm-yellow">
-            <div class="flex items-start gap-4 mb-4">
-                <img src="/avner/avner_studing.jpeg" alt="אבנר לומד"
-                     class="w-16 h-16 rounded-xl object-cover shadow-md border-2 border-golden-yellow">
-                <div>
-                    <h3 class="text-xl font-bold text-dark-brown">🃏 כרטיסיות</h3>
-                    <p class="text-sm text-cozy-brown">כרטיסיות שאלה-תשובה לתרגול</p>
-                </div>
-            </div>
-            <ul class="text-coffee text-sm space-y-1 list-disc list-inside">
-                <li>יוצר כרטיסיות אוטומטית מהחומר</li>
-                <li>הפיכת כרטיס לראות את התשובה</li>
-                <li>מעולה לשינון מושגים</li>
-            </ul>
-        </div>
-        
-        <!-- Assess Me Card -->
-        <div class="bg-cream rounded-2xl p-6 shadow-md border border-warm-yellow">
-            <div class="flex items-start gap-4 mb-4">
-                <img src="/avner/avner_thinking.jpeg" alt="אבנר חושב"
-                     class="w-16 h-16 rounded-xl object-cover shadow-md border-2 border-golden-yellow">
-                <div>
-                    <h3 class="text-xl font-bold text-dark-brown">✅ בחן אותי</h3>
-                    <p class="text-sm text-cozy-brown">שאלות בחירה לבדיקה עצמית</p>
-                </div>
-            </div>
-            <ul class="text-coffee text-sm space-y-1 list-disc list-inside">
-                <li>יוצר שאלות אמריקאיות מהחומר</li>
-                <li>בודק תשובות ונותן ציון</li>
-                <li>מראה מה צריך לחזור עליו</li>
-            </ul>
-        </div>
-        
-        <!-- Homework Helper Card -->
-        <div class="bg-cream rounded-2xl p-6 shadow-md border border-warm-yellow">
-            <div class="flex items-start gap-4 mb-4">
-                <img src="/avner/avner_signing_ok.jpeg" alt="אבנר עובד"
-                     class="w-16 h-16 rounded-xl object-cover shadow-md border-2 border-golden-yellow">
-                <div>
-                    <h3 class="text-xl font-bold text-dark-brown">📚 עוזר שיעורים</h3>
-                    <p class="text-sm text-cozy-brown">עזרה בפתרון בעיות ותרגילים</p>
-                </div>
-            </div>
-            <ul class="text-coffee text-sm space-y-1 list-disc list-inside">
-                <li>מסביר איך לגשת לשאלה</li>
-                <li>מפרק לשלבים ברורים</li>
-                <li>נותן טיפים לפתרון</li>
-            </ul>
-        </div>
-    </div>
-</section>
-
-<!-- Avner Chat Feature -->
-<section class="py-12">
-    <div class="bg-cozy-brown rounded-3xl p-8 text-center">
-        <img src="/avner/avner_calling.jpeg" alt="אבנר" class="w-24 h-24 rounded-full mx-auto mb-4 border-4 border-golden-yellow shadow-lg">
-        <h2 class="text-2xl font-bold text-cream mb-3">שאלו את אבנר! 🦫</h2>
-        <p class="text-warm-yellow mb-6 max-w-lg mx-auto">
-            אבנר תמיד כאן לעזור. לחצו על האווטר בפינה השמאלית התחתונה לשאלות על האפליקציה או על החומר שלכם!
-        </p>
-        {% if not current_user.is_authenticated %}
-        <a href="{{ url_for('auth.signup') }}" 
-           class="inline-flex items-center gap-2 bg-golden-yellow text-dark-brown font-bold py-3 px-8 rounded-xl shadow-md hover:bg-warm-yellow transition-colors">
-            התחילו עכשיו - חינם!
+        <a href="{{ url_for('summary_tool') }}" class="group block p-6 bg-white rounded-2xl shadow-md hover:shadow-lg transition-shadow">
+            <img src="{{ url_for('serve_avner', filename='avner_waving.jpeg') }}" alt="אבנר מנופף לשלום" class="h-24 mx-auto mb-4 transition-transform group-hover:scale-110">
+            <h3 class="font-bold text-lg text-center text-warm-brown">סיכום חכם</h3>
+            <p class="text-sm text-center text-ink-brown/70 mt-1">תמצות של טקסטים ארוכים לנקודות מרכזיות.</p>
         </a>
-        {% endif %}
+        <!-- Flashcards Card -->
+        <a href="{{ url_for('flashcards_tool') }}" class="group block p-6 bg-white rounded-2xl shadow-md hover:shadow-lg transition-shadow">
+            <img src="{{ url_for('serve_avner', filename='avner_notebook.jpeg') }}" alt="אבנר עם מחברת" class="h-24 mx-auto mb-4 transition-transform group-hover:scale-110">
+            <h3 class="font-bold text-lg text-center text-warm-brown">כרטיסיות לימוד</h3>
+            <p class="text-sm text-center text-ink-brown/70 mt-1">יצירת כרטיסיות של שאלות ותשובות מהחומר שלכם.</p>
+        </a>
+        <!-- Assess Me Card -->
+        <a href="{{ url_for('assess_tool') }}" class="group block p-6 bg-white rounded-2xl shadow-md hover:shadow-lg transition-shadow">
+            <img src="{{ url_for('serve_avner', filename='avner_laptop.jpeg') }}" alt="אבנר עם לפטופ" class="h-24 mx-auto mb-4 transition-transform group-hover:scale-110">
+            <h3 class="font-bold text-lg text-center text-warm-brown">בחן אותי</h3>
+            <p class="text-sm text-center text-ink-brown/70 mt-1">יצירת בחנים קצרים כדי לבדוק את הידע שלכם.</p>
+        </a>
+        <!-- Homework Helper Card -->
+        <a href="{{ url_for('homework_tool') }}" class="group block p-6 bg-white rounded-2xl shadow-md hover:shadow-lg transition-shadow">
+            <img src="{{ url_for('serve_avner', filename='avner_question.jpeg') }}" alt="אבנר חושב" class="h-24 mx-auto mb-4 transition-transform group-hover:scale-110">
+            <h3 class="font-bold text-lg text-center text-warm-brown">עזרה בשיעורים</h3>
+            <p class="text-sm text-center text-ink-brown/70 mt-1">הסברים מפורטים, צעד אחר צעד, לבעיות קשות.</p>
+        </a>
+        <!-- Tutor Card -->
+        <a href="{{ url_for('tutor_tool') }}" class="group block p-6 bg-white rounded-2xl shadow-md hover:shadow-lg transition-shadow">
+            <img src="{{ url_for('serve_avner', filename='avner_teaching.jpeg') }}" alt="אבנר מלמד" class="h-24 mx-auto mb-4 transition-transform group-hover:scale-110">
+            <h3 class="font-bold text-lg text-center text-warm-brown">מורה פרטי AI</h3>
+            <p class="text-sm text-center text-ink-brown/70 mt-1">שאלו אותי כל דבר על החומר שלכם.</p>
+        </a>
+        <!-- Diagram Card -->
+        <a href="{{ url_for('diagram_tool') }}" class="group block p-6 bg-white rounded-2xl shadow-md hover:shadow-lg transition-shadow">
+            <img src="{{ url_for('serve_avner', filename='avner_diagram.jpeg') }}" alt="אבנר עם תרשים" class="h-24 mx-auto mb-4 transition-transform group-hover:scale-110">
+            <h3 class="font-bold text-lg text-center text-warm-brown">יצירת תרשימים</h3>
+            <p class="text-sm text-center text-ink-brown/70 mt-1">הפיכת טקסט מורכב לתרשים ויזואלי פשוט.</p>
+        </a>
+        <!-- Glossary Card -->
+        <a href="{{ url_for('glossary_page', course_id='default') }}" class="group block p-6 bg-white rounded-2xl shadow-md hover:shadow-lg transition-shadow">
+            <img src="{{ url_for('serve_avner', filename='avner_glossary.jpeg') }}" alt="אבנר עם מילון" class="h-24 mx-auto mb-4 transition-transform group-hover:scale-110">
+            <h3 class="font-bold text-lg text-center text-warm-brown">מונחון</h3>
+            <p class="text-sm text-center text-ink-brown/70 mt-1">כל המונחים החשובים מהקורסים שלכם במקום אחד.</p>
+        </a>
     </div>
-</section>
-
-<!-- AI-Powered Features Section -->
-<section class="py-12 bg-warm-yellow rounded-3xl my-8 border-2 border-golden-yellow">
-    <h2 class="text-2xl md:text-3xl font-bold text-dark-brown text-center mb-3">
-        למידה חכמה עם בינה מלאכותית 🤖
-    </h2>
-    <p class="text-center text-cozy-brown mb-8 px-4">אבנר משתמש בבינה מלאכותית מתקדמת כדי לעזור לך ללמוד טוב יותר</p>
-    
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 px-6">
-        <!-- Smart Feature 1 -->
-        <div class="bg-cream rounded-2xl p-6 text-center">
-            <div class="text-4xl mb-3">🧠</div>
-            <h3 class="font-bold text-dark-brown mb-2">הבנה עמוקה</h3>
-            <p class="text-sm text-coffee">אבנר מבין את החומר שלך ויודע לענות על שאלות מורכבות</p>
-        </div>
-        
-        <!-- Smart Feature 2 -->
-        <div class="bg-cream rounded-2xl p-6 text-center">
-            <div class="text-4xl mb-3">⚡</div>
-            <h3 class="font-bold text-dark-brown mb-2">תשובות מיידיות</h3>
-            <p class="text-sm text-coffee">קבל תשובות ברורות ומדויקות בשניות</p>
-        </div>
-        
-        <!-- Smart Feature 3 -->
-        <div class="bg-cream rounded-2xl p-6 text-center">
-            <div class="text-4xl mb-3">🎯</div>
-            <h3 class="font-bold text-dark-brown mb-2">התאמה אישית</h3>
-            <p class="text-sm text-coffee">אבנר מתאים את עצמו לסגנון הלמידה שלך</p>
-        </div>
-    </div>
-    
-    <div class="text-center mt-8">
-        <p class="text-sm text-cozy-brown">
-            תומך ב-OpenAI GPT-4 ו-Google Gemini למידה מתקדמת
-        </p>
-    </div>
-</section>
-
-<!-- Additional Tools Section -->
-<section class="py-12">
-    <h2 class="text-2xl md:text-3xl font-bold text-dark-brown text-center mb-8">
-        עוד כלים מועילים 🎨
-    </h2>
-    
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <!-- Glossary Tool -->
-        <div class="bg-cream rounded-2xl p-6 shadow-md border border-warm-yellow">
-            <div class="flex items-start gap-4 mb-4">
-                <img src="/avner/avner_scroling_phon.jpeg" alt="אבנר קורא"
-                     class="w-16 h-16 rounded-xl object-cover shadow-md border-2 border-golden-yellow">
-                <div>
-                    <h3 class="text-xl font-bold text-dark-brown">📖 מילון מונחים</h3>
-                    <p class="text-sm text-cozy-brown">מילון אוטומטי לכל הקורס</p>
-                </div>
-            </div>
-            <ul class="text-coffee text-sm space-y-1 list-disc list-inside">
-                <li>מזהה מונחים חשובים אוטומטית</li>
-                <li>הסברים קצרים וברורים</li>
-                <li>חיפוש מהיר במילון</li>
-            </ul>
-        </div>
-        
-        <!-- Tutor Tool -->
-        <div class="bg-cream rounded-2xl p-6 shadow-md border border-warm-yellow">
-            <div class="flex items-start gap-4 mb-4">
-                <img src="/avner/avner_reading.jpeg" alt="אבנר מלמד"
-                     class="w-16 h-16 rounded-xl object-cover shadow-md border-2 border-golden-yellow">
-                <div>
-                    <h3 class="text-xl font-bold text-dark-brown">👨‍🏫 מורה אינטראקטיבי</h3>
-                    <p class="text-sm text-cozy-brown">למידה צעד אחר צעד</p>
-                </div>
-            </div>
-            <ul class="text-coffee text-sm space-y-1 list-disc list-inside">
-                <li>מתכנן מסלול למידה מותאם אישית</li>
-                <li>תרגילים אינטראקטיביים</li>
-                <li>משוב מיידי על התשובות</li>
-            </ul>
-        </div>
-        
-        <!-- Diagram Tool -->
-        <div class="bg-cream rounded-2xl p-6 shadow-md border border-warm-yellow">
-            <div class="flex items-start gap-4 mb-4">
-                <img src="/avner/avner_arms_in_pockets.jpeg" alt="אבנר חושב"
-                     class="w-16 h-16 rounded-xl object-cover shadow-md border-2 border-golden-yellow">
-                <div>
-                    <h3 class="text-xl font-bold text-dark-brown">🎨 דיאגרמות</h3>
-                    <p class="text-sm text-cozy-brown">ויזואליזציה של רעיונות</p>
-                </div>
-            </div>
-            <ul class="text-coffee text-sm space-y-1 list-disc list-inside">
-                <li>יוצר דיאגרמות מהחומר</li>
-                <li>מפות חשיבה וזרימה</li>
-                <li>הופך מידע למבנה חזותי</li>
-            </ul>
-        </div>
-        
-        <!-- Export Tool -->
-        <div class="bg-cream rounded-2xl p-6 shadow-md border border-warm-yellow">
-            <div class="flex items-start gap-4 mb-4">
-                <img src="/avner/avner_drinnking_coffee.jpeg" alt="אבנר מאשר"
-                     class="w-16 h-16 rounded-xl object-cover shadow-md border-2 border-golden-yellow">
-                <div>
-                    <h3 class="text-xl font-bold text-dark-brown">💾 ייצוא PDF</h3>
-                    <p class="text-sm text-cozy-brown">שמור את החומרים שלך</p>
-                </div>
-            </div>
-            <ul class="text-coffee text-sm space-y-1 list-disc list-inside">
-                <li>ייצוא סיכומים ל-PDF</li>
-                <li>שמירת כרטיסיות להדפסה</li>
-                <li>לקיחת החומר לכל מקום</li>
-            </ul>
-        </div>
-    </div>
-</section>
+</div>
 {% endblock %}

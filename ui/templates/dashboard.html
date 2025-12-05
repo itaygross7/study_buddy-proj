@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}לוח בקרה{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <h1 class="text-2xl font-bold text-right">לוח הבקרה שלך</h1>
+
+    <div class="bg-white p-6 rounded-lg shadow-md">
+        <form hx-post="{{ url_for('upload_bp.upload_files_route') }}"
+              hx-encoding="multipart/form-data"
+              hx-trigger="submit"
+              hx-swap="innerHTML"
+              hx-target="#upload-response"
+              hx-indicator="#progress-container">
+
+            <h2 class="text-lg font-semibold text-right">העלאת קבצים</h2>
+            <p class="text-sm text-gray-500 text-right mb-4">ניתן לבחור מספר קבצים בבת אחת. הקבצים יועלו ברקע.</p>
+
+            <div>
+                <input type="file" name="files" multiple
+                       class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+            </div>
+
+            <!-- HTMX Progress Bar Container -->
+            <div id="progress-container" class="htmx-indicator w-full bg-gray-200 rounded-full h-2.5 mt-4">
+                <div id="progress-bar" class="bg-blue-600 h-2.5 rounded-full" style="width: 0%"></div>
+            </div>
+            
+            <!-- Response message area -->
+            <div id="upload-response" class="mt-2 text-sm text-center"></div>
+
+            <button type="submit" class="mt-6 w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700">
+                העלה קבצים
+            </button>
+        </form>
+    </div>
+
+    <div class="bg-white p-6 rounded-lg shadow-md">
+        <h2 class="text-lg font-semibold text-right">הקבצים שלי</h2>
+        <div id="my-files-table">
+            <!-- File list will be loaded here, e.g., via another HTMX call -->
+            <p class="text-center text-gray-500">טוען קבצים...</p>
+        </div>
+    </div>
+</div>
+
+<script>
+  document.body.addEventListener('htmx:xhr:progress', function(evt) {
+    var progressBar = document.getElementById('progress-bar');
+    if (progressBar) {
+        var progress = (evt.detail.loaded / evt.detail.total) * 100;
+        progressBar.style.width = progress + '%';
+    }
+  });
+
+  document.body.addEventListener('htmx:afterOnLoad', function(evt) {
+      if (evt.target.id === 'upload-response') {
+          // Reset progress bar after upload completes
+          var progressBar = document.getElementById('progress-bar');
+          if(progressBar) {
+              setTimeout(() => { progressBar.style.width = '0%'; }, 1000);
+          }
+          // Optionally, trigger a refresh of the file list
+          htmx.trigger('#my-files-table', 'loadFiles');
+      }
+  });
+</script>
+{% endblock %}

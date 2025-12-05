@@ -5,7 +5,6 @@ from sb_utils.validation import validate_upload
 
 logger = logging.getLogger(__name__)
 
-
 class FileService:
     """
     Handles user files: validation, safe temp storage, lightweight extraction.

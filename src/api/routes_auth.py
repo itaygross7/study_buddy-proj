@@ -1,6 +1,6 @@
 """Authentication routes for login, signup, and user management."""
 from functools import wraps
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, session
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 
 from src.infrastructure.database import db
@@ -261,3 +261,13 @@ def reset_password(token):
             flash('אירעה שגיאה באיפוס הסיסמה', 'error')
 
     return render_template('auth/reset_password.html', token=token)
+
+@auth_bp.route('/set-lang/<lang>')
+def set_lang(lang: str):
+    """
+    Sets the user's language preference in the session.
+    """
+    if lang in ['he', 'en']:
+        session['lang'] = lang
+    # Redirect back to the page the user was on, or home as a fallback
+    return redirect(request.referrer or url_for('index'))

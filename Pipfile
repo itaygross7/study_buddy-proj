@@ -5,8 +5,10 @@ name = "pypi"
 
 [packages]
 flask = "*"
+gunicorn = "*" # Added for production server
 flask-cors = "*"
 flask-login = "*"
+flask-babel = "*"
 celery = "*"
 pymongo = "*"
 pika = "*"

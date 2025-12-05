@@ -1,273 +1,53 @@
 {% extends "base.html" %}
 
-{% block title %}כרטיסיות - StudyBuddyAI{% endblock %}
+{% block title %}יצירת כרטיסיות לימוד{% endblock %}
 
 {% block content %}
-<!-- Header Bar -->
-<div class="mb-6">
-    <nav class="text-sm text-cozy-brown mb-2">
-        <a href="{{ url_for('index') }}" class="hover:text-golden-yellow transition-colors">בית</a>
-        <span class="mx-2">/</span>
-        <span class="text-dark-brown">כרטיסיות</span>
-    </nav>
-    <div class="flex items-center justify-between">
-        <div class="flex items-center gap-4">
-            <h1 class="text-2xl md:text-3xl font-bold text-dark-brown">כרטיסיות</h1>
-            <img src="{{ url_for('static', filename='img/avner_pencil.png') }}" 
-                 alt="אבנר כותב"
-                 class="w-10 h-10 rounded-lg object-cover border-2 border-golden-yellow shadow-md"
-                 onerror="this.style.display='none';">
+<div class="space-y-8 text-right">
+    <!-- Input Card -->
+    <div class="bg-white/80 p-6 rounded-2xl shadow-md">
+        <div class="flex items-start space-x-4 space-x-reverse">
+            <img src="{{ url_for('serve_avner', filename='avner_notebook.png') }}" alt="אבנר עם מחברת" class="h-16 w-16 flex-shrink-0">
+            <div>
+                <h2 class="text-xl font-bold text-warm-brown">יצירת כרטיסיות לימוד</h2>
+                <p class="text-ink-brown/80 mt-1">העלו קובץ או הדביקו טקסט, ואני אהפוך אותו לכרטיסיות שאלות ותשובות כדי שתוכלו לתרגל.</p>
+            </div>
         </div>
-        <button type="button" 
-                onclick="openFlashcardsHelp()"
-                class="inline-flex items-center gap-1 text-cozy-brown hover:text-caramel text-sm font-medium transition-colors">
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z" />
-            </svg>
-            הסבר קצר
-        </button>
+        
+        <div class="mt-6">
+            <form id="flashcard-form"
+                  hx-post="{{ url_for('flashcards_bp.trigger_flashcards') }}"
+                  hx-swap="innerHTML"
+                  hx-target="#task-status-container"
+                  hx-indicator="#task-status-container">
+                
+                <input type="hidden" name="user_id" value="{{ current_user.id }}">
+                <input type="hidden" name="course_id" value="default">
+                
+                <textarea name="text" class="w-full p-3 border rounded-lg text-right" rows="8" placeholder="הדביקו כאן את החומר ללמידה..."></textarea>
+                
+                <div class="my-4 text-center text-gray-500">או</div>
+                
+                <input type="file" name="file" class="block w-full text-sm text-ink-brown file:ml-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:font-semibold file:bg-orange-100 file:text-capy-orange hover:file:bg-orange-200"/>
+                
+                <div class="mt-4">
+                    <label for="num_cards" class="block text-sm font-medium text-gray-700 text-right">מספר כרטיסיות (5-20):</label>
+                    <input type="number" name="num_cards" id="num_cards" value="10" min="5" max="20" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                </div>
+
+                <button type="submit" class="mt-6 w-full bg-capy-orange text-white font-bold py-3 px-5 rounded-lg shadow-sm hover:bg-opacity-90">
+                    ✨ הפקת כרטיסיות
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Result Card -->
+    <div id="task-status-container" class="bg-white/80 p-6 rounded-2xl shadow-md min-h-[10rem]">
+        <div class="flex flex-col items-center justify-center text-center text-ink-brown/60 h-full">
+            <img src="{{ url_for('serve_avner', filename='avner_reading.jpeg') }}" alt="אבנר קורא ספר" class="h-24 mb-4">
+            <p>התוצאות יופיעו כאן לאחר הפקת הכרטיסיות.</p>
+        </div>
     </div>
 </div>
-
-<!-- Two-pane Layout -->
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-    <!-- Right Pane: Input Area -->
-    <div class="bg-cream rounded-2xl p-6 shadow-md border border-warm-yellow">
-        <h2 class="text-xl font-bold text-dark-brown mb-4">העלאת חומר לימוד</h2>
-        
-        <form id="flashcards-form">
-            <!-- Text Area -->
-            <div class="mb-6">
-                <label for="text-input" class="block text-sm font-medium text-dark-brown mb-2">
-                    טקסט ללמידה
-                </label>
-                <textarea 
-                    id="text-input" 
-                    name="text"
-                    rows="8"
-                    class="w-full p-4 border-2 border-warm-gray rounded-xl focus:ring-2 focus:ring-golden-yellow focus:border-golden-yellow transition-all resize-none bg-warm-beige"
-                    placeholder="הדביקו כאן סיכום, שיעור, מאמר או כל טקסט אחר..."
-                    aria-describedby="text-helper"></textarea>
-                <p id="text-helper" class="text-sm text-cozy-brown mt-2">
-                    או העלו קובץ מהמחשב
-                </p>
-            </div>
-            
-            <!-- File Picker -->
-            <div class="mb-6">
-                <label class="block text-sm font-medium text-dark-brown mb-2">
-                    בחרו קובץ מהמחשב
-                </label>
-                <div class="border-2 border-dashed border-warm-gray rounded-xl p-4 hover:border-golden-yellow transition-colors bg-warm-beige">
-                    <input 
-                        type="file" 
-                        id="file-input"
-                        name="file"
-                        accept=".pdf,.doc,.docx,.txt"
-                        class="w-full text-sm text-coffee"
-                        onchange="handleFileSelect(this, 'file-display')"
-                        aria-label="בחירת קובץ להעלאה">
-                    <p class="text-xs text-cozy-brown mt-2">
-                        ניתן להעלות קבצי PDF, Word או טקסט עד 10MB
-                    </p>
-                </div>
-                <div id="file-display" class="hidden mt-3 inline-flex items-center gap-2 bg-warm-yellow text-dark-brown text-sm px-3 py-2 rounded-lg">
-                </div>
-            </div>
-            
-            <!-- Privacy Note -->
-            <p class="text-xs text-cozy-brown mb-6">
-                <svg class="w-4 h-4 inline-block ml-1" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
-                </svg>
-                הערה: הטקסט לא נשמר לצמיתות – הוא משמש רק לעיבוד עבורכם בזמן השימוש.
-            </p>
-            
-            <!-- Error Message -->
-            <div id="error-message" class="hidden mb-4 p-3 bg-warm-beige border-2 border-error rounded-lg text-error text-sm">
-            </div>
-            
-            <!-- Submit Button -->
-            <button 
-                type="submit"
-                id="submit-btn"
-                class="w-full bg-golden-yellow text-dark-brown font-semibold py-3 px-6 rounded-xl btn-hover-lift transition-all duration-150 flex items-center justify-center gap-2 min-h-[48px] shadow-md">
-                <span>צור כרטיסיות</span>
-                <svg class="w-5 h-5 htmx-indicator animate-spin" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-            </button>
-        </form>
-        
-        <div id="upload-result" class="mt-4"></div>
-    </div>
-    
-    <!-- Left Pane: Results Area -->
-    <div class="bg-cream rounded-2xl p-6 shadow-md border border-warm-yellow">
-        <div class="flex items-center justify-between mb-4">
-            <h2 class="text-xl font-bold text-dark-brown">הכרטיסיות שלך</h2>
-            
-            <!-- Shuffle Toggle (hidden until cards exist) -->
-            <label id="shuffle-toggle" for="shuffle-checkbox" class="hidden items-center gap-2 cursor-pointer" aria-label="הפעל או כבה מצב ערבוב כרטיסיות">
-                <span class="text-sm text-coffee">מצב ערבוב</span>
-                <div class="relative">
-                    <input type="checkbox" id="shuffle-checkbox" class="sr-only" onchange="toggleShuffle()" aria-describedby="shuffle-desc">
-                    <span id="shuffle-desc" class="sr-only">כאשר מופעל, הכרטיסיות יוצגו בסדר אקראי</span>
-                    <div class="block bg-warm-gray w-10 h-6 rounded-full"></div>
-                    <div class="dot absolute right-1 top-1 bg-cream w-4 h-4 rounded-full transition"></div>
-                </div>
-            </label>
-        </div>
-        
-        <div id="results-container">
-            <!-- Empty State with Avner -->
-            <div id="empty-state" class="text-center py-12">
-                <img src="{{ url_for('static', filename='img/avner_pencil.png') }}" 
-                     alt="אבנר ממתין"
-                     class="w-24 h-24 mx-auto mb-4 rounded-xl object-cover border-2 border-warm-yellow shadow-md"
-                     onerror="this.style.display='none'">
-                <p class="text-cozy-brown leading-relaxed">
-                    עוד אין כרטיסיות.<br>
-                    העלו חומר, ואצור לכם כרטיסיות לתרגול.
-                </p>
-            </div>
-            
-            <!-- Flashcards Container -->
-            <div id="flashcards-container" class="hidden space-y-4">
-                <!-- Cards will be injected here -->
-            </div>
-        </div>
-        
-        <div id="task-status-container" class="mt-4"></div>
-    </div>
-</div>
-
-<style>
-    /* Toggle switch styles - Cozy Theme */
-    #shuffle-checkbox:checked + div {
-        background-color: #F2C94C;
-    }
-    #shuffle-checkbox:checked + div + .dot {
-        transform: translateX(-16px);
-    }
-</style>
-{% endblock %}
-
-{% block scripts %}
-<script>
-    // Help modal for flashcards
-    function openFlashcardsHelp() {
-        openModal('איך להשתמש בכרטיסיות?', 
-            '<ul class="list-disc list-inside space-y-2 text-right">' +
-            '<li>העלו חומר לימוד או הדביקו טקסט</li>' +
-            '<li>לחצו על "צור כרטיסיות"</li>' +
-            '<li>לחצו על כל כרטיס כדי לראות את התשובה</li>' +
-            '<li>השתמשו במצב ערבוב לתרגול אקראי</li>' +
-            '</ul>');
-    }
-
-    // Store original card order for shuffle toggle
-    let originalCards = [];
-    
-    // Form validation
-    document.getElementById('flashcards-form').addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        const textInput = document.getElementById('text-input').value.trim();
-        const fileInput = document.getElementById('file-input').files.length;
-        const errorDiv = document.getElementById('error-message');
-        
-        if (!textInput && !fileInput) {
-            errorDiv.textContent = 'כדי להמשיך, הזינו טקסט או בחרו קובץ מהמחשב.';
-            errorDiv.classList.remove('hidden');
-            return;
-        }
-        
-        // Check file size
-        if (fileInput) {
-            const file = document.getElementById('file-input').files[0];
-            if (file.size > 10 * 1024 * 1024) {
-                errorDiv.textContent = 'לא ניתן להעלות את הקובץ הזה. בדקו שהקובץ עד 10MB ובפורמט נתמך.';
-                errorDiv.classList.remove('hidden');
-                return;
-            }
-        }
-        
-        errorDiv.classList.add('hidden');
-        // Here you would typically trigger the flashcards generation API
-    });
-    
-    // Clear error when user types or selects file
-    document.getElementById('text-input').addEventListener('input', function() {
-        document.getElementById('error-message').classList.add('hidden');
-    });
-    
-    document.getElementById('file-input').addEventListener('change', function() {
-        document.getElementById('error-message').classList.add('hidden');
-    });
-    
-    // Toggle shuffle mode
-    window.toggleShuffle = function() {
-        const container = document.getElementById('flashcards-container');
-        const isShuffled = document.getElementById('shuffle-checkbox').checked;
-        
-        if (isShuffled) {
-            // Shuffle cards
-            const cards = Array.from(container.children);
-            for (let i = cards.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                container.appendChild(cards[j]);
-            }
-        } else {
-            // Restore original order
-            originalCards.forEach(card => container.appendChild(card));
-        }
-    }
-    
-    // Flip card function
-    window.flipCard = function(cardElement) {
-        cardElement.classList.toggle('flipped');
-    }
-    
-    /**
-     * Render flashcards - called when API returns flashcard results.
-     * Exposed globally for HTMX response handlers.
-     * @param {Array} cards - Array of card objects with question and answer
-     */
-    window.renderFlashcards = function(cards) {
-        const container = document.getElementById('flashcards-container');
-        const emptyState = document.getElementById('empty-state');
-        const shuffleToggle = document.getElementById('shuffle-toggle');
-        
-        container.innerHTML = '';
-        originalCards = [];
-        
-        cards.forEach((card, index) => {
-            const cardElement = document.createElement('div');
-            cardElement.className = 'flashcard cursor-pointer min-h-[200px]';
-            cardElement.onclick = () => flipCard(cardElement);
-            cardElement.innerHTML = `
-                <div class="flashcard-inner">
-                    <div class="flashcard-front bg-white border-2 border-hoodie-orange p-6 flex flex-col items-center justify-center text-center">
-                        <span class="text-xs text-gray-400 mb-2">שאלה ${index + 1}</span>
-                        <p class="text-lg font-medium text-dark-brown">${card.question}</p>
-                        <span class="text-xs text-gray-400 mt-4">לחצו להפוך</span>
-                    </div>
-                    <div class="flashcard-back bg-hoodie-orange text-white p-6 flex flex-col items-center justify-center text-center">
-                        <span class="text-xs opacity-75 mb-2">תשובה</span>
-                        <p class="text-lg font-medium">${card.answer}</p>
-                    </div>
-                </div>
-            `;
-            container.appendChild(cardElement);
-            originalCards.push(cardElement);
-        });
-        
-        emptyState.classList.add('hidden');
-        container.classList.remove('hidden');
-        shuffleToggle.classList.remove('hidden');
-        shuffleToggle.classList.add('flex');
-    }
-</script>
 {% endblock %}

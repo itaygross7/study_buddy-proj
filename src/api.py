@@ -11,20 +11,16 @@ app.config["MAX_CONTENT_LENGTH"] = 12 * 1024 * 1024  # slightly above per-file l
 
 file_service = FileService()
 
-
 class DummyClient:
     def generate(self, prompt: str, timeout: int = 20, **kwargs: Dict) -> str:
         # local stub — replace with real LLM client wrapper
         return f"[תשובת דמו ל: {prompt[:80]}]"
 
-
 ai_service = AIService(client=DummyClient())
-
 
 @app.route("/")
 def home():
     return render_template("home.html")
-
 
 @app.route("/api/summarize", methods=["POST"])
 def summarize():
