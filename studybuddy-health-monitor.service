@@ -5,6 +5,8 @@ Requires=docker.service
 
 [Service]
 Type=simple
+# Note: Change 'root' to your app user if not running as root
+# Example: User=studybuddy
 User=root
 WorkingDirectory=/root/study_buddy-proj
 Environment="PATH=/usr/local/bin:/usr/bin:/bin"
