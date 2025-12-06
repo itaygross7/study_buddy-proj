@@ -121,8 +121,8 @@ def check_ai_models() -> dict:
             ai_client = AIClient()
             # Use task_type "standard" to route to GPT-4o-mini
             test_response = ai_client.generate_text(
-                prompt="You are a test bot. Respond with exactly 'OK'. Say 'OK' if you can read this.",
-                context="",
+                prompt="Say 'OK' if you can read this.",
+                context="You are a test bot. Respond with exactly 'OK'.",
                 task_type="standard"
             )
             
@@ -151,8 +151,8 @@ def check_ai_models() -> dict:
             ai_client = AIClient()
             # Use task_type "heavy_file" to route to Gemini Flash (without actual file)
             test_response = ai_client.generate_text(
-                prompt="You are a test bot. Respond with exactly 'OK'. Say 'OK' if you can read this.",
-                context="",
+                prompt="Say 'OK' if you can read this.",
+                context="You are a test bot. Respond with exactly 'OK'.",
                 task_type="heavy_file"
             )
             
