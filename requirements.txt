@@ -31,3 +31,4 @@ email-validator
 authlib
 httpx
 psutil
+schedule
