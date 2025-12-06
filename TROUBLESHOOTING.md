@@ -319,7 +319,7 @@ The environment variable `SB_GEMINI_MODEL` is set to an older model name without
 
 3. Restart the application:
    ```bash
-   docker compose restart app worker health_monitor
+   docker compose restart app
    ```
 
 4. Verify the fix:

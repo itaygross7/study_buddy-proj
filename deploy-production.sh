@@ -1199,18 +1199,23 @@ send_notification() {
         log_info "Sending email notification..."
         
         # Use Docker container to send email (has all dependencies installed)
-        docker exec "$APP_CONTAINER" python3 << EOF
-import os
+        # Pass variables as command line arguments to avoid shell injection
+        docker exec "$APP_CONTAINER" python3 -c "
 import sys
 from src.services.email_service import send_email
 
 try:
-    send_email('${ADMIN_EMAIL}', '${subject}', '<html><body><h2>${subject}</h2><p>${message}</p></body></html>')
-    print("Email sent successfully")
+    # Read email details from command line args
+    to_email = sys.argv[1]
+    subject = sys.argv[2]
+    message = sys.argv[3]
+    html_body = f'<html><body><h2>{subject}</h2><p>{message}</p></body></html>'
+    send_email(to_email, subject, html_body)
+    print('Email sent successfully')
 except Exception as e:
-    print(f"Failed to send email: {e}", file=sys.stderr)
+    print(f'Failed to send email: {e}', file=sys.stderr)
     sys.exit(1)
-EOF
+" "${ADMIN_EMAIL}" "${subject}" "${message}"
         
         if [ $? -ne 0 ]; then
             log_warning "Failed to send email notification (non-critical)"
