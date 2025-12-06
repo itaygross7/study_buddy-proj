@@ -75,16 +75,17 @@
             
             <!-- File Upload -->
             <div class="mb-4">
-                <label class="block text-sm font-medium text-dark-brown mb-2">העלה קובץ:</label>
+                <label class="block text-sm font-medium text-dark-brown mb-2">העלה קבצים (אחד או יותר):</label>
                 <div class="relative">
-                    <input type="file" name="file" id="file-input-main" accept=".pdf,.docx,.pptx,.txt,.html,.png,.jpg,.jpeg,.gif"
+                    <input type="file" name="files" id="file-input-main" accept=".pdf,.docx,.pptx,.txt,.html,.png,.jpg,.jpeg,.gif"
+                        multiple
                         style="font-size: 16px;"
                         class="w-full p-3 border-2 border-dashed border-warm-gray rounded-xl bg-white text-sm 
                                file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold 
                                file:bg-golden-yellow file:text-dark-brown hover:file:bg-warm-yellow
                                mobile-touch-target cursor-pointer
                                focus:outline-none focus:border-golden-yellow focus:ring-2 focus:ring-golden-yellow">
-                    <p class="text-xs text-cozy-brown mt-1">PDF, Word (.docx), PowerPoint (.pptx), HTML, תמונות או טקסט (עד 50MB)</p>
+                    <p class="text-xs text-cozy-brown mt-1">PDF, Word (.docx), PowerPoint (.pptx), HTML, תמונות או טקסט (עד 50MB לקובץ) - ניתן לבחור קבצים מרובים</p>
                 </div>
             </div>
             
@@ -202,13 +203,15 @@
             <form id="upload-more-form" enctype="multipart/form-data">
                 <input type="hidden" name="course_id" value="{{ course.id }}">
                 <div class="mb-2">
-                    <input type="file" name="file" id="file-input-more" accept=".pdf,.docx,.pptx,.txt,.html,.png,.jpg,.jpeg,.gif"
+                    <input type="file" name="files" id="file-input-more" accept=".pdf,.docx,.pptx,.txt,.html,.png,.jpg,.jpeg,.gif"
+                        multiple
                         style="font-size: 16px;"
                         class="w-full p-2 border border-dashed border-warm-gray rounded-lg bg-warm-beige text-sm 
                                file:mr-2 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold 
                                file:bg-golden-yellow file:text-dark-brown hover:file:bg-warm-yellow
                                mobile-touch-target cursor-pointer
                                focus:outline-none focus:border-golden-yellow focus:ring-2 focus:ring-golden-yellow">
+                    <p class="text-xs text-cozy-brown mt-1">ניתן לבחור קבצים מרובים</p>
                 </div>
                 <button type="submit" class="w-full bg-golden-yellow text-dark-brown font-medium py-2 rounded-lg hover:bg-warm-yellow transition-colors text-sm mobile-touch-target">
                     העלה
@@ -305,7 +308,7 @@
         }
     }
     
-    // Upload form handler - Enhanced for iOS Safari compatibility
+    // Upload form handler - Enhanced for iOS Safari compatibility and multiple files
     const uploadForm = document.getElementById('upload-form');
     if (uploadForm) {
         uploadForm.addEventListener('submit', function(e) {
@@ -319,21 +322,24 @@
             const statusText = document.getElementById('upload-status-text');
             const avnerImg = document.getElementById('upload-avner-img');
             
-            // Check if user provided either text or file
+            // Check if user provided either text or files
             const textInput = formData.get('text');
-            const fileInput = formData.get('file');
+            const fileInput = document.getElementById('file-input-main');
+            const files = fileInput ? fileInput.files : [];
             
-            if ((!textInput || textInput.trim() === '') && (!fileInput || fileInput.size === 0)) {
+            if ((!textInput || textInput.trim() === '') && files.length === 0) {
                 alert('יש להזין טקסט או לבחור קובץ להעלאה 📝');
                 return;
             }
             
-            // Validate file size if file provided
-            if (fileInput && fileInput.size > 0) {
-                const validation = validateFileSize(fileInput);
-                if (!validation.valid) {
-                    alert(validation.error);
-                    return;
+            // Validate file sizes if files provided
+            if (files.length > 0) {
+                for (let i = 0; i < files.length; i++) {
+                    const validation = validateFileSize(files[i]);
+                    if (!validation.valid) {
+                        alert(validation.error);
+                        return;
+                    }
                 }
             }
             
@@ -341,33 +347,41 @@
             statusDiv.classList.remove('hidden');
             avnerImg.src = '/avner/loading.jpeg';
             avnerImg.classList.add('animate-pulse');
-            statusText.textContent = 'מעלה את הקובץ...';
+            
+            if (files.length > 1) {
+                statusText.textContent = `מעלה ${files.length} קבצים...`;
+            } else if (files.length === 1) {
+                statusText.textContent = 'מעלה את הקובץ...';
+            } else {
+                statusText.textContent = 'שומר טקסט...';
+            }
             
             // Disable button
             submitBtn.disabled = true;
             submitBtn.classList.add('opacity-75');
             
+            // Use faster GridFS endpoint for multiple files, or regular endpoint for text/single file
+            const uploadUrl = (files.length > 0) ? '/api/upload/files' : '/api/upload/';
+            
             // Use XMLHttpRequest for better iOS Safari compatibility
             const xhr = new XMLHttpRequest();
-            xhr.open('POST', '/api/upload/', true);
+            xhr.open('POST', uploadUrl, true);
             
             xhr.onload = function() {
                 if (xhr.status >= 200 && xhr.status < 300) {
                     try {
                         const data = JSON.parse(xhr.responseText);
                         
-                        if (data.status === 'processing') {
-                            avnerImg.src = '/avner/progress.jpeg';
-                            statusText.textContent = 'הקובץ הועלה! אבנר מעבד את התוכן...';
-                            // Poll for completion
-                            pollDocumentStatus(data.document_id, avnerImg, statusText);
+                        avnerImg.src = '/avner/avner_celebrating.jpeg';
+                        avnerImg.classList.remove('animate-pulse');
+                        
+                        if (files.length > 1) {
+                            statusText.textContent = `✅ ${files.length} קבצים הועלו בהצלחה!`;
                         } else {
-                            // Text input - completed immediately
-                            avnerImg.src = '/avner/avner_celebrating.jpeg';
-                            avnerImg.classList.remove('animate-pulse');
                             statusText.textContent = '✅ הועלה בהצלחה!';
-                            setTimeout(function() { window.location.reload(); }, 800);
                         }
+                        
+                        setTimeout(function() { window.location.reload(); }, 800);
                     } catch (parseError) {
                         console.error('Parse error:', parseError);
                         statusDiv.classList.add('hidden');
@@ -401,7 +415,7 @@
         });
     }
     
-    // Upload more form handler - Enhanced for iOS Safari compatibility
+    // Upload more form handler - Enhanced for iOS Safari compatibility and multiple files
     const uploadMoreForm = document.getElementById('upload-more-form');
     if (uploadMoreForm) {
         uploadMoreForm.addEventListener('submit', function(e) {
@@ -411,37 +425,41 @@
             const formData = new FormData(this);
             const submitBtn = this.querySelector('button[type="submit"]');
             const originalText = submitBtn.innerHTML;
-            const fileInput = formData.get('file');
+            const fileInput = document.getElementById('file-input-more');
+            const files = fileInput ? fileInput.files : [];
             
-            // Validate file
-            const validation = validateFileSize(fileInput);
-            if (!validation.valid) {
-                alert(validation.error);
+            // Validate files
+            if (files.length === 0) {
+                alert('יש לבחור קובץ להעלאה 📝');
                 return;
+            }
+            
+            for (let i = 0; i < files.length; i++) {
+                const validation = validateFileSize(files[i]);
+                if (!validation.valid) {
+                    alert(validation.error);
+                    return;
+                }
             }
             
             // Disable button and show loading with Avner
             submitBtn.disabled = true;
-            submitBtn.innerHTML = '<img src="/avner/loading.jpeg" class="w-6 h-6 inline-block animate-pulse"> מעלה...';
+            if (files.length > 1) {
+                submitBtn.innerHTML = '<img src="/avner/loading.jpeg" class="w-6 h-6 inline-block animate-pulse"> מעלה ' + files.length + ' קבצים...';
+            } else {
+                submitBtn.innerHTML = '<img src="/avner/loading.jpeg" class="w-6 h-6 inline-block animate-pulse"> מעלה...';
+            }
             
-            // Use XMLHttpRequest for better iOS Safari compatibility
+            // Use faster GridFS endpoint for file uploads
             const xhr = new XMLHttpRequest();
-            xhr.open('POST', '/api/upload/', true);
+            xhr.open('POST', '/api/upload/files', true);
             
             xhr.onload = function() {
                 if (xhr.status >= 200 && xhr.status < 300) {
                     try {
                         const data = JSON.parse(xhr.responseText);
-                        
-                        if (data.status === 'processing') {
-                            submitBtn.innerHTML = '<img src="/avner/progress.jpeg" class="w-6 h-6 inline-block animate-pulse"> מעבד...';
-                            // Poll for completion
-                            pollDocumentStatusSimple(data.document_id, submitBtn, originalText);
-                        } else {
-                            // Text input - completed immediately
-                            submitBtn.innerHTML = '✅ הועלה!';
-                            setTimeout(function() { window.location.reload(); }, 500);
-                        }
+                        submitBtn.innerHTML = '✅ הועלה!';
+                        setTimeout(function() { window.location.reload(); }, 500);
                     } catch (parseError) {
                         console.error('Parse error:', parseError);
                         submitBtn.disabled = false;
