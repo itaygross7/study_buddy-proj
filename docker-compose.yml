@@ -10,8 +10,8 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: studybuddy_app
-    expose:
-      - "5000"
+    ports:
+      - "5000:5000"
     volumes:
       - ./src:/app/src
       - ./ui:/app/ui
@@ -86,19 +86,19 @@ services:
     networks:
       - studybuddy-net
 
-  # --- THIS IS THE FIX ---
+  # --- RESTORED TO ORIGINAL ---
   cloudflared:
     image: cloudflare/cloudflared:latest
     container_name: studybuddy_cloudflared
     restart: unless-stopped
-    # The command should ONLY run the tunnel with the token.
+    # This is the original, correct command. It uses the token for authentication.
     # The routing to http://app:5000 is configured in the Cloudflare Dashboard.
     command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
     depends_on:
       - app
     networks:
       - studybuddy-net
-  # --- END OF FIX ---
+  # --- END OF RESTORATION ---
 
 volumes:
   mongo_data:
