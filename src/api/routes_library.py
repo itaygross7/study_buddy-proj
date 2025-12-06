@@ -259,6 +259,50 @@ def course_tool(course_id, tool):
                            course_id=course_id)
 
 
+@library_bp.route('/course/<course_id>/tasks')
+@login_required
+def course_tasks(course_id):
+    """View all tasks for a specific course."""
+    course = get_course_by_id(course_id, current_user.id)
+    if not course:
+        flash('הקורס לא נמצא', 'error')
+        return redirect(url_for('library.index'))
+    
+    # Get all tasks for this course, sorted by most recent first
+    tasks = list(db.tasks.find({
+        "user_id": current_user.id,
+        "course_id": course_id
+    }).sort("created_at", -1))
+    
+    # Count tasks by status
+    task_stats = {
+        'total': len(tasks),
+        'completed': len([t for t in tasks if t.get('status') == 'COMPLETED']),
+        'processing': len([t for t in tasks if t.get('status') == 'PROCESSING']),
+        'failed': len([t for t in tasks if t.get('status') == 'FAILED']),
+        'pending': len([t for t in tasks if t.get('status') == 'PENDING'])
+    }
+    
+    # Group tasks by type
+    tasks_by_type = {}
+    for task in tasks:
+        task_type = task.get('task_type', 'unknown')
+        if task_type not in tasks_by_type:
+            tasks_by_type[task_type] = []
+        tasks_by_type[task_type].append(task)
+    
+    profile = get_user_profile(current_user.id)
+    config = get_system_config()
+    
+    return render_template('library/course_tasks.html',
+                           course=course,
+                           tasks=tasks,
+                           task_stats=task_stats,
+                           tasks_by_type=tasks_by_type,
+                           profile=profile,
+                           config=config)
+
+
 # ============ User Profile Routes ============
 
 @library_bp.route('/profile', methods=['GET', 'POST'])

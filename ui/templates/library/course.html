@@ -25,6 +25,10 @@
             <span class="px-3 py-1 bg-warm-beige text-cozy-brown text-sm rounded-full">
                 {{ 'עברית' if course.language.value == 'he' else 'English' }}
             </span>
+            <a href="{{ url_for('library.course_tasks', course_id=course.id) }}" 
+               class="px-3 py-1 border border-golden-yellow text-cozy-brown text-sm rounded-full hover:bg-golden-yellow hover:text-dark-brown transition-colors">
+                📋 משימות
+            </a>
             <a href="{{ url_for('library.course_settings', course_id=course.id) }}" 
                class="px-3 py-1 border border-cozy-brown text-cozy-brown text-sm rounded-full hover:bg-cozy-brown hover:text-cream transition-colors">
                 ⚙️ הגדרות
