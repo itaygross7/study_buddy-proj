@@ -119,11 +119,9 @@ def check_ai_models() -> dict:
     if settings.OPENAI_API_KEY:
         try:
             ai_client = AIClient()
-            # Use task_type "standard" to route to GPT-4o-mini
-            test_response = ai_client.generate_text(
-                prompt="Say 'OK' if you can read this.",
-                context="You are a test bot. Respond with exactly 'OK'.",
-                task_type="standard"
+            # Directly call GPT mini for health check
+            test_response = ai_client._call_gpt_mini(
+                prompt="You are a test bot. Respond with exactly 'OK'. Say 'OK' if you can read this."
             )
             
             results["openai"] = {
@@ -149,11 +147,9 @@ def check_ai_models() -> dict:
     if settings.GEMINI_API_KEY:
         try:
             ai_client = AIClient()
-            # Use task_type "heavy_file" to route to Gemini Flash (without actual file)
-            test_response = ai_client.generate_text(
-                prompt="Say 'OK' if you can read this.",
-                context="You are a test bot. Respond with exactly 'OK'.",
-                task_type="heavy_file"
+            # Directly call Gemini Flash for health check
+            test_response = ai_client._call_gemini_flash(
+                prompt="You are a test bot. Respond with exactly 'OK'. Say 'OK' if you can read this."
             )
             
             results["gemini"] = {
