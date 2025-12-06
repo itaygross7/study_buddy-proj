@@ -1,14 +1,29 @@
 """
 AI Constraint System - CRITICAL SECURITY MODULE
 
-REQUIREMENT: All AI responses must come ONLY from user-uploaded documents.
+🔒 MANDATORY REQUIREMENT: All AI responses must come ONLY from user-uploaded documents.
 NO external knowledge, NO hallucinations, NO outside material.
+
+⚠️ WARNING: These constraints are MANDATORY and ALWAYS ACTIVE.
+There is NO way to bypass or disable them. This is by design.
 
 This module provides strict constraint prompts and validation to ensure
 AI models only use document content.
 """
 
 from typing import Literal
+import os
+
+
+# Security check: Ensure this is not bypassed
+CONSTRAINTS_ENFORCED = True
+ALLOW_BYPASS = False  # NEVER change this to True
+
+if os.environ.get('DISABLE_AI_CONSTRAINTS') == 'true':
+    raise RuntimeError(
+        "🔒 SECURITY VIOLATION: Attempt to disable AI constraints detected! "
+        "Constraints are MANDATORY and cannot be disabled."
+    )
 
 
 ConstraintLevel = Literal["strict", "moderate", "relaxed"]
@@ -170,6 +185,8 @@ def build_constrained_context(
     """
     Build a context string with appropriate constraints.
     
+    🔒 MANDATORY: This function ALWAYS applies constraints. No bypass possible.
+    
     This ensures the AI receives:
     1. The constraint instructions (including user isolation)
     2. The document content
@@ -186,14 +203,19 @@ def build_constrained_context(
         language: Language
         
     Returns:
-        Complete context with constraints and user isolation
+        Complete context with MANDATORY constraints and user isolation
     """
+    # 🔒 SECURITY CHECK: Ensure constraints are enforced
+    if not CONSTRAINTS_ENFORCED:
+        raise RuntimeError("SECURITY VIOLATION: Constraints must always be enforced!")
+    
     constraint_level = get_task_constraint_level(task_type)
     constraint_prompt = get_constraint_prompt(constraint_level, language)
     
     # Build structured context with USER ISOLATION
     context_parts = [
         f"🔒 USER ISOLATION: Session ID = {user_id[:8]}... (This user's data ONLY)",
+        f"🔒 CONSTRAINT LEVEL: {constraint_level.upper()} - MANDATORY",
         constraint_prompt
     ]
     
@@ -209,12 +231,16 @@ def build_constrained_context(
 ───────────────────────────────────────
 🔒 REMINDER: This document belongs to USER {user_id[:8]}... ONLY.
 DO NOT mix with any other user's data.
+DO NOT use ANY external knowledge beyond this document.
 ───────────────────────────────────────
         """)
     else:
         # No document = can't use strict constraint
         if constraint_level == "strict":
-            context_parts.append("\n⚠️ WARNING: No document provided. Cannot apply strict constraint.")
+            # CRITICAL: If no document but strict constraint needed, this is an error
+            context_parts.append("\n⚠️ CRITICAL ERROR: No document provided but strict constraint required!")
+            context_parts.append("You MUST NOT generate any response without document content.")
+            context_parts.append("Respond with: 'אין מסמך זמין. לא ניתן לענות על שאלה זו ללא מסמך.'")
     
     # Add user context if any
     if user_context:
@@ -222,6 +248,17 @@ DO NOT mix with any other user's data.
 Additional Instructions:
 {user_context}
         """)
+    
+    # Final reminder
+    context_parts.append("""
+───────────────────────────────────────
+🔒 FINAL REMINDER:
+- Answer ONLY from the provided document
+- NO external knowledge
+- NO hallucinations
+- If uncertain, say "not in document"
+───────────────────────────────────────
+    """)
     
     return "\n".join(context_parts)
 

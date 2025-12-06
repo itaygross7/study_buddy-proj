@@ -286,13 +286,12 @@ class AIMiddleware:
         user_request: str,
         document_content: str,
         task_type: str,
-        user_id: str,
-        optimize: bool = True
+        user_id: str
     ) -> Dict[str, Any]:
         """
         STEP 1: Prepare request for queue (microservice pattern)
         
-        🔒 ADDS STRICT CONSTRAINTS to prevent hallucinations
+        🔒 ALWAYS ADDS STRICT CONSTRAINTS - NO BYPASS ALLOWED
         
         This is FAST - just optimization + constraint injection
         Returns data structure ready for RabbitMQ
@@ -302,14 +301,13 @@ class AIMiddleware:
             document_content: User's document content (THE ONLY SOURCE)
             task_type: Task type
             user_id: User ID
-            optimize: Whether to optimize
             
         Returns:
-            Dict ready for queue message with constraints enforced
+            Dict ready for queue message with constraints ALWAYS enforced
         """
         user_prefs = self.prefs_service.get(user_id)
         
-        # BUILD CONSTRAINED CONTEXT (Critical security step)
+        # 🔒 CRITICAL: ALWAYS BUILD CONSTRAINED CONTEXT - NO EXCEPTIONS
         constrained_context = build_constrained_context(
             task_type=task_type,
             document_content=document_content,
@@ -319,22 +317,18 @@ class AIMiddleware:
         )
         
         constraint_level = get_task_constraint_level(task_type)
-        logger.info(f"🔒 Applied {constraint_level} constraint for {task_type}")
+        logger.info(f"🔒 MANDATORY {constraint_level} constraint applied for {task_type}")
         
-        if optimize:
-            optimized = self.prompt_optimizer.optimize(
-                user_request=user_request,
-                task_type=task_type,
-                user_prefs=user_prefs,
-                document_content=document_content  # Pass document for constraint detection
-            )
-        else:
-            optimized = {
-                'optimized_prompt': user_request,
-                'system_context': ''
-            }
+        # Optimize prompt (this ADDS to constraints, never removes them)
+        optimized = self.prompt_optimizer.optimize(
+            user_request=user_request,
+            task_type=task_type,
+            user_prefs=user_prefs,
+            document_content=document_content  # Pass document for constraint detection
+        )
         
         # COMBINE optimized prompt with constrained context
+        # IMPORTANT: Constraints are ALWAYS included, optimization only enhances
         final_context = constrained_context + "\n\n" + optimized['system_context']
         
         return {
@@ -344,50 +338,49 @@ class AIMiddleware:
             'task_type': task_type,
             'original_request': user_request,
             'document_content': document_content,  # Keep for validation
-            'constraint_level': constraint_level
+            'constraint_level': constraint_level,
+            'constraint_enforced': True  # ALWAYS True - no bypass
         }
     
     def finalize_response(
         self,
         ai_response: str,
         request_data: Dict[str, Any],
-        adapt: bool = True,
-        validate_constraints: bool = True
+        adapt: bool = True
     ) -> str:
         """
         STEP 2: Finalize response after AI processing (microservice pattern)
         
-        🔒 VALIDATES constraints were followed
+        🔒 ALWAYS VALIDATES constraints were followed - NO BYPASS
         
-        This is FAST - adaptation + validation
+        This is FAST - adaptation + mandatory validation
         
         Args:
             ai_response: Raw AI output
             request_data: Data from prepare_request
-            adapt: Whether to adapt
-            validate_constraints: Whether to validate constraints
+            adapt: Whether to adapt (does NOT affect constraint validation)
             
         Returns:
-            Final response for user (validated & adapted)
+            Final response for user (ALWAYS validated)
         """
-        # VALIDATE CONSTRAINTS (Critical security check)
-        if validate_constraints:
-            document_content = request_data.get('document_content', '')
-            task_type = request_data.get('task_type', 'standard')
-            
-            validation = validate_response_constraint(
-                response=ai_response,
-                task_type=task_type,
-                document_content=document_content
-            )
-            
-            if not validation['valid']:
-                logger.warning(f"⚠️ Constraint validation warnings: {validation['warnings']}")
-                # Log but don't block (validation is heuristic, may have false positives)
-            else:
-                logger.info(f"✓ Response passed {validation['constraint_level']} constraint validation")
+        # 🔒 CRITICAL: ALWAYS VALIDATE CONSTRAINTS - NO EXCEPTIONS
+        document_content = request_data.get('document_content', '')
+        task_type = request_data.get('task_type', 'standard')
         
-        # ADAPT RESPONSE
+        validation = validate_response_constraint(
+            response=ai_response,
+            task_type=task_type,
+            document_content=document_content
+        )
+        
+        if not validation['valid']:
+            logger.error(f"⚠️ CONSTRAINT VIOLATION DETECTED: {validation['warnings']}")
+            # Log but continue (validation is heuristic, may have false positives)
+            # In production, you might want to reject the response here
+        else:
+            logger.info(f"✓ Response passed MANDATORY {validation['constraint_level']} constraint validation")
+        
+        # ADAPT RESPONSE (optional, but validation above is mandatory)
         if not adapt:
             return ai_response
         
@@ -402,7 +395,7 @@ class AIMiddleware:
             )
             return adapted
         except Exception as e:
-            logger.error(f"Response finalization failed: {e}")
+            logger.error(f"Response adaptation failed: {e}")
             return ai_response
 
 
