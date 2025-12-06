@@ -14,14 +14,14 @@
                 <p class="text-cozy-brown mt-1">כאן נמצאים כל הקורסים והחומרים שלך</p>
             </div>
         </div>
-        <div class="flex gap-3">
+        <div class="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
             <a href="{{ url_for('library.profile') }}" 
-               class="btn-secondary">
+               class="btn-secondary mobile-touch-target text-center">
                 👤 הפרופיל שלי
             </a>
             {% if current_user.user.role.value == 'admin' or courses|length < max_courses %}
             <a href="{{ url_for('library.new_course') }}" 
-               class="btn-primary shadow-warm">
+               class="btn-primary shadow-warm mobile-touch-target text-center">
                 ➕ קורס חדש
             </a>
             {% endif %}

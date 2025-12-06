@@ -2,7 +2,10 @@
 <html lang="{{ 'en' if current_locale == 'en' else 'he' }}" dir="{{ 'ltr' if current_locale == 'en' else 'rtl' }}" class="h-full">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="mobile-web-app-capable" content="yes">
     <title>{% block title %}StudyBuddyAI{% endblock %}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -148,17 +151,46 @@
     </footer>
     
     <script>
-        // Mobile menu toggle script (Restored)
+        // Mobile menu toggle script (Enhanced for better mobile support)
         const mobileMenuButton = document.getElementById('mobile-menu-button');
         const mobileMenu = document.getElementById('mobile-menu');
         const menuIconOpen = document.getElementById('menu-icon-open');
         const menuIconClose = document.getElementById('menu-icon-close');
         
         if (mobileMenuButton && mobileMenu) {
-            mobileMenuButton.addEventListener('click', function() {
+            // Toggle menu on button click
+            mobileMenuButton.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
                 mobileMenu.classList.toggle('hidden');
                 menuIconOpen.classList.toggle('hidden');
                 menuIconClose.classList.toggle('hidden');
+            });
+            
+            // Close menu when clicking menu items
+            const menuLinks = mobileMenu.querySelectorAll('a');
+            menuLinks.forEach(link => {
+                link.addEventListener('click', function() {
+                    mobileMenu.classList.add('hidden');
+                    menuIconOpen.classList.remove('hidden');
+                    menuIconClose.classList.add('hidden');
+                });
+            });
+            
+            // Close menu when clicking outside (but not on button)
+            document.addEventListener('click', function(e) {
+                if (!mobileMenu.contains(e.target) && !mobileMenuButton.contains(e.target)) {
+                    if (!mobileMenu.classList.contains('hidden')) {
+                        mobileMenu.classList.add('hidden');
+                        menuIconOpen.classList.remove('hidden');
+                        menuIconClose.classList.add('hidden');
+                    }
+                }
+            });
+            
+            // Prevent menu close when clicking inside menu
+            mobileMenu.addEventListener('click', function(e) {
+                e.stopPropagation();
             });
         }
     </script>
