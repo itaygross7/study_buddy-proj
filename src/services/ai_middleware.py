@@ -313,6 +313,7 @@ class AIMiddleware:
         constrained_context = build_constrained_context(
             task_type=task_type,
             document_content=document_content,
+            user_id=user_id,  # Pass user_id for isolation tracking
             user_context="",
             language=user_prefs.language
         )

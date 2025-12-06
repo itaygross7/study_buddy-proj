@@ -28,11 +28,20 @@ RULES (MUST FOLLOW):
 5. ✓ If the answer is NOT in the document, say: "המידע אינו מופיע במסמך" (Information not in document)
 6. ✓ Quote or reference the document when answering
 7. ✗ DO NOT use phrases like "I know" or "generally" - stick to the document
+8. 🔒 DO NOT reference ANY other user's documents or knowledge
+9. 🔒 DO NOT mix information from different users - STRICT ISOLATION
 
 WHY THIS MATTERS:
 - Users trust you to work with THEIR documents only
 - Adding outside info = hallucination = wrong answers
 - This is a learning tool - accuracy is CRITICAL
+- Privacy: Each user's data is isolated and private
+
+PRIVACY REQUIREMENT:
+This conversation is for ONE USER ONLY. You must never:
+- Mix this user's documents with other users' data
+- Reference information from other conversations
+- Use knowledge from other users' uploads
 
 If you're unsure if something is in the document, DON'T include it.
 When in doubt, err on the side of "not in document."
@@ -51,12 +60,16 @@ RULES:
 3. ✓ ALWAYS indicate when you're going beyond the provided material
 4. ✓ Prioritize document content over external knowledge
 5. ✓ If document has the answer, use it exclusively
+6. 🔒 DO NOT reference other users' documents or knowledge
+7. 🔒 This is ONE USER's session - maintain strict isolation
 
 PHRASES TO USE:
 - "לפי המסמך..." (According to the document...)
 - "המסמך מזכיר..." (The document mentions...)
 - "נוסף על המידע במסמך..." (Beyond the document info...)
 - "באופן כללי..." (Generally...) - only when supplementing
+
+PRIVACY: Work only with THIS user's materials. Never mix users' knowledge.
 """
 
 
@@ -64,13 +77,17 @@ PHRASES TO USE:
 RELAXED_DOCUMENT_CONSTRAINT = """
 💬 CONSTRAINT - Context-Aware Chat:
 
-You are a helpful study assistant.
+You are a helpful study assistant for ONE USER.
 
 RULES:
 1. ✓ If user provides context/document, prioritize it
 2. ✓ May use general knowledge when appropriate
 3. ✓ Always be clear about source of information
 4. ✓ For factual questions, be accurate and cite sources when possible
+5. 🔒 DO NOT reference other users' documents or conversations
+6. 🔒 Maintain strict user isolation - this is ONE user's session
+
+PRIVACY: Each user's data is private and isolated. Never mix knowledge between users.
 """
 
 
@@ -146,6 +163,7 @@ def get_task_constraint_level(task_type: str) -> ConstraintLevel:
 def build_constrained_context(
     task_type: str,
     document_content: str,
+    user_id: str,
     user_context: str = "",
     language: str = "he"
 ) -> str:
@@ -153,36 +171,44 @@ def build_constrained_context(
     Build a context string with appropriate constraints.
     
     This ensures the AI receives:
-    1. The constraint instructions
+    1. The constraint instructions (including user isolation)
     2. The document content
-    3. Any additional context
+    3. User isolation metadata
+    4. Any additional context
     
-    All properly formatted to prevent hallucinations.
+    All properly formatted to prevent hallucinations AND data mixing.
     
     Args:
         task_type: Type of task
         document_content: The user's document content
+        user_id: User ID for isolation tracking
         user_context: Additional context/instructions
         language: Language
         
     Returns:
-        Complete context with constraints
+        Complete context with constraints and user isolation
     """
     constraint_level = get_task_constraint_level(task_type)
     constraint_prompt = get_constraint_prompt(constraint_level, language)
     
-    # Build structured context
-    context_parts = [constraint_prompt]
+    # Build structured context with USER ISOLATION
+    context_parts = [
+        f"🔒 USER ISOLATION: Session ID = {user_id[:8]}... (This user's data ONLY)",
+        constraint_prompt
+    ]
     
     # Add document content if provided
     if document_content:
         context_parts.append(f"""
 ───────────────────────────────────────
-📄 DOCUMENT CONTENT (Your ONLY source):
+📄 DOCUMENT CONTENT (User {user_id[:8]}... - ISOLATED):
 ───────────────────────────────────────
 
 {document_content}
 
+───────────────────────────────────────
+🔒 REMINDER: This document belongs to USER {user_id[:8]}... ONLY.
+DO NOT mix with any other user's data.
 ───────────────────────────────────────
         """)
     else:
@@ -254,26 +280,26 @@ def validate_response_constraint(
 
 
 # Quick access functions for common use cases
-def get_summary_constraint(document_content: str, language: str = "he") -> str:
+def get_summary_constraint(document_content: str, user_id: str, language: str = "he") -> str:
     """Get constraint for summary task."""
-    return build_constrained_context("summary", document_content, "", language)
+    return build_constrained_context("summary", document_content, user_id, "", language)
 
 
-def get_flashcards_constraint(document_content: str, language: str = "he") -> str:
+def get_flashcards_constraint(document_content: str, user_id: str, language: str = "he") -> str:
     """Get constraint for flashcard generation."""
-    return build_constrained_context("flashcards", document_content, "", language)
+    return build_constrained_context("flashcards", document_content, user_id, "", language)
 
 
-def get_assessment_constraint(document_content: str, language: str = "he") -> str:
+def get_assessment_constraint(document_content: str, user_id: str, language: str = "he") -> str:
     """Get constraint for assessment generation."""
-    return build_constrained_context("assessment", document_content, "", language)
+    return build_constrained_context("assessment", document_content, user_id, "", language)
 
 
-def get_homework_constraint(problem: str, document_context: str = "", language: str = "he") -> str:
+def get_homework_constraint(problem: str, user_id: str, document_context: str = "", language: str = "he") -> str:
     """Get constraint for homework help (moderate level)."""
-    return build_constrained_context("homework", document_context, problem, language)
+    return build_constrained_context("homework", document_context, user_id, problem, language)
 
 
-def get_chat_constraint(user_question: str, document_context: str = "", language: str = "he") -> str:
+def get_chat_constraint(user_question: str, user_id: str, document_context: str = "", language: str = "he") -> str:
     """Get constraint for chat (relaxed level)."""
-    return build_constrained_context("chat", document_context, user_question, language)
+    return build_constrained_context("chat", document_context, user_id, user_question, language)
