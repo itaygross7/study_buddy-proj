@@ -1,314 +1,65 @@
 """
-🔒 SAFETY CLASSIFICATION: TEACHING MODE (CLASS B - EXTERNAL KNOWLEDGE OK)
-========================================================================
-This service provides interactive tutoring on general topics.
-
-SECURITY REQUIREMENTS:
-- ⚠️ External knowledge ALLOWED (this is for teaching general concepts)
-- ⚠️ Does NOT use user documents (teaches any topic)
-- ✅ Creates educational content for learning
-- ✅ User-specific progress tracking
-
-CONSTRAINT LEVEL: RELAXED (Teaching Mode)
-- Teaches general educational concepts
-- Does not claim to use user documents
-- Appropriate use of AI knowledge for education
-- NOT a document analysis feature
-
-PURPOSE: General education, not document analysis.
+Service for handling the AI Tutor chat functionality.
 """
-
-import json
-import uuid
 from pymongo.database import Database
-from typing import Dict, List
-from datetime import datetime, timezone
 from .ai_client import ai_client
 from src.infrastructure.database import db as flask_db
-from src.domain.models.db_models import TutorSession
+from src.infrastructure.repositories import MongoDocumentRepository
 from sb_utils.logger_utils import logger
-
-
-def _utc_now():
-    """Return current UTC datetime."""
-    return datetime.now(timezone.utc)
-
+from src.utils.smart_parser import get_smart_context # Import the centralized utility
 
 def _get_db(db_conn: Database = None) -> Database:
     return db_conn if db_conn is not None else flask_db
 
-
-def create_tutor_session(user_id: str, topic: str, course_id: str = "", 
-                        db_conn: Database = None) -> str:
+def answer_tutor_question(user_id: str, course_id: str, question: str, db_conn: Database = None) -> str:
     """
-    Creates a new interactive tutor session for a given topic.
-    Generates a 5-step syllabus using AI.
-    
-    🔒 SECURITY: TEACHING MODE - External knowledge allowed.
-    This creates general educational content, not document analysis.
-    
-    Args:
-        user_id: ID of the user
-        topic: The topic the user wants to learn
-        course_id: Optional course ID for context
-        db_conn: Optional database connection
-        
-    Returns:
-        Session ID
+    Answers a user's question using documents from a specific course as context.
+    This now uses the high-performance "Sniper Retrieval" method.
     """
     db = _get_db(db_conn)
-    logger.info(f"💡 [TEACHING] Creating tutor session for user {user_id} on topic: {topic}")
+    doc_repo = MongoDocumentRepository(db)
     
-    # Generate syllabus using GPT-4o for better planning
+    logger.info(f"Tutor question received from user {user_id} for course {course_id}: '{question[:30]}...'")
+
+    # --- ADDITIVE INJECTION POINT (Retrieval) ---
+    
+    # 1. Find all documents associated with the course.
+    course_documents = doc_repo.find_by_course(course_id, user_id)
+    
+    # 2. Perform "Sniper Retrieval" on each document.
+    smart_contexts = []
+    for doc in course_documents:
+        context_chunk = get_smart_context(doc.id, query=question)
+        if context_chunk:
+            smart_contexts.append(f"קטע מתוך '{doc.filename}':\\n{context_chunk}")
+
+    # 3. Aggregate the results or fall back.
+    final_context = ""
+    if smart_contexts:
+        logger.info(f"Found {len(smart_contexts)} relevant smart chunks for tutor question.")
+        final_context = "\\n--- \\n".join(smart_contexts)
+    else:
+        # FALLBACK: If no smart chunks are found, revert to the original, robust logic.
+        logger.warning(f"No smart context found for tutor question. Falling back to full document text for course {course_id}.")
+        full_texts = [doc.content_text for doc in course_documents]
+        final_context = "\\n--- \\n".join(full_texts)
+
+    if not final_context:
+        return "מצטער, לא מצאתי חומר לימוד רלוונטי בקורס הזה כדי לענות על השאלה. אולי כדאי להעלות קודם כמה קבצים?"
+    # --- END OF INJECTION ---
+
     prompt = f"""
-    Create a 5-step learning syllabus for teaching the topic: "{topic}"
+    You are Avner, a friendly and expert teaching assistant.
+    Your goal is to answer the user's question based *only* on the provided context from their study materials.
+    If the answer is not in the context, you MUST reply with: 'מצטער, אבל התשובה לשאלה הזו לא מופיעה בחומר הלימוד שהעלית. אולי תנסה לנסח את השאלה אחרת?'
     
-    Each step should be:
-    - A clear, specific concept or skill
-    - Buildable on previous steps
-    - Achievable in one focused lesson
-    
-    Return a JSON array of exactly 5 strings (the step titles).
-    Example: ["Introduction to basic concepts", "Core principles", "Practical applications", "Advanced techniques", "Summary and practice"]
-    
-    Return ONLY valid JSON, no other text.
+    User's question: "{question}"
     """
-    
-    try:
-        json_string = ai_client.generate_text(
-            prompt=prompt,
-            context="",
-            task_type="complex_reasoning"
-        )
-        
-        # Try to parse as JSON
-        try:
-            syllabus = json.loads(json_string)
-        except json.JSONDecodeError:
-            # Fallback to simple split if not JSON
-            syllabus = [
-                f"Introduction to {topic}",
-                "Core Concepts",
-                "Practical Applications",
-                "Advanced Topics",
-                "Review and Practice"
-            ]
-        
-        session_id = f"tutor_{uuid.uuid4().hex[:12]}"
-        session = TutorSession(
-            _id=session_id,
-            user_id=user_id,
-            course_id=course_id,
-            topic=topic,
-            syllabus=syllabus,
-            current_step=0,
-            chat_history=[],
-            completed_steps=[]
-        )
-        
-        db.tutor_sessions.insert_one(session.to_dict())
-        logger.info(f"Created tutor session {session_id}")
-        return session_id
-        
-    except Exception as e:
-        logger.error(f"Error creating tutor session: {e}", exc_info=True)
-        raise
 
-
-def get_session(session_id: str, user_id: str, db_conn: Database = None) -> Dict:
-    """
-    Retrieves a tutor session.
+    answer = ai_client.generate_text(
+        prompt=prompt,
+        context=final_context,
+        task_type="tutor"
+    )
     
-    Args:
-        session_id: ID of the session
-        user_id: ID of the user (for permission check)
-        db_conn: Optional database connection
-        
-    Returns:
-        Session dictionary
-    """
-    db = _get_db(db_conn)
-    session = db.tutor_sessions.find_one({"_id": session_id, "user_id": user_id})
-    return session
-
-
-def teach_step(session_id: str, user_id: str, db_conn: Database = None) -> Dict:
-    """
-    Teaches the current step in the tutor session.
-    Generates teaching content and a drill question.
-    
-    Args:
-        session_id: ID of the session
-        user_id: ID of the user
-        db_conn: Optional database connection
-        
-    Returns:
-        Dictionary with teaching content and question
-    """
-    db = _get_db(db_conn)
-    session = db.tutor_sessions.find_one({"_id": session_id, "user_id": user_id})
-    
-    if not session:
-        raise ValueError("Session not found")
-    
-    current_step = session.get("current_step", 0)
-    syllabus = session.get("syllabus", [])
-    
-    if current_step >= len(syllabus):
-        return {"completed": True, "message": "🎉 You've completed all steps!"}
-    
-    step_title = syllabus[current_step]
-    topic = session.get("topic", "")
-    
-    prompt = f"""
-    You are teaching step {current_step + 1} of {len(syllabus)} on the topic "{topic}".
-    This step is: "{step_title}"
-    
-    Provide:
-    1. A clear, engaging explanation of this concept (2-3 paragraphs)
-    2. An example to illustrate the concept
-    3. One drill question to test understanding
-    
-    Format your response as JSON:
-    {{
-      "explanation": "...",
-      "example": "...",
-      "question": "..."
-    }}
-    """
-    
-    try:
-        json_string = ai_client.generate_text(
-            prompt=prompt,
-            context="",
-            task_type="standard",
-            require_json=True
-        )
-        
-        content = json.loads(json_string)
-        
-        # Add to chat history
-        chat_entry = {
-            "role": "tutor",
-            "step": current_step,
-            "content": content
-        }
-        
-        db.tutor_sessions.update_one(
-            {"_id": session_id},
-            {
-                "$push": {"chat_history": chat_entry},
-                "$set": {"updated_at": _utc_now()}
-            }
-        )
-        
-        return {
-            "step": current_step + 1,
-            "total_steps": len(syllabus),
-            "title": step_title,
-            **content
-        }
-        
-    except Exception as e:
-        logger.error(f"Error teaching step: {e}", exc_info=True)
-        raise
-
-
-def submit_answer(session_id: str, user_id: str, answer: str, db_conn: Database = None) -> Dict:
-    """
-    Evaluates user's answer to the drill question.
-    Moves to next step if correct, provides feedback if wrong.
-    
-    Args:
-        session_id: ID of the session
-        user_id: ID of the user
-        answer: User's answer
-        db_conn: Optional database connection
-        
-    Returns:
-        Dictionary with evaluation result
-    """
-    db = _get_db(db_conn)
-    session = db.tutor_sessions.find_one({"_id": session_id, "user_id": user_id})
-    
-    if not session:
-        raise ValueError("Session not found")
-    
-    current_step = session.get("current_step", 0)
-    chat_history = session.get("chat_history", [])
-    
-    # Get the last question
-    last_entry = chat_history[-1] if chat_history else None
-    if not last_entry or last_entry.get("role") != "tutor":
-        return {"error": "No active question"}
-    
-    question = last_entry.get("content", {}).get("question", "")
-    
-    prompt = f"""
-    A student answered the following question:
-    Question: {question}
-    Student's answer: {answer}
-    
-    Evaluate if the answer is correct. Return JSON:
-    {{
-      "correct": true/false,
-      "feedback": "Encouraging feedback explaining why the answer is correct or incorrect"
-    }}
-    """
-    
-    try:
-        json_string = ai_client.generate_text(
-            prompt=prompt,
-            context="",
-            task_type="standard",
-            require_json=True
-        )
-        
-        evaluation = json.loads(json_string)
-        is_correct = evaluation.get("correct", False)
-        
-        # Add answer to chat history
-        answer_entry = {
-            "role": "student",
-            "step": current_step,
-            "answer": answer,
-            "evaluation": evaluation
-        }
-        
-        update_data = {
-            "$push": {"chat_history": answer_entry},
-            "$set": {"updated_at": _utc_now()}
-        }
-        
-        # If correct, advance to next step
-        if is_correct:
-            update_data["$set"]["current_step"] = current_step + 1
-            update_data["$addToSet"] = {"completed_steps": current_step}  # Use $addToSet to avoid duplicates
-        
-        db.tutor_sessions.update_one({"_id": session_id}, update_data)
-        
-        return {
-            "correct": is_correct,
-            "feedback": evaluation.get("feedback", ""),
-            "next_step": current_step + 1 if is_correct else current_step
-        }
-        
-    except Exception as e:
-        logger.error(f"Error evaluating answer: {e}", exc_info=True)
-        raise
-
-
-def list_user_sessions(user_id: str, db_conn: Database = None) -> List[Dict]:
-    """
-    Lists all tutor sessions for a user.
-    
-    Args:
-        user_id: ID of the user
-        db_conn: Optional database connection
-        
-    Returns:
-        List of session dictionaries
-    """
-    db = _get_db(db_conn)
-    sessions = list(db.tutor_sessions.find({"user_id": user_id}).sort("created_at", -1))
-    return sessions
+    return answer
