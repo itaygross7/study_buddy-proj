@@ -55,8 +55,8 @@ class Settings(BaseSettings):
     # --- Webhook ---
     WEBHOOK_SECRET: str = ""
     
-    # --- Version for cache busting ---
-    VERSION: str = "2024.12.06"
+    # --- Version for cache busting (update when CSS changes) ---
+    VERSION: str = "2024.12.06.001"
 
 # Load settings
 settings = Settings()
