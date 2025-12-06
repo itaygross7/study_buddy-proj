@@ -70,6 +70,22 @@ This application provides a suite of tools to help students learn more effective
     docker-compose down
     ```
 
+### Troubleshooting Deployment Issues
+
+If you encounter permission issues, auto-update failures, or Docker problems, use the hard restart script:
+
+```bash
+./deploy-hard-restart.sh
+```
+
+This comprehensive script will:
+- Fix all permissions (Git, Docker, files)
+- Clean and rebuild Docker state
+- Verify deployment health
+- Configure auto-update flow
+
+For other issues, see the [Troubleshooting Guide](TROUBLESHOOTING.md).
+
 ## 🧪 Local Development & Testing
 
 1.  **Install Dependencies**:
