@@ -136,7 +136,7 @@ def test_real_file_upload() -> dict:
                 }
             
             # Clean up test file
-            if os.path.exists(test_file_path):
+            if test_file_path and os.path.exists(test_file_path):
                 os.remove(test_file_path)
                 logger.info(f"Cleaned up test file: {test_file_path}")
             
@@ -154,20 +154,20 @@ def test_real_file_upload() -> dict:
     except Exception as e:
         logger.error(f"File upload test failed: {e}", exc_info=True)
         
-        # Clean up on error
+        # Clean up test file on error
         if test_file_path and os.path.exists(test_file_path):
             try:
                 os.remove(test_file_path)
             except:
                 pass
         
+        # Clean up document on error (reuse existing app instance if possible)
         if document_id:
             try:
-                # Need app context for cleanup too
-                from app import create_app
-                app = create_app()
-                with app.app_context():
-                    db.documents.delete_one({"_id": document_id})
+                # Try to use app instance from outer scope if it exists
+                if 'app' in locals():
+                    with app.app_context():
+                        db.documents.delete_one({"_id": document_id})
             except:
                 pass
         
