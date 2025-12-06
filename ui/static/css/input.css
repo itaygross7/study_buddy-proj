@@ -488,9 +488,10 @@
     .btn-primary, .btn-secondary, button {
         -webkit-user-select: none;
         -moz-user-select: none;
-        -ms-user-select: none;
         user-select: none;
         -webkit-tap-highlight-color: transparent;
+        /* Prevent double-tap zoom on buttons */
+        touch-action: manipulation;
     }
     
     /* Improve scrolling on mobile */

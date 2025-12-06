@@ -193,16 +193,6 @@
                 e.stopPropagation();
             });
         }
-        
-        // Prevent iOS from zooming when double-tapping
-        let lastTouchEnd = 0;
-        document.addEventListener('touchend', function(e) {
-            const now = Date.now();
-            if (now - lastTouchEnd <= 300) {
-                e.preventDefault();
-            }
-            lastTouchEnd = now;
-        }, false);
     </script>
     {% block scripts %}{% endblock %}
 </body>
