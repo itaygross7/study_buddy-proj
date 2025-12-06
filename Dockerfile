@@ -11,6 +11,7 @@ RUN apt-get update && apt-get install -y \
     libpango-1.0-0 \
     libharfbuzz0b \
     libfontconfig1 \
+    libmagic1 \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Node.js for Tailwind CSS build
@@ -45,6 +46,7 @@ RUN apt-get update && apt-get install -y \
     libpango-1.0-0 \
     libharfbuzz0b \
     libfontconfig1 \
+    libmagic1 \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy installed Python packages from the builder stage
