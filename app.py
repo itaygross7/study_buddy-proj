@@ -125,7 +125,10 @@ def create_app():
     # --- Main UI Routes ---
     @app.route('/')
     def index():
-        return render_template('index.html')
+        from src.services.capybara_of_the_day_service import get_capybara_of_the_day, get_random_family_fact
+        capybara_of_day = get_capybara_of_the_day()
+        family_fact = get_random_family_fact()
+        return render_template('index.html', capybara_of_day=capybara_of_day, family_fact=family_fact)
 
     # Tool routes - redirect to library if no files uploaded
     @app.route('/tools/summary')

@@ -443,6 +443,59 @@
   </div>
 </div>
 
+<!-- Meet the Family - Capybara of the Day! -->
+<div class="mb-12 bg-gradient-to-l from-warm-yellow via-golden-yellow to-warm-beige p-8 rounded-3xl border-4 border-golden-yellow shadow-2xl">
+  <div class="text-center mb-6">
+    <h2 class="text-3xl font-black text-dark-brown mb-2">🦫 פגשו את המשפחה!</h2>
+    <p class="text-lg text-cozy-brown font-bold">הקפיברה המיוחד/ת של היום:</p>
+  </div>
+  
+  <div class="max-w-2xl mx-auto bg-white p-6 rounded-2xl border-4 border-warm-yellow shadow-xl">
+    <div class="flex flex-col md:flex-row items-center gap-6">
+      <!-- Capybara Image -->
+      <div class="flex-shrink-0">
+        <div class="relative">
+          <div class="absolute inset-0 bg-golden-yellow rounded-full blur-2xl opacity-40 animate-pulse"></div>
+          <img src="{{ url_for('serve_avner', filename=capybara_of_day.image) }}" 
+               alt="{{ capybara_of_day.name }}" 
+               class="relative w-40 h-40 rounded-full object-cover border-6 border-golden-yellow shadow-2xl hover:scale-105 transition-transform">
+        </div>
+        <div class="text-center mt-3">
+          <p class="text-2xl font-black text-dark-brown">{{ capybara_of_day.name }}</p>
+          <p class="text-sm text-warm-gray">({{ capybara_of_day.name_en }})</p>
+        </div>
+      </div>
+      
+      <!-- Avner's Comment -->
+      <div class="flex-1 text-right">
+        <div class="bg-gradient-to-l from-cream to-warm-beige p-5 rounded-xl border-2 border-warm-yellow shadow-md">
+          <div class="flex items-start gap-3 mb-3">
+            <img src="{{ url_for('serve_avner', filename='avner_signing_ok.jpeg') }}" 
+                 alt="אבנר" 
+                 class="w-12 h-12 rounded-full border-2 border-golden-yellow">
+            <div class="flex-1">
+              <p class="text-sm font-bold text-dark-brown mb-1">אבנר מספר:</p>
+              <p class="text-base text-cozy-brown leading-relaxed">{{ capybara_of_day.comment }}</p>
+            </div>
+          </div>
+          <div class="pt-3 border-t-2 border-warm-yellow/30">
+            <p class="text-sm text-warm-gray italic">✨ {{ capybara_of_day.personality }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Fun Fact -->
+    <div class="mt-6 bg-golden-yellow/20 p-4 rounded-xl border-2 border-golden-yellow/50 text-center">
+      <p class="text-sm font-bold text-dark-brown">{{ family_fact }}</p>
+    </div>
+    
+    <p class="text-xs text-center text-warm-gray mt-4">
+      💡 הקפיברה משתנה כל יום! חזרו מחר לפגוש עוד בן/בת משפחה 🦫
+    </p>
+  </div>
+</div>
+
 <!-- Final CTA -->
 {% if not current_user.is_authenticated %}
 <div class="my-12 bg-gradient-to-l from-caramel via-golden-yellow to-warm-yellow p-10 rounded-3xl shadow-2xl border-4 border-caramel text-center">
