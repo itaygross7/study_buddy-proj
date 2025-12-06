@@ -49,19 +49,19 @@
                 </div>
                 {% else %}
                 <!-- Standalone mode: need upload -->
-                <textarea name="text" class="w-full p-3 border rounded-lg text-right" rows="8" placeholder="הדביקו כאן את החומר ללמידה..."></textarea>
+                <textarea name="text" class="w-full p-3 border rounded-lg text-right mobile-scroll" style="font-size: 16px;" rows="8" placeholder="הדביקו כאן את החומר ללמידה..."></textarea>
                 
                 <div class="my-4 text-center text-gray-500">או</div>
                 
-                <input type="file" name="file" class="block w-full text-sm text-ink-brown file:ml-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:font-semibold file:bg-orange-100 file:text-capy-orange hover:file:bg-orange-200"/>
+                <input type="file" name="file" class="block w-full text-sm text-ink-brown file:ml-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:font-semibold file:bg-orange-100 file:text-capy-orange hover:file:bg-orange-200" style="font-size: 16px;"/>
                 {% endif %}
                 
                 <div class="mt-4">
-                    <label for="num_cards" class="block text-sm font-medium text-gray-700 text-right">מספר כרטיסיות (5-20):</label>
-                    <input type="number" name="num_cards" id="num_cards" value="10" min="5" max="20" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                    <label for="num_cards" class="block text-sm font-medium text-gray-700 text-right mb-2">מספר כרטיסיות (5-20):</label>
+                    <input type="number" name="num_cards" id="num_cards" value="10" min="5" max="20" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" style="font-size: 16px; min-height: 48px; padding: 0.75rem;">
                 </div>
 
-                <button type="submit" class="mt-6 w-full bg-capy-orange text-white font-bold py-3 px-5 rounded-lg shadow-sm hover:bg-opacity-90">
+                <button type="submit" class="mt-6 w-full bg-capy-orange text-white font-bold py-3 px-5 rounded-lg shadow-sm hover:bg-opacity-90 mobile-touch-target">
                     ✨ הפקת כרטיסיות
                 </button>
             </form>
