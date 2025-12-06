@@ -16,6 +16,7 @@ from src.domain.models.db_models import TaskStatus
 from src.domain.errors import DocumentNotFoundError
 from sb_utils.logger_utils import logger
 from src.utils.file_processing import process_file_from_path
+from src.utils.document_chunking import index_document_chunks
 
 # --- Database Connection for Worker ---
 try:
@@ -54,6 +55,22 @@ def process_task(body: bytes):
                 doc.content_text = text_content
                 doc_repo.update(doc)
                 logger.info(f"Successfully processed file '{filename}'", extra={"document_id": document_id})
+                
+                # Index document chunks for fast retrieval
+                try:
+                    chunk_count = index_document_chunks(
+                        db=db_conn,
+                        document_id=document_id,
+                        filename=filename,
+                        text=text_content,
+                        course_id=doc.course_id,
+                        user_id=doc.user_id
+                    )
+                    logger.info(f"Indexed {chunk_count} chunks for document '{filename}'", 
+                              extra={"document_id": document_id, "chunks": chunk_count})
+                except Exception as chunk_error:
+                    logger.error(f"Failed to index chunks for '{filename}': {chunk_error}", exc_info=True)
+                    # Don't fail the task if chunking fails, just log it
             
             # Clean up temp file and directory
             try:
