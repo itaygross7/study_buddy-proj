@@ -54,6 +54,9 @@ class Settings(BaseSettings):
 
     # --- Webhook ---
     WEBHOOK_SECRET: str = ""
+    
+    # --- Version for cache busting ---
+    VERSION: str = "2024.12.06"
 
 # Load settings
 settings = Settings()
