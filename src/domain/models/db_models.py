@@ -10,6 +10,13 @@ class TaskStatus(str, Enum):
     COMPLETED = "COMPLETED"
     FAILED = "FAILED"
 
+# --- THIS IS THE FIX ---
+class DocumentStatus(str, Enum):
+    UPLOADED = "UPLOADED"
+    PROCESSING = "PROCESSING"
+    READY = "READY"
+    FAILED = "FAILED"
+# --- END OF FIX ---
 
 class UserRole(str, Enum):
     USER = "user"

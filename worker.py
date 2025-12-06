@@ -1,10 +1,12 @@
 import json
 import os
 import shutil
-from tenacity import retry, stop_after_attempt, wait_fixed
-from pymongo import MongoClient
 import pika
 import time
+import uuid
+from datetime import datetime, timezone
+from tenacity import retry, stop_after_attempt, wait_fixed
+from pymongo import MongoClient
 
 from src.infrastructure.config import settings
 from src.infrastructure.repositories import MongoTaskRepository, MongoDocumentRepository
@@ -14,7 +16,7 @@ from src.domain.models.db_models import TaskStatus, DocumentStatus
 from src.domain.errors import DocumentNotFoundError
 from sb_utils.logger_utils import logger
 from src.utils.file_processing import process_uploaded_file
-from src.utils.smart_parser import create_smart_repository
+from src.utils.document_chunking import index_document_chunks
 
 # --- Database Connection ---
 try:
@@ -23,7 +25,7 @@ try:
     db_conn.command('ping')
     task_repo = MongoTaskRepository(db_conn)
     doc_repo = MongoDocumentRepository(db_conn)
-    file_service = FileService(db_conn) # Safe to initialize here for the worker
+    file_service = FileService(db_conn)
     logger.info("Worker successfully connected to MongoDB and services initialized.")
 except Exception as e:
     logger.critical(f"Worker failed to connect to MongoDB on startup: {e}", exc_info=True)
@@ -39,14 +41,13 @@ def process_task(body: bytes):
     logger.info(f"Starting processing for task {task_id}", extra={"queue": queue_name, "task_id": task_id})
     task_repo.update_status(task_id, TaskStatus.PROCESSING)
 
-    # Handle tasks that don't need a document first
+    # This is the only task that doesn't need a document
     if queue_name == 'homework':
         result_id = homework_service.solve_homework_problem(data['problem_statement'])
         task_repo.update_status(task_id, TaskStatus.COMPLETED, result_id=result_id)
         logger.info(f"Successfully completed task {task_id}", extra={"task_id": task_id})
         return
 
-    # All other tasks require a document
     document_id = data.get('document_id')
     if not document_id:
         raise ValueError(f"Task {task_id} of type {queue_name} is missing a document_id.")
@@ -55,8 +56,7 @@ def process_task(body: bytes):
     if not doc:
         raise DocumentNotFoundError(f"Document {document_id} not found for task {task_id}.")
 
-    text_content = ""
-    # If the document has a GridFS ID and is not ready, process it now.
+    text_content = doc.content_text
     if doc.gridfs_id and doc.status != DocumentStatus.READY:
         logger.info(f"Worker is processing file from GridFS for doc {doc.id}")
         file_stream = file_service.get_file_stream(doc.gridfs_id)
@@ -66,26 +66,18 @@ def process_task(body: bytes):
         text_content = process_uploaded_file(file_stream)
         
         try:
-            create_smart_repository(document_id, text_content)
+            index_document_chunks(db=db_conn, document_id=doc.id, filename=doc.filename, text=text_content, course_id=doc.course_id, user_id=doc.user_id)
         except Exception as e:
-            logger.warning(f"Smart repository creation failed for doc {document_id}: {e}")
+            logger.warning(f"Chunk indexing failed for doc {document_id}: {e}")
 
         doc.status = DocumentStatus.READY
-        doc.content_text = "" # No longer needed
+        doc.content_text = text_content # Store the processed text
         doc_repo.update(doc)
         
-        file_service.delete_file(doc.gridfs_id)
-        logger.info(f"Original GridFS file {doc.gridfs_id} deleted after successful processing.")
+        # We no longer delete the GridFS file, it's the source of truth
+        # file_service.delete_file(doc.gridfs_id) 
     
-    # For tasks on documents that were already processed (e.g. pure text input)
-    elif doc.gridfs_id and doc.status == DocumentStatus.READY:
-        # We need to retrieve the text from the smart repo as it's the source of truth
-        # This is a simplified retrieval for now.
-        logger.warning("Document already processed, but text not passed. This indicates a logic gap.")
-        text_content = "Could not retrieve processed text. Please re-upload."
-
-
-    # --- RESTORED: All AI task logic is present ---
+    result_id = None
     if queue_name == 'summarize':
         result_id = summary_service.generate_summary(doc.id, text_content, db_conn)
         try:
@@ -100,7 +92,6 @@ def process_task(body: bytes):
         result_id = assess_service.generate_assessment(doc.id, text_content, data['num_questions'], data['question_type'], db_conn)
     
     elif queue_name == 'avner_chat':
-        # This logic was also deleted and is now restored
         answer = avner_service.answer_question(question=data['question'], context=text_content, language=data.get('language', 'he'), baby_mode=data.get('baby_mode', False), user_id=data.get('user_id', ''), db_conn=db_conn)
         result_doc = {"_id": str(uuid.uuid4()), "answer": answer}
         db_conn.avner_results.insert_one(result_doc)
@@ -108,10 +99,12 @@ def process_task(body: bytes):
     else:
         raise ValueError(f"Unknown AI queue for worker: {queue_name}")
 
-    task_repo.update_status(task_id, TaskStatus.COMPLETED, result_id=result_id)
-    logger.info(f"Successfully completed task {task_id}", extra={"task_id": task_id})
+    if result_id:
+        task_repo.update_status(task_id, TaskStatus.COMPLETED, result_id=result_id)
+        logger.info(f"Successfully completed task {task_id}", extra={"task_id": task_id})
+    else:
+        task_repo.update_status(task_id, TaskStatus.FAILED, error_message="Task finished without a result.")
 
-# ... (main_callback and main function remain the same, but I will write them to be sure) ...
 def main_callback(ch, method, properties, body):
     task_id = "unknown"
     try:
