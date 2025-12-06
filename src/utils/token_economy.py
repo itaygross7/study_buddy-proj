@@ -66,7 +66,7 @@ class CacheManager:
     """
     
     def __init__(self, db_conn=None):
-        self.db = db_conn or flask_db
+        self.db = db_conn if db_conn is not None else flask_db
         self.cache_ttl_hours = 24  # Cache for 24 hours
     
     def _generate_cache_key(
@@ -151,7 +151,7 @@ class TokenTracker:
     """
     
     def __init__(self, db_conn=None):
-        self.db = db_conn or flask_db
+        self.db = db_conn if db_conn is not None else flask_db
         
         # Cost per 1K tokens (approximate)
         self.costs = {

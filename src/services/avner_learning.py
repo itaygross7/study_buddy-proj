@@ -56,7 +56,7 @@ class UsageAnalytics:
     """
     
     def __init__(self, db_conn: Database = None):
-        self.db = db_conn or flask_db
+        self.db = db_conn if db_conn is not None else flask_db
     
     def track_interaction(
         self,
@@ -181,7 +181,7 @@ class PreferenceLearner:
     """
     
     def __init__(self, db_conn: Database = None):
-        self.db = db_conn or flask_db
+        self.db = db_conn if db_conn is not None else flask_db
     
     def analyze_user_behavior(self, user_id: str) -> Dict[str, Any]:
         """
@@ -269,7 +269,7 @@ class AdminTeachingInterface:
     """
     
     def __init__(self, db_conn: Database = None):
-        self.db = db_conn or flask_db
+        self.db = db_conn if db_conn is not None else flask_db
     
     def add_teaching_example(
         self,
@@ -451,7 +451,7 @@ class ContinuousImprovement:
     """
     
     def __init__(self, db_conn: Database = None):
-        self.db = db_conn or flask_db
+        self.db = db_conn if db_conn is not None else flask_db
         self.analytics = UsageAnalytics(db_conn)
         self.learner = PreferenceLearner(db_conn)
         self.admin_interface = AdminTeachingInterface(db_conn)

@@ -22,7 +22,7 @@ from sb_utils.logger_utils import logger
 
 def _get_db(db_conn: Database = None) -> Database:
     """Returns the provided db_conn or the default Flask db proxy."""
-    return db_conn or flask_db
+    return db_conn if db_conn is not None else flask_db
 
 
 def check_mongodb(db_conn: Database = None) -> dict:
