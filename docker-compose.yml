@@ -30,6 +30,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    container_name:
     command: ["python", "worker.py"]
     volumes:
       - ./src:/app/src
@@ -91,9 +92,9 @@ services:
     image: cloudflare/cloudflared:latest
     container_name: studybuddy_cloudflared
     restart: unless-stopped
-    # The command now explicitly tells the tunnel to forward traffic
-    # to the 'app' service on port 5000 within the Docker network.
-    command: tunnel --no-autoupdate --url http://app:5000 run --token ${CLOUDFLARE_TUNNEL_TOKEN}
+    # The command should ONLY run the tunnel with the token.
+    # The routing to http://app:5000 is configured in the Cloudflare Dashboard.
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
     depends_on:
       - app
     networks:
