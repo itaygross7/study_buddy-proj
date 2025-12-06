@@ -23,7 +23,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: studybuddy_worker
     # --- THIS IS THE FIX ---
     # The command now correctly points to the worker script at the root.
     command: ["python", "worker.py"]
