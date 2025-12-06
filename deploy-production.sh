@@ -10,7 +10,7 @@ IFS=$'\n\t'
 # CONFIGURATION & GLOBALS
 # =============================================================================
 
-VERSION="2.2.0-autoscaling"
+VERSION="2.2.1-autoscaling"
 DEPLOY_START_TIME=$(date +%s)
 DEPLOY_DATE=$(date +%Y%m%d_%H%M%S)
 
@@ -27,6 +27,7 @@ readonly GREEN='\033[0;32m'
 readonly YELLOW='\033[1;33m'
 readonly BLUE='\033[0;34m'
 readonly CYAN='\033[0;36m'
+readonly WHITE='\033[1;37m'  # <--- FIXED: Added this missing definition
 readonly NC='\033[0m'
 
 # Directories
@@ -127,7 +128,7 @@ check_prerequisites() {
     fi
 
     # Verify tools
-    for cmd in docker git curl bc; do
+    for cmd in docker git curl; do
         if ! command -v $cmd &> /dev/null; then
             log_warning "Installing missing tool: $cmd"
             apt-get update -qq && apt-get install -y -qq $cmd
