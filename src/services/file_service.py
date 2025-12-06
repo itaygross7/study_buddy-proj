@@ -1,53 +1,57 @@
 import gridfs
-from datetime import datetime
-from werkzeug.datastructures import FileStorage
-from typing import List
 from bson import ObjectId
-
+from werkzeug.datastructures import FileStorage
 from src.infrastructure.database import db
-# from src.infrastructure.messaging import publish_file_processing_job
+from sb_utils.logger_utils import logger
 
 class FileService:
+    """A dedicated service for interacting with GridFS."""
+
     def __init__(self):
-        self._fs = None
+        self.fs = gridfs.GridFS(db)
 
-    @property
-    def fs(self):
-        """Lazy initialization of GridFS to ensure Flask app context is available."""
-        if self._fs is None:
-            self._fs = gridfs.GridFS(db)
-        return self._fs
+    def save_file(self, file_stream: FileStorage, user_id: str, course_id: str) -> ObjectId:
+        """
+        Streams a file directly to GridFS and returns the new file's ObjectId.
+        This is a safe, synchronous operation.
+        """
+        try:
+            file_id = self.fs.put(
+                file_stream,
+                filename=file_stream.filename,
+                contentType=file_stream.content_type,
+                metadata={
+                    "owner_id": user_id,
+                    "course_id": course_id
+                }
+            )
+            logger.info(f"Successfully saved file '{file_stream.filename}' to GridFS with ID: {file_id}")
+            return file_id
+        except Exception as e:
+            logger.error(f"Failed to save file to GridFS: {e}", exc_info=True)
+            raise
 
-    def upload_files_to_gridfs(self, files: List[FileStorage], user_id: str) -> List[str]:
+    def get_file_stream(self, gridfs_id: str):
         """
-        Streams a list of files directly to GridFS without loading them into memory.
+        Retrieves a file stream from GridFS by its ID.
         """
-        file_ids = []
-        for file_stream in files:
-            if file_stream and file_stream.filename:
-                file_id = self.fs.put(
-                    file_stream,
-                    filename=file_stream.filename,
-                    contentType=file_stream.content_type,
-                    metadata={
-                        "owner_id": user_id,
-                        "upload_date": datetime.utcnow()
-                    }
-                )
-                # publish_file_processing_job({"file_id": str(file_id), "user_id": user_id})
-                print(f"Published job for file_id: {file_id}")
-                file_ids.append(str(file_id))
-        return file_ids
-
-    def delete_file(self, file_id: str, user_id: str):
-        """
-        Deletes a file from GridFS, ensuring the user has ownership.
-        """
-        file_doc = self.fs.find_one({"_id": ObjectId(file_id), "metadata.owner_id": user_id})
-        if not file_doc:
-            raise PermissionError("File not found or user does not have permission to delete.")
-        
-        self.fs.delete(ObjectId(file_id))
-        print(f"Deleted file {file_id} for user {user_id}")
+        try:
+            gridfs_file = self.fs.get(ObjectId(gridfs_id))
+            return gridfs_file
+        except gridfs.errors.NoFile:
+            logger.error(f"No file found in GridFS with ID: {gridfs_id}")
+            return None
+        except Exception as e:
+            logger.error(f"Failed to retrieve file from GridFS with ID {gridfs_id}: {e}", exc_info=True)
+            raise
+            
+    def delete_file(self, gridfs_id: str):
+        """Deletes a file from GridFS."""
+        try:
+            self.fs.delete(ObjectId(gridfs_id))
+            logger.info(f"Deleted file from GridFS with ID: {gridfs_id}")
+        except Exception as e:
+            logger.error(f"Failed to delete file from GridFS with ID {gridfs_id}: {e}", exc_info=True)
+            raise
 
 file_service = FileService()

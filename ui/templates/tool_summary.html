@@ -15,72 +15,50 @@
         </div>
         
         <div class="mt-6">
-            <form id="upload-form"
-                  hx-post="{{ url_for('upload_bp.upload_route') }}" 
+            <!-- This form now correctly posts to the single, smart summary endpoint -->
+            <form id="summary-form"
+                  hx-post="{{ url_for('summary_bp.trigger_summary') }}" 
                   hx-encoding="multipart/form-data"
-                  hx-target="#upload-result"
+                  hx-target="#task-status-container"
                   hx-swap="innerHTML">
                 
-                <!-- Course ID Input -->
                 <div class="mb-4">
                     <label for="course_id" class="block text-sm font-medium text-gray-700 text-right">שם הקורס (אופציונלי)</label>
                     <input type="text" name="course_id" id="course_id" placeholder="לדוגמה: היסטוריה שנה א'" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm text-right">
                 </div>
                 
                 <textarea name="text" class="w-full p-3 border rounded-lg text-right" rows="8" placeholder="הדביקו כאן את החומר לסיכום..."></textarea>
-                
                 <div class="my-4 text-center text-gray-500">או</div>
-                
                 <input type="file" name="file" class="block w-full text-sm text-ink-brown file:ml-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:font-semibold file:bg-orange-100 file:text-capy-orange hover:file:bg-orange-200"/>
 
                 <button type="submit" class="mt-6 w-full bg-capy-orange text-white font-bold py-3 px-5 rounded-lg shadow-sm hover:bg-opacity-90">
-                    העלאה ועיבוד
+                    ✨ הפקת סיכום
                 </button>
             </form>
-            <div id="upload-result" class="mt-4 text-center"></div>
         </div>
     </div>
 
     <!-- Result Card -->
-    <div id="action-container" class="bg-white/80 p-6 rounded-2xl shadow-md min-h-[10rem]">
-        <div id="action-placeholder" class="flex flex-col items-center justify-center text-center text-ink-brown/60 h-full">
+    <div id="task-status-container" class="bg-white/80 p-6 rounded-2xl shadow-md min-h-[10rem]">
+        <div class="flex flex-col items-center justify-center text-center text-ink-brown/60 h-full">
             <img src="{{ url_for('serve_avner', filename='avner_reading.jpeg') }}" alt="אבנר קורא ספר" class="h-24 mb-4">
-            <p>העלו קובץ או טקסט כדי להתחיל.</p>
+            <p>התוצאות יופיעו כאן.</p>
         </div>
-        <div id="task-status-container" class="mt-4"></div>
     </div>
 </div>
 
 <script>
-// This script remains the same and will work correctly.
+// This script is now much simpler. It just needs to handle the initial response.
 document.body.addEventListener('htmx:afterOnLoad', function(evt) {
-    if (evt.target.id === 'upload-form') {
+    if (evt.target.id === 'summary-form') {
         const response = JSON.parse(evt.detail.xhr.responseText);
-        if (response.status === 'processing' && response.polling_url) {
-            const uploadResultDiv = document.getElementById('upload-result');
-            uploadResultDiv.setAttribute('hx-get', response.polling_url);
-            uploadResultDiv.setAttribute('hx-trigger', 'load, every 2s');
-            uploadResultDiv.setAttribute('hx-swap', 'innerHTML');
-            htmx.process(uploadResultDiv);
-        } else if (response.status === 'completed' && response.document_id) {
-            const actionContainer = document.getElementById('action-container');
-            actionContainer.innerHTML = `
-                <div class="flex items-center space-x-4 space-x-reverse mb-4">
-                    <img src="{{ url_for('serve_avner', filename='avner_notebook.jpeg') }}" alt="אבנר עם מחברת" class="h-16 w-16 flex-shrink-0">
-                    <div>
-                        <h2 class="text-xl font-bold text-warm-brown">מוכנים!</h2>
-                        <p class="text-ink-brown/80">המסמך <strong>${response.filename}</strong> מוכן. בואו ניצור לו סיכום!</p>
-                    </div>
-                </div>
-                <button hx-post="{{ url_for('summary_bp.trigger_summary') }}"
-                        hx-vals='{"document_id": "${response.document_id}"}'
-                        hx-target="#task-status-container"
-                        hx-swap="innerHTML"
-                        class="w-full bg-green-600 text-white font-bold py-3 px-5 rounded-lg shadow-sm hover:bg-green-700">
-                    ✨ הפקת סיכום
-                </button>
-            `;
-            htmx.process(actionContainer);
+        
+        // The server's response IS the initial state of the task status partial.
+        // We just need to tell HTMX to start polling it.
+        if (response.polling_url) {
+            const taskContainer = document.getElementById('task-status-container');
+            taskContainer.innerHTML = `<div hx-get="${response.polling_url}" hx-trigger="load, every 2s" hx-swap="outerHTML"></div>`;
+            htmx.process(taskContainer);
         }
     }
 });
