@@ -1,12 +1,14 @@
 """
 Capybara of the Day Service - Daily rotating capybara family member with funny commentary!
 Presents Avner's "family" with humor and personality.
+Now with real capybara photos from the internet!
 """
 import random
 from datetime import datetime
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from sb_utils.logger_utils import logger
+from src.services.capybara_image_fetcher import get_fetcher
 
 
 # Avner's extended capybara family names with personalities
@@ -135,12 +137,14 @@ def get_day_of_year() -> int:
     return datetime.now().timetuple().tm_yday
 
 
-def get_capybara_of_the_day() -> Dict[str, str]:
+def get_capybara_of_the_day() -> Optional[Dict[str, str]]:
     """
     Get the capybara family member of the day with funny commentary.
+    Fetches real capybara photos from Unsplash API.
+    Returns None if API is unavailable.
     
     Returns:
-        Dict with name, image, personality, and Avner's funny comment
+        Dict with name, image, personality, comment, and attribution, or None
     """
     try:
         # Use day of year to deterministically select family member
@@ -148,8 +152,14 @@ def get_capybara_of_the_day() -> Dict[str, str]:
         member_index = day % len(CAPYBARA_FAMILY)
         member = CAPYBARA_FAMILY[member_index]
         
-        # Select random image for this member
-        image = random.choice(member["images"])
+        # Get image from internet (with caching)
+        fetcher = get_fetcher()
+        image_data = fetcher.get_image_for_day(day)
+        
+        # If no image available, return None (don't show section)
+        if not image_data:
+            logger.info("No capybara images available - Meet the Family will be hidden")
+            return None
         
         # Generate funny comment
         # Try to find personality-specific comment first
@@ -168,26 +178,28 @@ def get_capybara_of_the_day() -> Dict[str, str]:
         
         logger.info(f"Capybara of the day: {member['name']} ({member['name_en']})")
         
-        return {
+        result = {
             "name": member["name"],
             "name_en": member["name_en"],
             "personality": member["personality"],
-            "image": image,
             "comment": comment,
-            "day": day
+            "day": day,
+            "image_url": image_data["url"],
+            "is_local": False
         }
+        
+        # Add attribution if from Unsplash
+        if "photographer" in image_data:
+            result["photographer"] = image_data["photographer"]
+            result["photographer_url"] = image_data["photographer_url"]
+            result["photo_url"] = image_data["photo_url"]
+        
+        return result
         
     except Exception as e:
         logger.error(f"Error getting capybara of the day: {e}", exc_info=True)
-        # Fallback to a safe default
-        return {
-            "name": "אבנר",
-            "name_en": "Avner",
-            "personality": "הקפיברה המיוחד שלכם",
-            "image": "avner_signing_ok.jpeg",
-            "comment": "היי! זה אני, אבנר! 🦫",
-            "day": 0
-        }
+        # Return None - don't show the section if there's an error
+        return None
 
 
 def get_random_family_fact() -> str:

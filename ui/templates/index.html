@@ -444,6 +444,7 @@
 </div>
 
 <!-- Meet the Family - Capybara of the Day! 🦫 -->
+{% if capybara_of_day %}
 <div class="mb-12 relative overflow-hidden">
   <!-- Decorative background -->
   <div class="absolute inset-0 bg-gradient-to-br from-warm-yellow/30 via-golden-yellow/20 to-cream/30 rounded-3xl"></div>
@@ -463,71 +464,84 @@
     
     <!-- Main Card -->
     <div class="max-w-3xl mx-auto">
-      <div class="bg-gradient-to-l from-cream via-white to-warm-beige p-6 md:p-8 rounded-2xl border-4 border-warm-yellow shadow-xl">
-        <div class="flex flex-col md:flex-row items-center md:items-start gap-6 md:gap-8">
+      <div class="bg-gradient-to-l from-cream via-white to-warm-beige p-4 md:p-8 rounded-2xl border-4 border-warm-yellow shadow-xl">
+        <div class="flex flex-col md:flex-row items-center md:items-start gap-4 md:gap-8">
           
           <!-- Left: Capybara Image & Name -->
-          <div class="flex-shrink-0 text-center">
+          <div class="flex-shrink-0 text-center w-full md:w-auto">
             <div class="relative inline-block">
               <!-- Glow effect -->
               <div class="absolute inset-0 bg-gradient-to-br from-golden-yellow to-warm-yellow rounded-full blur-2xl opacity-40 animate-pulse"></div>
               
-              <!-- Image -->
-              <img src="{{ url_for('serve_avner', filename=capybara_of_day.image) }}" 
+              <!-- Real Capybara Photo from Unsplash -->
+              <img src="{{ capybara_of_day.image_url }}" 
                    alt="{{ capybara_of_day.name }}" 
-                   class="relative w-48 h-48 rounded-full object-cover border-6 border-golden-yellow shadow-2xl hover:scale-105 transition-transform duration-300">
+                   class="relative w-40 h-40 md:w-48 md:h-48 rounded-full object-cover border-4 md:border-6 border-golden-yellow shadow-2xl hover:scale-105 transition-transform duration-300"
+                   loading="lazy">
               
               <!-- Decorative badge -->
-              <div class="absolute -bottom-2 -right-2 bg-golden-yellow text-dark-brown text-2xl w-14 h-14 rounded-full flex items-center justify-center border-4 border-white shadow-lg">
+              <div class="absolute -bottom-2 -right-2 bg-golden-yellow text-dark-brown text-xl md:text-2xl w-12 h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center border-4 border-white shadow-lg">
                 🦫
               </div>
             </div>
             
             <!-- Name Card -->
-            <div class="mt-4 bg-gradient-to-r from-golden-yellow to-warm-yellow p-4 rounded-xl shadow-md border-2 border-golden-yellow">
-              <p class="text-3xl font-black text-dark-brown leading-tight">{{ capybara_of_day.name }}</p>
-              <p class="text-sm text-cozy-brown font-medium mt-1">({{ capybara_of_day.name_en }})</p>
+            <div class="mt-4 bg-gradient-to-r from-golden-yellow to-warm-yellow p-3 md:p-4 rounded-xl shadow-md border-2 border-golden-yellow">
+              <p class="text-2xl md:text-3xl font-black text-dark-brown leading-tight">{{ capybara_of_day.name }}</p>
+              <p class="text-xs md:text-sm text-cozy-brown font-medium mt-1">({{ capybara_of_day.name_en }})</p>
             </div>
+            
+            <!-- Photo Attribution (Unsplash) - Mobile Friendly -->
+            {% if capybara_of_day.photographer %}
+            <div class="mt-3 text-xs text-warm-gray px-2">
+              <p class="leading-relaxed">Photo by <a href="{{ capybara_of_day.photographer_url }}?utm_source=StudyBuddy&utm_medium=referral" 
+                 target="_blank" rel="noopener" 
+                 class="underline hover:text-golden-yellow">{{ capybara_of_day.photographer }}</a></p>
+              <p class="leading-relaxed">on <a href="https://unsplash.com?utm_source=StudyBuddy&utm_medium=referral" 
+                 target="_blank" rel="noopener" 
+                 class="underline hover:text-golden-yellow">Unsplash</a></p>
+            </div>
+            {% endif %}
           </div>
           
           <!-- Right: Avner's Commentary -->
-          <div class="flex-1 space-y-4 text-right">
+          <div class="flex-1 space-y-4 text-right w-full">
             <!-- Avner's Speech Bubble -->
-            <div class="bg-gradient-to-l from-warm-beige to-cream p-6 rounded-2xl border-3 border-warm-yellow shadow-lg relative">
-              <!-- Speech bubble arrow (desktop) -->
+            <div class="bg-gradient-to-l from-warm-beige to-cream p-4 md:p-6 rounded-2xl border-2 md:border-3 border-warm-yellow shadow-lg relative">
+              <!-- Speech bubble arrow (desktop only) -->
               <div class="hidden md:block absolute right-full top-8 w-0 h-0 border-t-[15px] border-t-transparent border-b-[15px] border-b-transparent border-r-[20px] border-r-warm-beige"></div>
               
-              <div class="flex items-start gap-4 mb-4">
+              <div class="flex items-start gap-3 md:gap-4 mb-3 md:mb-4">
                 <div class="flex-1">
-                  <div class="flex items-center gap-2 mb-3">
+                  <div class="flex items-center gap-2 mb-2 md:mb-3">
                     <img src="{{ url_for('serve_avner', filename='avner_signing_ok.jpeg') }}" 
                          alt="אבנר" 
-                         class="w-12 h-12 rounded-full border-3 border-golden-yellow shadow-md">
+                         class="w-10 h-10 md:w-12 md:h-12 rounded-full border-2 md:border-3 border-golden-yellow shadow-md">
                     <div>
-                      <p class="text-sm font-bold text-dark-brown">אבנר מספר:</p>
-                      <p class="text-xs text-warm-gray">מומחה המשפחה 🦫</p>
+                      <p class="text-xs md:text-sm font-bold text-dark-brown">אבנר מספר:</p>
+                      <p class="text-xs text-warm-gray hidden md:block">מומחה המשפחה 🦫</p>
                     </div>
                   </div>
-                  <p class="text-lg text-cozy-brown leading-relaxed font-medium">
+                  <p class="text-base md:text-lg text-cozy-brown leading-relaxed font-medium">
                     {{ capybara_of_day.comment }}
                   </p>
                 </div>
               </div>
               
               <!-- Personality Badge -->
-              <div class="flex items-center gap-2 pt-4 border-t-2 border-warm-yellow/40">
-                <span class="text-2xl">✨</span>
-                <p class="text-sm text-warm-gray italic flex-1">{{ capybara_of_day.personality }}</p>
+              <div class="flex items-center gap-2 pt-3 md:pt-4 border-t-2 border-warm-yellow/40">
+                <span class="text-xl md:text-2xl">✨</span>
+                <p class="text-xs md:text-sm text-warm-gray italic flex-1">{{ capybara_of_day.personality }}</p>
               </div>
             </div>
             
             <!-- Fun Family Fact -->
-            <div class="bg-gradient-to-r from-golden-yellow/20 to-warm-yellow/20 p-5 rounded-xl border-2 border-golden-yellow/60 shadow-md">
+            <div class="bg-gradient-to-r from-golden-yellow/20 to-warm-yellow/20 p-4 md:p-5 rounded-xl border-2 border-golden-yellow/60 shadow-md">
               <div class="flex items-start gap-3">
-                <span class="text-3xl flex-shrink-0">💡</span>
+                <span class="text-2xl md:text-3xl flex-shrink-0">💡</span>
                 <div class="flex-1">
                   <p class="text-xs font-bold text-dark-brown mb-1 uppercase tracking-wide">עובדה משפחתית</p>
-                  <p class="text-sm font-medium text-cozy-brown leading-relaxed">{{ family_fact }}</p>
+                  <p class="text-xs md:text-sm font-medium text-cozy-brown leading-relaxed">{{ family_fact }}</p>
                 </div>
               </div>
             </div>
@@ -535,18 +549,23 @@
         </div>
       </div>
       
-      <!-- Bottom Info -->
-      <div class="mt-6 text-center">
-        <div class="inline-flex items-center gap-2 bg-white/80 px-5 py-3 rounded-full border-2 border-warm-yellow/50 shadow-md">
-          <span class="text-2xl animate-pulse">🗓️</span>
-          <p class="text-sm font-medium text-dark-brown">
-            הקפיברה משתנה כל יום ב-00:00 • עוד <span class="font-bold text-golden-yellow">{{ 12 - capybara_of_day.name|length }}</span> בני משפחה לגלות!
+      <!-- Bottom Info - Mobile Optimized -->
+      <div class="mt-4 md:mt-6 text-center px-2">
+        <div class="inline-flex flex-col md:flex-row items-center gap-2 bg-white/80 px-4 md:px-5 py-3 rounded-full border-2 border-warm-yellow/50 shadow-md">
+          <span class="text-xl md:text-2xl animate-pulse">🗓️</span>
+          <p class="text-xs md:text-sm font-medium text-dark-brown text-center">
+            הקפיברה משתנה כל יום ב-00:00<span class="hidden md:inline"> • עוד <span class="font-bold text-golden-yellow">{{ 12 - capybara_of_day.name|length }}</span> בני משפחה לגלות!</span>
           </p>
         </div>
+        <!-- Mobile only - second line -->
+        <p class="md:hidden text-xs text-warm-gray mt-2">
+          עוד <span class="font-bold text-golden-yellow">11</span> בני משפחה לגלות!
+        </p>
       </div>
     </div>
   </div>
 </div>
+{% endif %}
 
 <!-- Final CTA -->
 {% if not current_user.is_authenticated %}
