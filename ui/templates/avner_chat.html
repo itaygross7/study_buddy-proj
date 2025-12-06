@@ -178,8 +178,10 @@
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 
-    chatForm.addEventListener('submit', async (e) => {
+    // Enhanced for iOS Safari compatibility
+    chatForm.addEventListener('submit', function(e) {
         e.preventDefault();
+        e.stopPropagation();
         
         const question = questionInput.value.trim();
         if (!question) return;
@@ -191,60 +193,100 @@
         // Show loading
         loadingIndicator.classList.remove('hidden');
         
-        try {
-            const babyMode = babyModeToggle.checked;
-            const courseId = courseSelector ? courseSelector.value : '';
-            
-            const response = await fetch('/api/avner/ask', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    question: question,
-                    baby_mode: babyMode,
-                    course_id: courseId
-                })
-            });
-            
-            const data = await response.json();
-            
-            if (data.error) {
-                addMessage(`שגיאה: ${data.error}`, false, 'sarcastic');
-            } else {
-                // Determine image variant based on context
-                let imageVariant = 'happy';
-                if (babyMode) {
-                    imageVariant = 'baby';
-                } else if (data.used_ai) {
-                    imageVariant = 'explaining';
-                }
-                
-                addMessage(data.answer, false, imageVariant);
-                
-                // Update prompts counter if available
-                if (data.prompts_used && data.prompts_limit && promptsCounter) {
-                    promptsCounter.textContent = `שאלות היום: ${data.prompts_used}/${data.prompts_limit}`;
-                }
-            }
-        } catch (error) {
-            console.error('Error:', error);
-            addMessage('אופס! משהו השתבש בחיבור לשרת. אנא בדוק את החיבור לאינטרנט ונסה שוב 🦫', false, 'sarcastic');
-        } finally {
+        // Use XMLHttpRequest for better iOS Safari compatibility
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', '/api/avner/ask', true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        
+        const babyMode = babyModeToggle.checked;
+        const courseId = courseSelector ? courseSelector.value : '';
+        
+        xhr.onload = function() {
             loadingIndicator.classList.add('hidden');
-        }
+            
+            if (xhr.status >= 200 && xhr.status < 300) {
+                try {
+                    const data = JSON.parse(xhr.responseText);
+                    
+                    if (data.error) {
+                        addMessage('שגיאה: ' + data.error, false, 'sarcastic');
+                    } else {
+                        // Determine image variant based on context
+                        let imageVariant = 'happy';
+                        if (babyMode) {
+                            imageVariant = 'baby';
+                        } else if (data.used_ai) {
+                            imageVariant = 'explaining';
+                        }
+                        
+                        addMessage(data.answer, false, imageVariant);
+                        
+                        // Update prompts counter if available
+                        if (data.prompts_used && data.prompts_limit && promptsCounter) {
+                            promptsCounter.textContent = 'שאלות היום: ' + data.prompts_used + '/' + data.prompts_limit;
+                        }
+                    }
+                } catch (parseError) {
+                    console.error('Parse error:', parseError);
+                    addMessage('אופס! שגיאה בעיבוד התגובה מהשרת 🦫', false, 'sarcastic');
+                }
+            } else {
+                addMessage('אופס! שגיאת שרת. אנא נסה שוב 🦫', false, 'sarcastic');
+            }
+        };
+        
+        xhr.onerror = function() {
+            loadingIndicator.classList.add('hidden');
+            console.error('Network error');
+            addMessage('אופס! משהו השתבש בחיבור לשרת. אנא בדוק את החיבור לאינטרנט ונסה שוב 🦫', false, 'sarcastic');
+        };
+        
+        xhr.send(JSON.stringify({
+            question: question,
+            baby_mode: babyMode,
+            course_id: courseId
+        }));
     });
 
-    // Enter to send (Shift+Enter for new line)
-    questionInput.addEventListener('keydown', (e) => {
+    // Enter to send (Shift+Enter for new line) - iOS 8 compatible
+    questionInput.addEventListener('keydown', function(e) {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
-            chatForm.dispatchEvent(new Event('submit'));
+            // iOS 8 compatible event dispatch
+            if (typeof Event === 'function') {
+                chatForm.dispatchEvent(new Event('submit'));
+            } else {
+                var event = document.createEvent('Event');
+                event.initEvent('submit', true, true);
+                chatForm.dispatchEvent(event);
+            }
         }
     });
 
+    // iOS-specific: Scroll chat into view when keyboard appears
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    if (isIOS) {
+        questionInput.addEventListener('focus', function() {
+            // Small delay to ensure keyboard is shown
+            setTimeout(function() {
+                // iOS 8 compatible scrollIntoView
+                if (questionInput.scrollIntoView) {
+                    try {
+                        questionInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    } catch (e) {
+                        // Fallback for older iOS
+                        questionInput.scrollIntoView(true);
+                    }
+                }
+            }, 300);
+        });
+        
+        // Ensure chat messages area is scrollable with momentum on iOS
+        chatMessages.style.webkitOverflowScrolling = 'touch';
+    }
+
     // Baby mode toggle effect
-    babyModeToggle.addEventListener('change', (e) => {
+    babyModeToggle.addEventListener('change', function(e) {
         const image = document.getElementById('baby-mode-image');
         if (e.target.checked) {
             image.src = '{{ url_for("serve_avner", filename="baby_avner.png") }}';

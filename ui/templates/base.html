@@ -158,6 +158,9 @@
         const menuIconClose = document.getElementById('menu-icon-close');
         
         if (mobileMenuButton && mobileMenu) {
+            // iOS detection for specific handling
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+            
             // Toggle menu on button click
             mobileMenuButton.addEventListener('click', function(e) {
                 e.preventDefault();
@@ -167,7 +170,7 @@
                 if (isOpen) {
                     // Closing animation
                     mobileMenu.style.animation = 'slideUp 0.2s ease-out';
-                    setTimeout(() => {
+                    setTimeout(function() {
                         mobileMenu.classList.add('hidden');
                         mobileMenu.style.animation = '';
                     }, 200);
@@ -186,12 +189,23 @@
                 }
             });
             
+            // iOS-specific: Add touch event for better responsiveness
+            if (isIOS) {
+                mobileMenuButton.addEventListener('touchstart', function(e) {
+                    // Add visual feedback
+                    this.style.opacity = '0.8';
+                });
+                mobileMenuButton.addEventListener('touchend', function(e) {
+                    this.style.opacity = '1';
+                });
+            }
+            
             // Close menu when clicking menu items
             const menuLinks = mobileMenu.querySelectorAll('a');
-            menuLinks.forEach(link => {
+            menuLinks.forEach(function(link) {
                 link.addEventListener('click', function() {
                     mobileMenu.style.animation = 'slideUp 0.2s ease-out';
-                    setTimeout(() => {
+                    setTimeout(function() {
                         mobileMenu.classList.add('hidden');
                         menuIconOpen.classList.remove('hidden');
                         menuIconClose.classList.add('hidden');
@@ -205,7 +219,7 @@
                 if (!mobileMenu.contains(e.target) && !mobileMenuButton.contains(e.target)) {
                     if (!mobileMenu.classList.contains('hidden')) {
                         mobileMenu.style.animation = 'slideUp 0.2s ease-out';
-                        setTimeout(() => {
+                        setTimeout(function() {
                             mobileMenu.classList.add('hidden');
                             menuIconOpen.classList.remove('hidden');
                             menuIconClose.classList.add('hidden');
@@ -256,12 +270,13 @@
         });
         
         // Add smooth scroll behavior for anchor links
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                const href = this.getAttribute('href');
+        var anchorLinks = document.querySelectorAll('a[href^="#"]');
+        for (var i = 0; i < anchorLinks.length; i++) {
+            anchorLinks[i].addEventListener('click', function (e) {
+                var href = this.getAttribute('href');
                 if (href !== '#' && href !== '#!') {
                     e.preventDefault();
-                    const target = document.querySelector(href);
+                    var target = document.querySelector(href);
                     if (target) {
                         target.scrollIntoView({
                             behavior: 'smooth',
@@ -270,17 +285,18 @@
                     }
                 }
             });
-        });
+        }
         
         // Improve touch feedback for all buttons and links
-        document.querySelectorAll('button, a, .btn-primary, .btn-secondary').forEach(element => {
-            element.addEventListener('touchstart', function() {
+        var touchElements = document.querySelectorAll('button, a, .btn-primary, .btn-secondary');
+        for (var j = 0; j < touchElements.length; j++) {
+            touchElements[j].addEventListener('touchstart', function() {
                 this.style.opacity = '0.9';
             });
-            element.addEventListener('touchend', function() {
+            touchElements[j].addEventListener('touchend', function() {
                 this.style.opacity = '';
             });
-        });
+        }
     </script>
     {% block scripts %}{% endblock %}
 </body>
