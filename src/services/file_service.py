@@ -53,9 +53,10 @@ def get_file_service() -> FileService:
     """
     Factory function to get a FileService instance.
     It uses the Flask 'g' object to ensure a single instance per request.
+    This is the ONLY safe way to use it within the Flask app.
     """
     if 'file_service' not in g:
-        # The 'db' proxy resolves correctly here because this function
-        # will only be called within a request context.
+        # The 'db' proxy resolves to the real database object here
+        # because this function is only ever called within a request context.
         g.file_service = FileService(db)
     return g.file_service

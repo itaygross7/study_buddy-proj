@@ -6,7 +6,7 @@ from werkzeug.utils import secure_filename
 from src.infrastructure.database import db
 from src.infrastructure.repositories import MongoDocumentRepository, MongoTaskRepository
 from src.infrastructure.rabbitmq import publish_task
-from src.domain.models.db_models import Document, Task
+from src.domain.models.db_models import Document, Task, DocumentStatus
 from src.services.file_service import get_file_service # IMPORT THE FACTORY
 from sb_utils.logger_utils import logger
 
@@ -32,16 +32,19 @@ def trigger_summary():
             task_body['document_id'] = document_id
 
         elif text_input:
-            document = Document(_id=str(uuid.uuid4()), user_id=user_id, course_id=course_id, filename="הדבקת טקסט.txt", content_text=text_input, gridfs_id=None)
+            file_service = get_file_service() # Get service instance safely
+            document = Document(_id=str(uuid.uuid4()), user_id=user_id, course_id=course_id, filename="הדבקת טקסט.txt", content_text="", status=DocumentStatus.READY, gridfs_id=None)
+            gridfs_id = file_service.fs.put(text_input.encode('utf-8'), filename=document.filename, metadata={"owner_id": user_id, "course_id": course_id})
+            document.gridfs_id = str(gridfs_id)
             doc_repo.create(document)
             task_body['document_id'] = document.id
 
         elif file and file.filename:
-            file_service = get_file_service() # GET THE INSTANCE HERE
+            file_service = get_file_service() # Get service instance safely
             filename = secure_filename(file.filename)
             gridfs_id = file_service.save_file(file, user_id, course_id)
 
-            document = Document(_id=str(uuid.uuid4()), user_id=user_id, course_id=course_id, filename=filename, content_text="[File content stored in GridFS]", gridfs_id=str(gridfs_id))
+            document = Document(_id=str(uuid.uuid4()), user_id=user_id, course_id=course_id, filename=filename, content_text="[File uploaded, pending processing]", status=DocumentStatus.UPLOADED, gridfs_id=str(gridfs_id))
             doc_repo.create(document)
             task_body['document_id'] = document.id
         
