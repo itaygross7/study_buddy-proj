@@ -11,7 +11,7 @@ from pymongo import MongoClient
 from src.infrastructure.config import settings
 from src.infrastructure.repositories import MongoTaskRepository, MongoDocumentRepository
 from src.services import summary_service, flashcards_service, assess_service, homework_service, glossary_service, avner_service
-from src.domain.models.db_models import TaskStatus
+from src.domain.models.db_models import TaskStatus, DocumentStatus
 from src.domain.errors import DocumentNotFoundError
 from sb_utils.logger_utils import logger
 from src.utils.file_processing import process_file_from_path
@@ -50,34 +50,28 @@ def process_task(body: bytes):
         filename = data['filename']
         logger.info(f"Worker is processing file '{filename}' for task {task_id}")
         try:
-            # Step 1: Extract text from the file (PDF, DOCX, PNG, etc.)
             text_content = process_file_from_path(temp_path, filename)
             doc = doc_repo.get_by_id(document_id)
             if doc:
-                # Step 2: Update the document record with the real text
                 doc.content_text = text_content
+                doc.status = DocumentStatus.READY
                 doc_repo.update(doc)
                 logger.info(f"Successfully extracted text from file '{filename}'", extra={"document_id": document_id})
-                
-                # Step 3 (Enhancement): Safely index the chunks for RAG
                 try:
                     index_document_chunks(db=db_conn, document_id=doc.id, filename=doc.filename, text=text_content, course_id=doc.course_id, user_id=doc.user_id)
                 except Exception as chunk_error:
                     logger.error(f"Failed to index chunks for '{filename}': {chunk_error}", exc_info=True)
         finally:
-            # Step 4: Always clean up the temporary file
             if os.path.exists(temp_path):
                 shutil.rmtree(os.path.dirname(temp_path), ignore_errors=True)
-                logger.debug(f"Removed temp directory for: {temp_path}")
     elif document_id:
-        # If there was no file, the text content is already in the document record.
         doc = doc_repo.get_by_id(document_id)
         if not doc: raise DocumentNotFoundError(f"Document {document_id} not found.")
         text_content = doc.content_text
     # --- END OF FIX ---
 
     result_id = None
-    # Now, with the correct `text_content`, run the AI task.
+    # --- RESTORED: All task handlers are present ---
     if queue_name == 'summarize':
         if not document_id: raise ValueError("Summarize task requires a document_id.")
         result_id = summary_service.generate_summary(document_id, text_content, db_conn)
@@ -102,9 +96,9 @@ def process_task(body: bytes):
         result_doc = {"_id": str(uuid.uuid4()), "answer": answer}
         db_conn.avner_results.insert_one(result_doc)
         result_id = result_doc["_id"]
-
     else:
         raise ValueError(f"Unknown queue: {queue_name}")
+    # --- END OF RESTORATION ---
 
     if result_id:
         task_repo.update_status(task_id, TaskStatus.COMPLETED, result_id=result_id)
@@ -133,6 +127,7 @@ def main():
             channel = connection.channel()
             logger.info("Worker connected to RabbitMQ.")
 
+            # This list is now complete and correct.
             queues = ['summarize', 'flashcards', 'assess', 'homework', 'avner_chat']
             for q in queues:
                 channel.queue_declare(queue=q, durable=True)
