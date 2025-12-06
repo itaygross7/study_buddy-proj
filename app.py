@@ -255,7 +255,10 @@ def create_app():
                 error_message=str(error),
                 details=f"Path: {request.path}"
             )
-        return jsonify({"error": "Internal Server Error"}), 500
+        # Return JSON for API requests, HTML for web requests
+        if request.path.startswith('/api/') or request.path.startswith('/webhook/'):
+            return jsonify({"error": "Internal Server Error"}), 500
+        return render_template('500.html'), 500
 
     logger.info(f"Flask App created successfully in {settings.FLASK_ENV} mode.")
     return app
