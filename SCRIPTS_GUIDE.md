@@ -8,6 +8,7 @@ This guide documents all scripts in the project and their current status.
 
 | Script | Purpose | When to Use |
 |--------|---------|-------------|
+| **deploy-hard-restart.sh** 🔧 | Hard restart with permission fixes | When auto-update fails, Docker issues, or system in bad state |
 | **start-local.sh** ⭐ | Start for local network access | Testing on home network, access from phone/tablet |
 | **deploy-production.sh** ⭐ | Full production deployment | Production servers with domain and HTTPS |
 | **deploy-simple.sh** ⭐ | Simple one-click deployment | Quick testing, development |
@@ -38,7 +39,58 @@ This guide documents all scripts in the project and their current status.
 
 ## 🚀 Deployment Scripts (Root Directory)
 
-### ⭐ start-local.sh (NEW - Recommended)
+### 🔧 deploy-hard-restart.sh (NEW - Emergency Tool)
+
+**Purpose:** Complete hard restart with comprehensive permission fixes and clean rebuild
+
+**When to use:**
+- Auto-update flow is failing due to permission issues
+- Docker permission errors preventing deployments
+- Git permission issues blocking updates
+- System is in an inconsistent state after failed deployment
+- Need to reset everything without losing data
+
+**What it does:**
+- Fixes Git repository ownership and permissions
+- Fixes Docker group membership and permissions
+- Fixes all file and directory permissions
+- Cleans Docker state (stops containers, removes old images)
+- Rebuilds all services from scratch with no cache
+- Verifies deployment health
+- Configures auto-update cron job (optional)
+- Creates detailed log file for troubleshooting
+
+**Usage:**
+```bash
+./deploy-hard-restart.sh
+```
+
+**Features:**
+- Interactive prompts for destructive operations
+- Detailed logging to /tmp/studybuddy-hard-restart-*.log
+- Color-coded output for easy reading
+- Comprehensive pre-flight checks
+- Health verification after deployment
+- Safe for production (preserves data in Docker volumes)
+
+**Important Notes:**
+- User must have sudo access
+- Docker volumes (database data) are preserved
+- Containers and images are rebuilt from scratch
+- May require logout/login for Docker group changes to take full effect
+- Creates timestamped log file for audit trail
+
+**What it fixes:**
+1. **Git Permissions**: Sets correct ownership, makes scripts executable
+2. **Docker Permissions**: Adds user to docker group, verifies daemon
+3. **File Permissions**: Fixes log directories, update scripts, data directories
+4. **Auto-update Flow**: Ensures all scripts have correct permissions
+5. **Docker State**: Removes old containers, cleans up images
+6. **Service Configuration**: Handles systemd conflicts, rebuilds cleanly
+
+---
+
+### ⭐ start-local.sh (Recommended)
 
 **Purpose:** Start StudyBuddy for local network access without Caddy/HTTPS
 
@@ -327,6 +379,11 @@ nano .env
 
 ## 📖 For Users: Which Script Should I Use?
 
+### Auto-update is broken or Docker permission errors
+```bash
+./deploy-hard-restart.sh
+```
+
 ### I want to access from my phone on the same WiFi
 ```bash
 ./start-local.sh
@@ -375,7 +432,8 @@ docker compose restart app
 ## 📝 Summary
 
 ### Keep & Maintain
-- ✅ start-local.sh (NEW)
+- ✅ deploy-hard-restart.sh (NEW - Emergency tool)
+- ✅ start-local.sh
 - ✅ deploy-production.sh
 - ✅ deploy-simple.sh
 - ✅ All scripts in scripts/ directory
@@ -386,7 +444,7 @@ docker compose restart app
 - ⚠️ deploy-check-only.sh (rarely used)
 
 ### Action Items
-1. Update README to promote new start-local.sh
+1. Update README to promote new deploy-hard-restart.sh for troubleshooting
 2. Add deprecation warnings to old scripts
 3. Update all documentation to reference correct scripts
 4. Consider cleanup in future version

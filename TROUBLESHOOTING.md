@@ -2,6 +2,32 @@
 
 This guide helps you diagnose and fix common issues with StudyBuddy.
 
+## Emergency Recovery
+
+### Complete System Reset (When Everything Is Broken)
+
+If you're experiencing multiple issues or the system is in an inconsistent state:
+
+```bash
+./deploy-hard-restart.sh
+```
+
+This script will:
+- Fix all permissions (Git, Docker, files)
+- Clean Docker state completely
+- Rebuild all services from scratch
+- Verify deployment health
+- Configure auto-update flow
+
+**Use this when:**
+- Auto-update is failing with permission errors
+- Docker commands require sudo unexpectedly
+- Git operations are blocked
+- Multiple deployment attempts have failed
+- System is in an unknown state
+
+---
+
 ## Quick Diagnosis Tool
 
 Run the configuration checker to identify missing or invalid configurations:
@@ -297,7 +323,83 @@ npm run tailwind:build
 
 ---
 
-### 6. "Cannot Verify" Error After Email Click 🔗
+### 6. Permission Issues / Auto-Update Failing 🔒
+
+**Symptoms:**
+- "Permission denied" errors when running scripts
+- Docker commands require sudo unexpectedly
+- Auto-update script fails with permission errors
+- Git operations blocked or fail
+- Can't write to log directories
+
+**Solutions:**
+
+#### A. Run the Hard Restart Script (Recommended)
+This fixes all permission issues automatically:
+```bash
+./deploy-hard-restart.sh
+```
+
+This comprehensive script will:
+- Fix Git repository ownership and permissions
+- Fix Docker group membership
+- Fix all file and script permissions
+- Rebuild services cleanly
+- Verify everything works
+
+#### B. Manual Docker Permission Fix
+If you only need to fix Docker permissions:
+```bash
+# Add user to docker group
+sudo usermod -aG docker $USER
+
+# Apply group changes
+newgrp docker
+
+# Verify it works
+docker ps
+```
+
+If still having issues, logout and login again.
+
+#### C. Fix Script Permissions
+Make all shell scripts executable:
+```bash
+find . -type f -name "*.sh" -exec chmod +x {} \;
+```
+
+#### D. Fix Git Permissions
+```bash
+# Set safe directory
+git config --global --add safe.directory $(pwd)
+
+# Fix ownership
+sudo chown -R $USER:$USER .
+
+# Fix .git permissions
+chmod -R u+rwX,go+rX,go-w .git
+```
+
+#### E. Fix Log Directory
+```bash
+sudo mkdir -p /var/log/studybuddy
+sudo chown $USER:$USER /var/log/studybuddy
+sudo chmod 755 /var/log/studybuddy
+```
+
+#### F. Check Auto-Update Logs
+If auto-update is failing:
+```bash
+# Check auto-update log
+cat /var/log/studybuddy/auto-update.log
+
+# Run auto-update manually with verbose output
+./scripts/auto-update.sh
+```
+
+---
+
+### 7. "Cannot Verify" Error After Email Click 🔗
 
 **Symptoms:**
 - Click verification link in email
@@ -457,6 +559,9 @@ ADMIN_EMAIL="admin@example.com"
 
 | Issue | Quick Fix |
 |-------|-----------|
+| System in bad state / Multiple issues | Run `./deploy-hard-restart.sh` to fix everything |
+| Permission errors | Run `./deploy-hard-restart.sh` or manually fix Docker group |
+| Auto-update failing | Check `/var/log/studybuddy/auto-update.log`, run `./deploy-hard-restart.sh` |
 | Google Sign-In | Check `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in `.env`, verify redirect URI in Google Console |
 | Email verification | Configure SMTP in `.env`, ensure `BASE_URL` is correct |
 | Network access | Check firewall: `sudo ufw allow 5000/tcp`, verify binding to `0.0.0.0` |
