@@ -1,15 +1,10 @@
 version: '3.8'
 
-networks:
-  studybuddy_network:
-    driver: bridge
-
 services:
   app:
     build:
       context: .
       dockerfile: Dockerfile
-    # REMOVED: container_name to allow scaling
     volumes:
       - ./src:/app/src
       - ./sb_utils:/app/sb_utils
@@ -50,9 +45,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    # --- THIS IS THE FIX ---
-    # REMOVED: container_name to allow scaling with 'docker-compose up --scale worker=9'
-    # --- END OF FIX ---
+    # Scale this service using: docker-compose up --scale worker=X
     command: ["python", "worker.py"]
     volumes:
       - ./src:/app/src
@@ -84,7 +77,8 @@ services:
       - ./src:/app/src
       - ./sb_utils:/app/sb_utils
       - ./health_monitor.py:/app/health_monitor.py
-      - /var/run/docker.sock:/var/run/docker.sock
+      # Added :ro for security (Read-Only access to socket)
+      - /var/run/docker.sock:/var/run/docker.sock:ro
     env_file: .env
     depends_on:
       - app
@@ -113,7 +107,7 @@ services:
     image: rabbitmq:3.9-management
     container_name: studybuddy_rabbitmq
     ports:
-      - "127.0.0.1:15672:15672" 
+      - "127.0.0.1:15672:15672"
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-user}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS:-password}
@@ -127,3 +121,11 @@ services:
       retries: 5
     networks:
       - studybuddy_network
+
+networks:
+  studybuddy_network:
+    driver: bridge
+
+volumes:
+  mongo_data:
+  rabbitmq_data:
