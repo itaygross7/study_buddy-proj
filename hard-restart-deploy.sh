@@ -86,28 +86,31 @@ fix_script_permissions() {
     
     local script_count=0
     
-    # Main directory scripts
-    # Use nullglob to handle case when no .sh files exist
-    shopt -s nullglob
-    for script in *.sh; do
-        if [ -f "$script" ]; then
-            chmod +x "$script" 2>/dev/null || $SUDO chmod +x "$script"
-            log_success "Fixed: $script"
-            ((script_count++))
-        fi
-    done
-    
-    # Scripts directory
-    if [ -d "scripts" ]; then
-        for script in scripts/*.sh; do
+    # Enable nullglob to handle case when no .sh files exist
+    # Use a subshell to automatically reset nullglob on function exit
+    (
+        shopt -s nullglob
+        
+        # Main directory scripts
+        for script in *.sh; do
             if [ -f "$script" ]; then
                 chmod +x "$script" 2>/dev/null || $SUDO chmod +x "$script"
                 log_success "Fixed: $script"
                 ((script_count++))
             fi
         done
-    fi
-    shopt -u nullglob
+        
+        # Scripts directory
+        if [ -d "scripts" ]; then
+            for script in scripts/*.sh; do
+                if [ -f "$script" ]; then
+                    chmod +x "$script" 2>/dev/null || $SUDO chmod +x "$script"
+                    log_success "Fixed: $script"
+                    ((script_count++))
+                fi
+            done
+        fi
+    )
     
     log_success "All script permissions fixed ($script_count scripts)"
     return 0
