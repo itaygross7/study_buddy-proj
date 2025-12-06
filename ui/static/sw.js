@@ -67,7 +67,8 @@ self.addEventListener('fetch', event => {
   }
   
   // Network-first strategy for HTML pages
-  if (request.headers.get('Accept').includes('text/html')) {
+  const acceptHeader = request.headers.get('Accept');
+  if (acceptHeader && acceptHeader.includes('text/html')) {
     event.respondWith(
       fetch(request)
         .then(response => {
