@@ -88,77 +88,86 @@ def test_real_file_upload() -> dict:
     document_id = None
     
     try:
-        # Create test file
-        test_file_path = create_test_file()
-        logger.info(f"Created test file: {test_file_path}")
+        # Create Flask app context for database operations
+        from app import create_app
+        app = create_app()
         
-        # Test file processing function
-        from src.utils.file_processing import process_file_from_path
-        
-        extracted_text = process_file_from_path(test_file_path, "health_test.txt")
-        
-        if not extracted_text or "health check test" not in extracted_text.lower():
+        with app.app_context():
+            # Create test file
+            test_file_path = create_test_file()
+            logger.info(f"Created test file: {test_file_path}")
+            
+            # Test file processing function
+            from src.utils.file_processing import process_file_from_path
+            
+            extracted_text = process_file_from_path(test_file_path, "health_test.txt")
+            
+            if not extracted_text or "health check test" not in extracted_text.lower():
+                return {
+                    "status": "failed",
+                    "error": "Text extraction failed or returned invalid content",
+                    "stage": "text_extraction"
+                }
+            
+            # Test document creation in database
+            from src.domain.models.db_models import Document
+            import uuid
+            
+            document_id = str(uuid.uuid4())
+            test_doc = Document(
+                _id=document_id,
+                user_id="health_check_system",
+                course_id="health_check",
+                filename="health_test.txt",
+                content_text=extracted_text
+            )
+            
+            # Insert into DB
+            db.documents.insert_one(test_doc.to_dict())
+            logger.info(f"Created test document: {document_id}")
+            
+            # Verify document exists
+            stored_doc = db.documents.find_one({"_id": document_id})
+            if not stored_doc:
+                return {
+                    "status": "failed",
+                    "error": "Document not found after insertion",
+                    "stage": "database_verification"
+                }
+            
+            # Clean up test file
+            if test_file_path and os.path.exists(test_file_path):
+                os.remove(test_file_path)
+                logger.info(f"Cleaned up test file: {test_file_path}")
+            
+            # Clean up test document
+            db.documents.delete_one({"_id": document_id})
+            logger.info(f"Cleaned up test document: {document_id}")
+            
             return {
-                "status": "failed",
-                "error": "Text extraction failed or returned invalid content",
-                "stage": "text_extraction"
+                "status": "success",
+                "document_id": document_id,
+                "text_length": len(extracted_text),
+                "test_passed": True
             }
-        
-        # Test document creation in database
-        from src.domain.models.db_models import Document
-        import uuid
-        
-        document_id = str(uuid.uuid4())
-        test_doc = Document(
-            _id=document_id,
-            user_id="health_check_system",
-            course_id="health_check",
-            filename="health_test.txt",
-            content_text=extracted_text
-        )
-        
-        # Insert into DB
-        db.documents.insert_one(test_doc.to_dict())
-        logger.info(f"Created test document: {document_id}")
-        
-        # Verify document exists
-        stored_doc = db.documents.find_one({"_id": document_id})
-        if not stored_doc:
-            return {
-                "status": "failed",
-                "error": "Document not found after insertion",
-                "stage": "database_verification"
-            }
-        
-        # Clean up test file
-        if os.path.exists(test_file_path):
-            os.remove(test_file_path)
-            logger.info(f"Cleaned up test file: {test_file_path}")
-        
-        # Clean up test document
-        db.documents.delete_one({"_id": document_id})
-        logger.info(f"Cleaned up test document: {document_id}")
-        
-        return {
-            "status": "success",
-            "document_id": document_id,
-            "text_length": len(extracted_text),
-            "test_passed": True
-        }
         
     except Exception as e:
         logger.error(f"File upload test failed: {e}", exc_info=True)
         
-        # Clean up on error
+        # Clean up test file on error
         if test_file_path and os.path.exists(test_file_path):
             try:
                 os.remove(test_file_path)
             except:
                 pass
         
+        # Clean up document on error (reuse existing app instance if possible)
         if document_id:
             try:
-                db.documents.delete_one({"_id": document_id})
+                # Try to use app instance from outer scope if it exists
+                if 'app' in locals():
+                    with app.app_context():
+                        db.documents.delete_one({"_id": document_id})
             except:
                 pass
         
@@ -302,39 +311,44 @@ def send_daily_health_report():
         return
     
     try:
-        # Get comprehensive health status
-        health_report = get_comprehensive_health(db)
+        # Create Flask app context for database operations
+        from app import create_app
+        app = create_app()
         
-        # Test file upload
-        upload_test = test_real_file_upload()
-        
-        status = health_report["overall_status"]
-        status_emoji = "✅" if status == "healthy" else "⚠️" if status == "degraded" else "❌"
-        
-        subject = f"{status_emoji} Daily Health Report - StudyBuddy - {status.upper()}"
-        
-        # Build component status table
-        components_html = ""
-        for comp_name, comp_data in health_report["components"].items():
-            comp_status = comp_data.get("status", "unknown")
-            comp_emoji = "✅" if comp_status == "healthy" else "⚠️" if comp_status == "degraded" else "❌"
+        with app.app_context():
+            # Get comprehensive health status
+            health_report = get_comprehensive_health(db)
             
-            comp_details = ""
-            if comp_status != "healthy":
-                comp_details = f"<br><small style='color: #666;'>{comp_data.get('error', 'N/A')}</small>"
+            # Test file upload
+            upload_test = test_real_file_upload()
             
-            components_html += f"""
-            <tr>
-                <td style="padding: 8px; border: 1px solid #ddd;">{comp_emoji} {comp_name}</td>
-                <td style="padding: 8px; border: 1px solid #ddd;">{comp_status.upper()}{comp_details}</td>
-            </tr>
-            """
-        
-        # File upload test status
-        upload_status = upload_test.get("status", "unknown")
-        upload_emoji = "✅" if upload_status == "success" else "❌"
-        
-        body = f"""
+            status = health_report["overall_status"]
+            status_emoji = "✅" if status == "healthy" else "⚠️" if status == "degraded" else "❌"
+            
+            subject = f"{status_emoji} Daily Health Report - StudyBuddy - {status.upper()}"
+            
+            # Build component status table
+            components_html = ""
+            for comp_name, comp_data in health_report["components"].items():
+                comp_status = comp_data.get("status", "unknown")
+                comp_emoji = "✅" if comp_status == "healthy" else "⚠️" if comp_status == "degraded" else "❌"
+                
+                comp_details = ""
+                if comp_status != "healthy":
+                    comp_details = f"<br><small style='color: #666;'>{comp_data.get('error', 'N/A')}</small>"
+                
+                components_html += f"""
+                <tr>
+                    <td style="padding: 8px; border: 1px solid #ddd;">{comp_emoji} {comp_name}</td>
+                    <td style="padding: 8px; border: 1px solid #ddd;">{comp_status.upper()}{comp_details}</td>
+                </tr>
+                """
+            
+            # File upload test status
+            upload_status = upload_test.get("status", "unknown")
+            upload_emoji = "✅" if upload_status == "success" else "❌"
+            
+            body = f"""
 <h2>📊 Daily Health Report</h2>
 <p><strong>Date:</strong> {datetime.now(timezone.utc).strftime('%Y-%m-%d')}</p>
 <p><strong>Overall Status:</strong> {status_emoji} {status.upper()}</p>
@@ -370,14 +384,14 @@ def send_daily_health_report():
 <h3>AI Models:</h3>
 <ul>
 """
-        
-        ai_models = health_report['components']['ai_models'].get('models', {})
-        for model_name, model_data in ai_models.items():
-            model_status = model_data.get('status', 'unknown')
-            model_emoji = "✅" if model_status == "healthy" else "⚠️" if model_status == "not_configured" else "❌"
-            body += f"<li>{model_emoji} {model_name}: {model_status.upper()}</li>\n"
-        
-        body += f"""
+            
+            ai_models = health_report['components']['ai_models'].get('models', {})
+            for model_name, model_data in ai_models.items():
+                model_status = model_data.get('status', 'unknown')
+                model_emoji = "✅" if model_status == "healthy" else "⚠️" if model_status == "not_configured" else "❌"
+                body += f"<li>{model_emoji} {model_name}: {model_status.upper()}</li>\n"
+            
+            body += f"""
 </ul>
 
 <h3>Auto-Update Status:</h3>
@@ -391,13 +405,13 @@ This is an automated daily report from StudyBuddy Health Monitoring System.
 To view detailed diagnostics: <a href="http://localhost:5000/health/detailed">/health/detailed</a>
 </p>
 """
-        
-        send_email(
-            to_email=settings.ADMIN_EMAIL,
-            subject=subject,
-            body=body
-        )
-        logger.info("Sent daily health report email")
+            
+            send_email(
+                to_email=settings.ADMIN_EMAIL,
+                subject=subject,
+                body=body
+            )
+            logger.info("Sent daily health report email")
         
     except Exception as e:
         logger.error(f"Failed to send daily health report: {e}", exc_info=True)
@@ -416,79 +430,84 @@ def perform_health_check_and_recovery():
     logger.info("=== Starting periodic health check ===")
     
     try:
-        # Get comprehensive health status
-        health_report = get_comprehensive_health(db)
+        # Create Flask app context for database operations
+        from app import create_app
+        app = create_app()
         
-        # Test file upload
-        upload_test = test_real_file_upload()
-        
-        # Check each component
-        for component, status_data in health_report["components"].items():
-            status = status_data.get("status", "unknown")
+        with app.app_context():
+            # Get comprehensive health status
+            health_report = get_comprehensive_health(db)
             
-            if status == "unhealthy":
-                consecutive_failures[component] += 1
-                logger.warning(
-                    f"Component {component} unhealthy "
-                    f"({consecutive_failures[component]}/{MAX_CONSECUTIVE_FAILURES})"
-                )
+            # Test file upload
+            upload_test = test_real_file_upload()
+            
+            # Check each component
+            for component, status_data in health_report["components"].items():
+                status = status_data.get("status", "unknown")
                 
-                # Check if we should restart
-                if consecutive_failures[component] >= MAX_CONSECUTIVE_FAILURES:
-                    if should_restart_services():
-                        logger.error(
-                            f"Component {component} failed {MAX_CONSECUTIVE_FAILURES} "
-                            f"times, attempting restart"
-                        )
-                        
-                        # Map component to service name
-                        service_map = {
-                            "mongodb": "mongo",
-                            "rabbitmq": "rabbitmq",
-                            "ai_models": "app",  # AI issues may need app restart
-                            "file_upload": "worker",  # File upload issues -> worker restart
-                            "git": None  # Git issues don't need restart
-                        }
-                        
-                        service_to_restart = service_map.get(component)
-                        
-                        if service_to_restart:
-                            restart_success = restart_docker_service(service_to_restart)
+                if status == "unhealthy":
+                    consecutive_failures[component] += 1
+                    logger.warning(
+                        f"Component {component} unhealthy "
+                        f"({consecutive_failures[component]}/{MAX_CONSECUTIVE_FAILURES})"
+                    )
+                    
+                    # Check if we should restart
+                    if consecutive_failures[component] >= MAX_CONSECUTIVE_FAILURES:
+                        if should_restart_services():
+                            logger.error(
+                                f"Component {component} failed {MAX_CONSECUTIVE_FAILURES} "
+                                f"times, attempting restart"
+                            )
                             
-                            global last_restart_time
-                            last_restart_time = datetime.now(timezone.utc)
+                            # Map component to service name
+                            service_map = {
+                                "mongodb": "mongo",
+                                "rabbitmq": "rabbitmq",
+                                "ai_models": "app",  # AI issues may need app restart
+                                "file_upload": "worker",  # File upload issues -> worker restart
+                                "git": None  # Git issues don't need restart
+                            }
                             
-                            # Send critical alert
-                            error_details = status_data.get("error", "Unknown error")
-                            send_critical_alert(component, error_details)
+                            service_to_restart = service_map.get(component)
                             
-                            if restart_success:
-                                # Reset failure counter on successful restart
-                                consecutive_failures[component] = 0
-                                logger.info(f"Service {service_to_restart} restarted successfully")
+                            if service_to_restart:
+                                restart_success = restart_docker_service(service_to_restart)
+                                
+                                global last_restart_time
+                                last_restart_time = datetime.now(timezone.utc)
+                                
+                                # Send critical alert
+                                error_details = status_data.get("error", "Unknown error")
+                                send_critical_alert(component, error_details)
+                                
+                                if restart_success:
+                                    # Reset failure counter on successful restart
+                                    consecutive_failures[component] = 0
+                                    logger.info(f"Service {service_to_restart} restarted successfully")
+                                else:
+                                    logger.error(f"Failed to restart {service_to_restart}")
                             else:
-                                logger.error(f"Failed to restart {service_to_restart}")
+                                # Send alert but don't restart (e.g., Git issues)
+                                error_details = status_data.get("error", "Unknown error")
+                                send_critical_alert(component, error_details)
+                                consecutive_failures[component] = 0  # Reset to avoid spam
                         else:
-                            # Send alert but don't restart (e.g., Git issues)
-                            error_details = status_data.get("error", "Unknown error")
-                            send_critical_alert(component, error_details)
-                            consecutive_failures[component] = 0  # Reset to avoid spam
-                    else:
-                        logger.warning(
-                            f"Component {component} needs restart but in cooldown period"
-                        )
-            else:
-                # Component is healthy or degraded, reset counter
-                if consecutive_failures[component] > 0:
-                    logger.info(f"Component {component} recovered")
-                consecutive_failures[component] = 0
-        
-        # Check file upload test
-        if upload_test.get("status") == "failed":
-            logger.error(f"File upload test failed: {upload_test.get('error')}")
-            # Could trigger app restart if this happens consistently
-        
-        logger.info(f"Health check complete: {health_report['overall_status']}")
+                            logger.warning(
+                                f"Component {component} needs restart but in cooldown period"
+                            )
+                else:
+                    # Component is healthy or degraded, reset counter
+                    if consecutive_failures[component] > 0:
+                        logger.info(f"Component {component} recovered")
+                    consecutive_failures[component] = 0
+            
+            # Check file upload test
+            if upload_test.get("status") == "failed":
+                logger.error(f"File upload test failed: {upload_test.get('error')}")
+                # Could trigger app restart if this happens consistently
+            
+            logger.info(f"Health check complete: {health_report['overall_status']}")
         
     except Exception as e:
         logger.error(f"Health check routine failed: {e}", exc_info=True)
