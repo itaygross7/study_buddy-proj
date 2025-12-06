@@ -1,10 +1,11 @@
 """Routes for the Ask Avner helper feature - Live Chat with Avner."""
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, url_for
 from flask_login import current_user
 
-from src.services.ai_client import AIClient
 from src.infrastructure.database import db
-from src.services import auth_service
+from src.infrastructure.rabbitmq import publish_task
+from src.services import auth_service, avner_service
+from src.services.task_service import create_task
 from src.api.routes_admin import get_system_config
 from sb_utils.logger_utils import logger
 
@@ -191,68 +192,57 @@ def ask_avner():
                 "limit_reached": True
             }), 429
 
-        # Get course context if course_id provided
+        # Get course context and language
         context = ""
         language = "he"
 
         if course_id:
-            # Get course and its documents
-            course = db.courses.find_one({"_id": course_id, "user_id": current_user.id})
-            if course:
-                language = course.get("language", "he")
-                # Get documents from this course
-                docs = db.documents.find({"course_id": course_id, "user_id": current_user.id})
-                context_parts = []
-                total_chars = 0
-                for doc in docs:
-                    content = doc.get("content_text", "")
-                    if total_chars + len(content) > 3000:
-                        break
-                    context_parts.append(content)
-                    total_chars += len(content)
-                context = "\n\n".join(context_parts)
-
+            context, language = avner_service.get_course_context(
+                course_id, current_user.id, db
+            )
+        
         # Get user's general context
-        user_profile = db.user_profiles.find_one({"_id": current_user.id})
-        user_context = user_profile.get("general_context", "") if user_profile else ""
-
-        # Build AI prompt
-        lang_instruction = "ענה בעברית." if language == "he" else "Answer in English."
-
-        prompt = f"{AVNER_SYSTEM_PROMPT}\n\n{lang_instruction}\n\n"
-
+        user_context = avner_service.get_user_general_context(current_user.id, db)
         if user_context:
-            prompt += f"מידע על המשתמש: {user_context}\n\n"
+            context = f"{user_context}\n\n{context}" if context else user_context
 
-        if context:
-            prompt += f"חומר הלימוד:\n{context}\n\n"
-        else:
-            prompt += "אין חומר לימוד זמין. ענה על בסיס ידע כללי או הצע למשתמש להעלות חומרים.\n\n"
-
-        prompt += f"שאלת המשתמש: {question}\n\nתשובה קצרה וברורה:"
-
-        # Generate AI response
+        # Create a task for async processing
+        task_id = create_task(db)
+        
+        # Publish to RabbitMQ for worker processing
         try:
-            ai_client = AIClient()
-            response = ai_client.generate_text(prompt, "", task_type="standard", baby_mode=baby_mode)
-        except Exception as ai_error:
-            logger.error(f"AI generation failed: {ai_error}", exc_info=True)
-            # Don't expose internal error details for security
+            publish_task(
+                queue_name='avner_chat',
+                task_body={
+                    "task_id": task_id,
+                    "question": question,
+                    "context": context,
+                    "language": language,
+                    "baby_mode": baby_mode,
+                    "user_id": current_user.id
+                }
+            )
+            
+            # Increment prompt count immediately (optimistic)
+            auth_service.increment_prompt_count(db, current_user.id)
+            
+            logger.info(f"Avner chat task created for user {current_user.id}")
+            
+            # Return task ID for polling
             return jsonify({
-                "error": "לא הצלחתי לקבל תשובה מהמערכת. ודא שהגדרת את ה-API keys בקובץ .env 🦫"
+                "message": "Avner is thinking...",
+                "status": "processing",
+                "task_id": task_id,
+                "polling_url": url_for('task_bp.get_task_status_route', task_id=task_id),
+                "prompts_used": user.prompt_count + 1 if user else 1,
+                "prompts_limit": config.max_prompts_per_day
+            }), 202
+            
+        except Exception as queue_error:
+            logger.error(f"Failed to queue Avner task: {queue_error}", exc_info=True)
+            return jsonify({
+                "error": "לא הצלחתי להעביר את השאלה למערכת. נסה שוב 🦫"
             }), 500
-
-        # Increment prompt count
-        auth_service.increment_prompt_count(db, current_user.id)
-
-        logger.info(f"Avner AI answer for user {current_user.id}")
-
-        return jsonify({
-            "answer": response,
-            "used_ai": True,
-            "prompts_used": user.prompt_count + 1 if user else 1,
-            "prompts_limit": config.max_prompts_per_day
-        })
 
     except Exception as e:
         logger.error(f"Ask Avner error: {e}", exc_info=True)
