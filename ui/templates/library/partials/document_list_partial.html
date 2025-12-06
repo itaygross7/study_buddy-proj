@@ -1,0 +1,40 @@
+{% if documents %}
+<div class="overflow-x-auto rounded-lg border">
+    <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+            <tr>
+                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">שם קובץ</th>
+                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">תאריך העלאה</th>
+                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">סטטוס</th>
+                <th scope="col" class="relative px-6 py-3"><span class="sr-only">פעולות</span></th>
+            </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+            {% for doc in documents %}
+            <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ doc.filename }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ doc.created_at.strftime('%d-%m-%Y') }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                    {% if '[Processing...]' in doc.content_text or '[שגיאה' in doc.content_text %}
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">מעבד...</span>
+                    {% else %}
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">מוכן</span>
+                    {% endif %}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-left text-sm font-medium">
+                    <a href="#" class="text-indigo-600 hover:text-indigo-900">מחק</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="text-center py-12 border-2 border-dashed rounded-lg">
+    <div class="flex flex-col items-center">
+        <img src="{{ url_for('serve_avner', filename='avner_empty.jpeg') }}" alt="אבנר" class="h-24 mb-4">
+        <h3 class="text-lg font-semibold text-gray-700">הקורס עדיין ריק</h3>
+        <p class="mt-1 text-sm text-gray-500">העלה את חומר הלימוד הראשון שלך כדי להתחיל.</p>
+    </div>
+</div>
+{% endif %}
