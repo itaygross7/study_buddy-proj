@@ -129,6 +129,11 @@ check_prerequisites() {
     fi
     log_success ".env file exists"
     
+    # Load environment variables from .env
+    if [ -f "$SCRIPT_DIR/.env" ]; then
+        export $(grep -v '^#' "$SCRIPT_DIR/.env" | grep -v '^[[:space:]]*$' | xargs -0)
+    fi
+    
     # Show current user
     log_info "Current user: $USER"
     log_info "Home directory: $HOME"
@@ -171,6 +176,19 @@ fix_git_permissions() {
         CURRENT_COMMIT=$(git rev-parse --short HEAD)
         log_info "Branch: $CURRENT_BRANCH"
         log_info "Commit: $CURRENT_COMMIT"
+        
+        # Pull latest changes
+        log_fix "Pulling latest changes from repository"
+        if sudo git pull origin "$CURRENT_BRANCH" 2>&1 | tee -a "$LOG_FILE"; then
+            NEW_COMMIT=$(git rev-parse --short HEAD)
+            if [ "$CURRENT_COMMIT" != "$NEW_COMMIT" ]; then
+                log_success "Updated from $CURRENT_COMMIT to $NEW_COMMIT"
+            else
+                log_success "Already up to date"
+            fi
+        else
+            log_warning "Git pull failed, but continuing with current version..."
+        fi
     else
         log_warning "Git status check failed, but continuing..."
     fi
@@ -414,6 +432,82 @@ rebuild_services() {
 }
 
 # =============================================================================
+# Send Email Notification
+# =============================================================================
+
+send_email_notification() {
+    local subject="$1"
+    local message="$2"
+    
+    # Check if ADMIN_EMAIL is configured
+    if [ -z "$ADMIN_EMAIL" ] || [ "$ADMIN_EMAIL" == "your_admin_email@example.com" ]; then
+        log_info "Email notification not sent - ADMIN_EMAIL not configured"
+        return 0
+    fi
+    
+    log_info "Sending email notification to $ADMIN_EMAIL"
+    
+    # Create Python script to send email
+    python3 << EOF
+import sys
+import os
+sys.path.insert(0, '$SCRIPT_DIR')
+
+# Set required environment variables for config
+os.environ.setdefault('SECRET_KEY', 'notification-temp-key')
+os.environ.setdefault('MONGO_URI', 'mongodb://localhost:27017/temp')
+os.environ.setdefault('RABBITMQ_URI', 'amqp://localhost:5672/')
+
+try:
+    from src.services.email_service import send_email
+    
+    html_body = """
+    <html>
+    <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 10px 10px 0 0;">
+            <h2 style="margin: 0;">🦫 StudyBuddy Deployment Notification</h2>
+        </div>
+        <div style="background: #f8f9fa; padding: 20px; border: 1px solid #dee2e6; border-radius: 0 0 10px 10px;">
+            <h3 style="color: #28a745;">$subject</h3>
+            <p style="color: #495057; line-height: 1.6;">$message</p>
+            <hr style="border: none; border-top: 1px solid #dee2e6; margin: 20px 0;">
+            <p style="color: #6c757d; font-size: 12px; margin: 0;">
+                Server: $(hostname)<br>
+                Time: $(date '+%Y-%m-%d %H:%M:%S')<br>
+                User: $USER
+            </p>
+        </div>
+    </body>
+    </html>
+    """
+    
+    text_body = """
+StudyBuddy Deployment Notification
+
+$subject
+
+$message
+
+Server: $(hostname)
+Time: $(date '+%Y-%m-%d %H:%M:%S')
+User: $USER
+    """
+    
+    result = send_email('$ADMIN_EMAIL', '$subject', html_body, text_body)
+    sys.exit(0 if result else 1)
+except Exception as e:
+    print(f"Failed to send email: {e}", file=sys.stderr)
+    sys.exit(1)
+EOF
+    
+    if [ $? -eq 0 ]; then
+        log_success "Email notification sent successfully"
+    else
+        log_warning "Failed to send email notification (this is non-critical)"
+    fi
+}
+
+# =============================================================================
 # Verify Deployment
 # =============================================================================
 
@@ -586,6 +680,12 @@ main() {
     # Verify everything works
     if verify_deployment; then
         configure_auto_update
+        
+        # Send success notification email
+        send_email_notification \
+            "✅ StudyBuddy Hard Restart Completed Successfully" \
+            "The StudyBuddy application has been successfully rebuilt and restarted. All services are running and health checks passed. The application is now accessible at http://localhost:5000"
+        
         show_summary
         
         END_TIME=$(date +%s)
@@ -594,6 +694,11 @@ main() {
         
         exit 0
     else
+        # Send failure notification email
+        send_email_notification \
+            "⚠️ StudyBuddy Hard Restart - Verification Failed" \
+            "The StudyBuddy application was rebuilt but health checks failed. Please check the logs at: $LOG_FILE"
+        
         log_error "Deployment verification failed"
         log_info "Check logs: $COMPOSE_CMD logs -f"
         log_info "Full log: $LOG_FILE"

@@ -21,6 +21,9 @@ log_error() { echo -e "${RED}[✗]${NC} $*"; }
 log_warning() { echo -e "${YELLOW}[!]${NC} $*"; }
 log_fix() { echo -e "${YELLOW}[FIX]${NC} $*"; }
 
+# Script directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 show_banner() {
     clear
     echo -e "${GREEN}"
@@ -265,6 +268,50 @@ fix_env() {
     return 0
 }
 
+pull_latest_code() {
+    log_info "Pulling latest code from repository..."
+    
+    cd "$SCRIPT_DIR"
+    
+    # Set safe directory to avoid dubious ownership errors
+    git config --global --add safe.directory "$SCRIPT_DIR" 2>/dev/null || true
+    
+    # Check if we're in a git repository
+    if [ ! -d ".git" ]; then
+        log_warning "Not a git repository, skipping pull"
+        return 0
+    fi
+    
+    # Get current branch and commit
+    if ! CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null); then
+        log_warning "Could not determine current branch, skipping pull"
+        return 0
+    fi
+    
+    CURRENT_COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+    log_info "Current branch: $CURRENT_BRANCH"
+    log_info "Current commit: $CURRENT_COMMIT"
+    
+    # Fix ownership before pull
+    log_fix "Ensuring correct repository ownership..."
+    sudo chown -R "$USER:$USER" "$SCRIPT_DIR" 2>/dev/null || true
+    
+    # Pull latest changes
+    log_fix "Pulling latest changes..."
+    if sudo git pull origin "$CURRENT_BRANCH" 2>&1; then
+        NEW_COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+        if [ "$CURRENT_COMMIT" != "$NEW_COMMIT" ]; then
+            log_success "Updated from $CURRENT_COMMIT to $NEW_COMMIT"
+        else
+            log_success "Already up to date"
+        fi
+    else
+        log_warning "Git pull failed, continuing with current version..."
+    fi
+    
+    return 0
+}
+
 fix_disk_space() {
     log_info "Checking disk space..."
     
@@ -395,6 +442,87 @@ show_success() {
 }
 
 # =============================================================================
+# Send Email Notification
+# =============================================================================
+
+send_email_notification() {
+    local subject="$1"
+    local message="$2"
+    
+    # Load environment variables from .env if it exists
+    if [ -f "$SCRIPT_DIR/.env" ]; then
+        export $(grep -v '^#' "$SCRIPT_DIR/.env" | grep -v '^[[:space:]]*$' | xargs -0) 2>/dev/null || true
+    fi
+    
+    # Check if ADMIN_EMAIL is configured
+    if [ -z "$ADMIN_EMAIL" ] || [ "$ADMIN_EMAIL" == "your_admin_email@example.com" ]; then
+        log_info "Email notification not sent - ADMIN_EMAIL not configured in .env"
+        return 0
+    fi
+    
+    log_info "Sending email notification to $ADMIN_EMAIL"
+    
+    # Create Python script to send email
+    python3 << EOF
+import sys
+import os
+sys.path.insert(0, '$SCRIPT_DIR')
+
+# Set required environment variables for config
+os.environ.setdefault('SECRET_KEY', 'notification-temp-key')
+os.environ.setdefault('MONGO_URI', 'mongodb://localhost:27017/temp')
+os.environ.setdefault('RABBITMQ_URI', 'amqp://localhost:5672/')
+
+try:
+    from src.services.email_service import send_email
+    
+    html_body = """
+    <html>
+    <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 10px 10px 0 0;">
+            <h2 style="margin: 0;">🦫 StudyBuddy Deployment Notification</h2>
+        </div>
+        <div style="background: #f8f9fa; padding: 20px; border: 1px solid #dee2e6; border-radius: 0 0 10px 10px;">
+            <h3 style="color: #28a745;">$subject</h3>
+            <p style="color: #495057; line-height: 1.6;">$message</p>
+            <hr style="border: none; border-top: 1px solid #dee2e6; margin: 20px 0;">
+            <p style="color: #6c757d; font-size: 12px; margin: 0;">
+                Server: $(hostname)<br>
+                Time: $(date '+%Y-%m-%d %H:%M:%S')<br>
+                User: $USER
+            </p>
+        </div>
+    </body>
+    </html>
+    """
+    
+    text_body = """
+StudyBuddy Deployment Notification
+
+$subject
+
+$message
+
+Server: $(hostname)
+Time: $(date '+%Y-%m-%d %H:%M:%S')
+User: $USER
+    """
+    
+    result = send_email('$ADMIN_EMAIL', '$subject', html_body, text_body)
+    sys.exit(0 if result else 1)
+except Exception as e:
+    print(f"Failed to send email: {e}", file=sys.stderr)
+    sys.exit(1)
+EOF
+    
+    if [ $? -eq 0 ]; then
+        log_success "Email notification sent successfully"
+    else
+        log_warning "Failed to send email notification (this is non-critical)"
+    fi
+}
+
+# =============================================================================
 # Main Execution
 # =============================================================================
 
@@ -410,6 +538,7 @@ main() {
     fix_network || exit 1
     fix_disk_space || exit 1
     fix_env || exit 1
+    pull_latest_code || exit 1
     fix_ports || exit 1
     fix_docker_network || exit 1
     
@@ -419,9 +548,19 @@ main() {
     
     # Deploy
     if deploy; then
+        # Send success notification email
+        send_email_notification \
+            "✅ StudyBuddy Deployment Completed Successfully" \
+            "The StudyBuddy application has been successfully deployed. All services are running and the application is now accessible at http://localhost:5000"
+        
         show_success
         exit 0
     else
+        # Send failure notification email
+        send_email_notification \
+            "⚠️ StudyBuddy Deployment Failed" \
+            "The StudyBuddy deployment encountered errors. Please check the logs and error messages."
+        
         echo ""
         log_error "Deployment failed"
         log_info "Check the error messages above"
