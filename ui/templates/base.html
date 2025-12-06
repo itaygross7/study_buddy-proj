@@ -270,12 +270,13 @@
         });
         
         // Add smooth scroll behavior for anchor links
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                const href = this.getAttribute('href');
+        var anchorLinks = document.querySelectorAll('a[href^="#"]');
+        for (var i = 0; i < anchorLinks.length; i++) {
+            anchorLinks[i].addEventListener('click', function (e) {
+                var href = this.getAttribute('href');
                 if (href !== '#' && href !== '#!') {
                     e.preventDefault();
-                    const target = document.querySelector(href);
+                    var target = document.querySelector(href);
                     if (target) {
                         target.scrollIntoView({
                             behavior: 'smooth',
@@ -284,17 +285,18 @@
                     }
                 }
             });
-        });
+        }
         
         // Improve touch feedback for all buttons and links
-        document.querySelectorAll('button, a, .btn-primary, .btn-secondary').forEach(element => {
-            element.addEventListener('touchstart', function() {
+        var touchElements = document.querySelectorAll('button, a, .btn-primary, .btn-secondary');
+        for (var j = 0; j < touchElements.length; j++) {
+            touchElements[j].addEventListener('touchstart', function() {
                 this.style.opacity = '0.9';
             });
-            element.addEventListener('touchend', function() {
+            touchElements[j].addEventListener('touchend', function() {
                 this.style.opacity = '';
             });
-        });
+        }
     </script>
     {% block scripts %}{% endblock %}
 </body>

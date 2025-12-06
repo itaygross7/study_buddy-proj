@@ -452,44 +452,73 @@
         });
     }
     
-    // Poll for document processing status with Avner animation
-    async function pollDocumentStatus(documentId, avnerImg, statusText) {
-        const maxAttempts = 60; // 60 seconds max
-        let attempts = 0;
+    // Poll for document processing status with Avner animation - iOS Compatible
+    function pollDocumentStatus(documentId, avnerImg, statusText) {
+        var maxAttempts = 60; // 60 seconds max
+        var attempts = 0;
         
-        const checkStatus = async () => {
-            try {
-                const res = await fetch(`/api/upload/status/${documentId}`);
-                const data = await res.json();
-                
-                if (data.ready) {
-                    avnerImg.src = '/avner/avner_celebrating.jpeg';
-                    avnerImg.classList.remove('animate-pulse');
-                    statusText.textContent = '✅ הקובץ מוכן! טוען מחדש...';
-                    setTimeout(() => window.location.reload(), 800);
-                    return true;
+        function checkStatus() {
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', '/api/upload/status/' + documentId, true);
+            
+            xhr.onload = function() {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    try {
+                        var data = JSON.parse(xhr.responseText);
+                        
+                        if (data.ready) {
+                            avnerImg.src = '/avner/avner_celebrating.jpeg';
+                            avnerImg.classList.remove('animate-pulse');
+                            statusText.textContent = '✅ הקובץ מוכן! טוען מחדש...';
+                            setTimeout(function() { window.location.reload(); }, 800);
+                            return;
+                        }
+                        
+                        // Still processing
+                        attempts++;
+                        if (attempts >= maxAttempts) {
+                            avnerImg.src = '/avner/avner_thinking.jpeg';
+                            avnerImg.classList.remove('animate-pulse');
+                            statusText.textContent = '⏱️ העיבוד לוקח זמן... טוען מחדש.';
+                            setTimeout(function() { window.location.reload(); }, 2000);
+                            return;
+                        }
+                        
+                        // Update status text with dots animation
+                        var dots = '.'.repeat((attempts % 3) + 1);
+                        statusText.textContent = 'אבנר מעבד את הקובץ' + dots;
+                        
+                        // Continue polling
+                        setTimeout(checkStatus, 1000);
+                        
+                    } catch (parseError) {
+                        console.error('Status check parse error:', parseError);
+                        attempts++;
+                        if (attempts < maxAttempts) {
+                            setTimeout(checkStatus, 1000);
+                        } else {
+                            avnerImg.src = '/avner/avner_shy.jpeg';
+                            avnerImg.classList.remove('animate-pulse');
+                            statusText.textContent = '⏱️ מעבד ברקע... טוען מחדש.';
+                            setTimeout(function() { window.location.reload(); }, 2000);
+                        }
+                    }
+                } else {
+                    console.error('Status check HTTP error:', xhr.status);
+                    attempts++;
+                    if (attempts < maxAttempts) {
+                        setTimeout(checkStatus, 1000);
+                    } else {
+                        avnerImg.src = '/avner/avner_shy.jpeg';
+                        avnerImg.classList.remove('animate-pulse');
+                        statusText.textContent = '⏱️ מעבד ברקע... טוען מחדש.';
+                        setTimeout(function() { window.location.reload(); }, 2000);
+                    }
                 }
-                
-                // Still processing
-                attempts++;
-                if (attempts >= maxAttempts) {
-                    avnerImg.src = '/avner/avner_thinking.jpeg';
-                    avnerImg.classList.remove('animate-pulse');
-                    statusText.textContent = '⏱️ העיבוד לוקח זמן... טוען מחדש.';
-                    setTimeout(() => window.location.reload(), 2000);
-                    return true;
-                }
-                
-                // Update status text with dots animation
-                const dots = '.'.repeat((attempts % 3) + 1);
-                statusText.textContent = `אבנר מעבד את הקובץ${dots}`;
-                
-                // Continue polling
-                setTimeout(checkStatus, 1000);
-                return false;
-                
-            } catch (error) {
-                console.error('Status check error:', error);
+            };
+            
+            xhr.onerror = function() {
+                console.error('Status check network error');
                 attempts++;
                 if (attempts < maxAttempts) {
                     setTimeout(checkStatus, 1000);
@@ -497,42 +526,71 @@
                     avnerImg.src = '/avner/avner_shy.jpeg';
                     avnerImg.classList.remove('animate-pulse');
                     statusText.textContent = '⏱️ מעבד ברקע... טוען מחדש.';
-                    setTimeout(() => window.location.reload(), 2000);
+                    setTimeout(function() { window.location.reload(); }, 2000);
                 }
-            }
-        };
+            };
+            
+            xhr.send();
+        }
         
-        await checkStatus();
+        checkStatus();
     }
     
-    // Simple polling for secondary upload forms
-    async function pollDocumentStatusSimple(documentId, submitBtn, originalText) {
-        const maxAttempts = 60;
-        let attempts = 0;
+    // Simple polling for secondary upload forms - iOS Compatible
+    function pollDocumentStatusSimple(documentId, submitBtn, originalText) {
+        var maxAttempts = 60;
+        var attempts = 0;
         
-        const checkStatus = async () => {
-            try {
-                const res = await fetch(`/api/upload/status/${documentId}`);
-                const data = await res.json();
-                
-                if (data.ready) {
-                    submitBtn.innerHTML = '<img src="/avner/avner_celebrating.jpeg" class="w-6 h-6 inline-block"> הועלה!';
-                    setTimeout(() => window.location.reload(), 500);
-                    return true;
+        function checkStatus() {
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', '/api/upload/status/' + documentId, true);
+            
+            xhr.onload = function() {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    try {
+                        var data = JSON.parse(xhr.responseText);
+                        
+                        if (data.ready) {
+                            submitBtn.innerHTML = '<img src="/avner/avner_celebrating.jpeg" class="w-6 h-6 inline-block"> הועלה!';
+                            setTimeout(function() { window.location.reload(); }, 500);
+                            return;
+                        }
+                        
+                        attempts++;
+                        if (attempts >= maxAttempts) {
+                            submitBtn.innerHTML = '⏱️ מעבד ברקע...';
+                            setTimeout(function() { window.location.reload(); }, 2000);
+                            return;
+                        }
+                        
+                        setTimeout(checkStatus, 1000);
+                        
+                    } catch (parseError) {
+                        console.error('Status check parse error:', parseError);
+                        attempts++;
+                        if (attempts < maxAttempts) {
+                            setTimeout(checkStatus, 1000);
+                        } else {
+                            submitBtn.innerHTML = originalText;
+                            submitBtn.disabled = false;
+                            alert('שגיאה בבדיקת סטטוס. הקובץ עדיין מעובד ברקע.');
+                        }
+                    }
+                } else {
+                    console.error('Status check HTTP error:', xhr.status);
+                    attempts++;
+                    if (attempts < maxAttempts) {
+                        setTimeout(checkStatus, 1000);
+                    } else {
+                        submitBtn.innerHTML = originalText;
+                        submitBtn.disabled = false;
+                        alert('שגיאה בבדיקת סטטוס. הקובץ עדיין מעובד ברקע.');
+                    }
                 }
-                
-                attempts++;
-                if (attempts >= maxAttempts) {
-                    submitBtn.innerHTML = '⏱️ מעבד ברקע...';
-                    setTimeout(() => window.location.reload(), 2000);
-                    return true;
-                }
-                
-                setTimeout(checkStatus, 1000);
-                return false;
-                
-            } catch (error) {
-                console.error('Status check error:', error);
+            };
+            
+            xhr.onerror = function() {
+                console.error('Status check network error');
                 attempts++;
                 if (attempts < maxAttempts) {
                     setTimeout(checkStatus, 1000);
@@ -541,10 +599,12 @@
                     submitBtn.disabled = false;
                     alert('שגיאה בבדיקת סטטוס. הקובץ עדיין מעובד ברקע.');
                 }
-            }
-        };
+            };
+            
+            xhr.send();
+        }
         
-        await checkStatus();
+        checkStatus();
     }
     
     function askAboutCourse() {
@@ -554,28 +614,35 @@
         }
     }
     
-    // Delete document function
-    async function deleteDocument(docId) {
+    // Delete document function - iOS Compatible
+    function deleteDocument(docId) {
         if (!confirm('האם אתה בטוח שברצונך למחוק את המסמך? פעולה זו אינה הפיכה.')) {
             return;
         }
         
-        try {
-            const res = await fetch(`/api/upload/files/${docId}`, {
-                method: 'DELETE'
-            });
-            
-            if (res.ok) {
+        var xhr = new XMLHttpRequest();
+        xhr.open('DELETE', '/api/upload/files/' + docId, true);
+        
+        xhr.onload = function() {
+            if (xhr.status >= 200 && xhr.status < 300) {
                 alert('המסמך נמחק בהצלחה!');
                 window.location.reload();
             } else {
-                const data = await res.json();
-                alert('שגיאה במחיקת המסמך: ' + (data.error || 'נסה שוב'));
+                try {
+                    var data = JSON.parse(xhr.responseText);
+                    alert('שגיאה במחיקת המסמך: ' + (data.error || 'נסה שוב'));
+                } catch (e) {
+                    alert('שגיאה במחיקת המסמך. נסה שוב.');
+                }
             }
-        } catch (error) {
-            console.error('Delete error:', error);
+        };
+        
+        xhr.onerror = function() {
+            console.error('Delete error: Network error');
             alert('שגיאה במחיקת המסמך. בדוק את החיבור לאינטרנט.');
-        }
+        };
+        
+        xhr.send();
     }
 </script>
 {% endblock %}
