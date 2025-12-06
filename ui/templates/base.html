@@ -158,6 +158,9 @@
         const menuIconClose = document.getElementById('menu-icon-close');
         
         if (mobileMenuButton && mobileMenu) {
+            // iOS detection for specific handling
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+            
             // Toggle menu on button click
             mobileMenuButton.addEventListener('click', function(e) {
                 e.preventDefault();
@@ -167,7 +170,7 @@
                 if (isOpen) {
                     // Closing animation
                     mobileMenu.style.animation = 'slideUp 0.2s ease-out';
-                    setTimeout(() => {
+                    setTimeout(function() {
                         mobileMenu.classList.add('hidden');
                         mobileMenu.style.animation = '';
                     }, 200);
@@ -186,12 +189,23 @@
                 }
             });
             
+            // iOS-specific: Add touch event for better responsiveness
+            if (isIOS) {
+                mobileMenuButton.addEventListener('touchstart', function(e) {
+                    // Add visual feedback
+                    this.style.opacity = '0.8';
+                });
+                mobileMenuButton.addEventListener('touchend', function(e) {
+                    this.style.opacity = '1';
+                });
+            }
+            
             // Close menu when clicking menu items
             const menuLinks = mobileMenu.querySelectorAll('a');
-            menuLinks.forEach(link => {
+            menuLinks.forEach(function(link) {
                 link.addEventListener('click', function() {
                     mobileMenu.style.animation = 'slideUp 0.2s ease-out';
-                    setTimeout(() => {
+                    setTimeout(function() {
                         mobileMenu.classList.add('hidden');
                         menuIconOpen.classList.remove('hidden');
                         menuIconClose.classList.add('hidden');
@@ -205,7 +219,7 @@
                 if (!mobileMenu.contains(e.target) && !mobileMenuButton.contains(e.target)) {
                     if (!mobileMenu.classList.contains('hidden')) {
                         mobileMenu.style.animation = 'slideUp 0.2s ease-out';
-                        setTimeout(() => {
+                        setTimeout(function() {
                             mobileMenu.classList.add('hidden');
                             menuIconOpen.classList.remove('hidden');
                             menuIconClose.classList.add('hidden');
