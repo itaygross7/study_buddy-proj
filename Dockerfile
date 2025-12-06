@@ -47,6 +47,8 @@ RUN apt-get update && apt-get install -y \
     libharfbuzz0b \
     libfontconfig1 \
     libmagic1 \
+    git \
+    docker.io \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy installed Python packages from the builder stage

@@ -3,13 +3,15 @@ import os
 import shutil
 import pika
 import time
+import uuid
+from datetime import datetime, timezone
 from tenacity import retry, stop_after_attempt, wait_fixed
 from pymongo import MongoClient
 
 from src.infrastructure.config import settings
 from src.infrastructure.repositories import MongoTaskRepository, MongoDocumentRepository
 from src.services import summary_service, flashcards_service, assess_service, homework_service
-from src.services import glossary_service
+from src.services import glossary_service, avner_service
 from src.domain.models.db_models import TaskStatus
 from src.domain.errors import DocumentNotFoundError
 from sb_utils.logger_utils import logger
@@ -106,6 +108,41 @@ def process_task(body: bytes):
 
     elif queue_name == 'homework':
         result_id = homework_service.solve_homework_problem(data['problem_statement'])
+    
+    elif queue_name == 'avner_chat':
+        # Avner chat task - answer questions with context
+        question = data['question']
+        context = data.get('context', '')
+        language = data.get('language', 'he')
+        baby_mode = data.get('baby_mode', False)
+        user_id = data.get('user_id', '')
+        
+        answer = avner_service.answer_question(
+            question=question,
+            context=context,
+            language=language,
+            baby_mode=baby_mode,
+            user_id=user_id,
+            db_conn=db_conn
+        )
+        
+        # Store the answer in a simple result document
+        result_doc = {
+            "_id": str(uuid.uuid4()),
+            "type": "avner_chat",
+            "question": question,
+            "answer": answer,
+            "user_id": user_id,
+            "created_at": datetime.now(timezone.utc)
+        }
+        
+        try:
+            db_conn.avner_results.insert_one(result_doc)
+            result_id = result_doc["_id"]
+        except Exception as db_error:
+            logger.error(f"Failed to store Avner result: {db_error}", exc_info=True)
+            # Re-raise to trigger retry logic and mark task as failed
+            raise
 
     else:
         raise ValueError(f"Unknown queue: {queue_name}")
@@ -139,7 +176,7 @@ def main():
             channel = connection.channel()
             logger.info("Worker connected to RabbitMQ.")
 
-            queues = ['file_processing', 'summarize', 'flashcards', 'assess', 'homework']
+            queues = ['file_processing', 'summarize', 'flashcards', 'assess', 'homework', 'avner_chat']
             for q in queues:
                 channel.queue_declare(queue=q, durable=True)
             channel.basic_qos(prefetch_count=1)

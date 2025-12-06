@@ -109,7 +109,8 @@ def create_app():
         response.headers['X-Content-Type-Options'] = 'nosniff'
         response.headers['X-Frame-Options'] = 'SAMEORIGIN'
         response.headers['X-XSS-Protection'] = '1; mode=block'
-        response.headers['Content-Security-Policy'] = "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' https://unpkg.com;"
+        # Updated CSP to allow service worker and inline scripts
+        response.headers['Content-Security-Policy'] = "default-src 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' https://unpkg.com https://cdn.jsdelivr.net; connect-src 'self'; worker-src 'self'; manifest-src 'self';"
         return response
 
     @app.context_processor
@@ -175,6 +176,11 @@ def create_app():
             flash(NO_FILES_MESSAGE, 'warning')
             return redirect(url_for('library.index'))
         return render_template('glossary.html', course_id=course_id)
+    
+    @app.route('/offline')
+    def offline():
+        """Offline fallback page for PWA."""
+        return render_template('offline.html')
 
     @app.route('/dashboard')
     @login_required
@@ -195,25 +201,42 @@ def create_app():
             session['lang'] = lang
         return redirect(request.referrer or url_for('index'))
 
-    # --- Health Checks (Restored) ---
+    # --- Health Checks (Enhanced) ---
     @app.route('/health')
     def health_check():
+        """Simple health check for load balancers."""
         return jsonify({"status": "healthy"}), 200
     
     @app.route('/health/detailed')
     def detailed_health_check():
-        # This detailed check remains as it was, verifying all components.
-        from src.infrastructure.database import db
-        import time
-        # ... (implementation is unchanged and correct)
-        health_status = {"status": "healthy", "components": {}}
+        """
+        Comprehensive health check testing all components:
+        - MongoDB
+        - RabbitMQ + Worker
+        - AI Models (OpenAI, Gemini)
+        - File Upload capability
+        - Git connectivity for auto-updates
+        """
+        from src.services.health_service import get_comprehensive_health
+        
         try:
-            db.command('ping')
-            health_status["components"]["mongodb"] = {"status": "healthy"}
+            health_report = get_comprehensive_health(db)
+            
+            # Return appropriate HTTP status code
+            if health_report["overall_status"] == "healthy":
+                return jsonify(health_report), 200
+            elif health_report["overall_status"] == "degraded":
+                return jsonify(health_report), 200  # Still operational
+            else:
+                return jsonify(health_report), 503  # Service unavailable
+                
         except Exception as e:
-            health_status["components"]["mongodb"] = {"status": "unhealthy", "error": str(e)}
-            health_status["status"] = "unhealthy"
-        return jsonify(health_status), 503 if health_status["status"] == "unhealthy" else 200
+            logger.error(f"Health check failed with exception: {e}", exc_info=True)
+            return jsonify({
+                "status": "unhealthy",
+                "error": "Health check failed to complete",
+                "details": str(e)
+            }), 503
 
     # --- Error Handling ---
     @app.errorhandler(NotFound)

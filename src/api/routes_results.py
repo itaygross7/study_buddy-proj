@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, abort
+from flask import Blueprint, render_template, abort, jsonify
 from src.infrastructure.database import db
 
 results_bp = Blueprint('results_bp', __name__)
@@ -27,6 +27,15 @@ def get_result(result_id: str):
         if not result_data:
             abort(404)
         return render_template('results/assessment_result.html', assessment=result_data)
+    
+    # Check if it's an Avner chat result
+    avner_result = db.avner_results.find_one({"_id": result_id})
+    if avner_result:
+        # Return JSON for HTMX to handle
+        return jsonify({
+            "answer": avner_result.get("answer", ""),
+            "used_ai": True
+        })
 
     # For homework helper, the result is the text itself
     return render_template('results/homework_result.html', solution_text=result_id)

@@ -71,6 +71,36 @@ services:
       rabbitmq:
         condition: service_healthy
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import pika; pika.BlockingConnection(pika.URLParameters('${RABBITMQ_URI}'))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - studybuddy_network
+
+  # ===========================================================================
+  # Health Monitor - Self-Healing Service
+  # ===========================================================================
+  health_monitor:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: studybuddy_health_monitor
+    command: ["python", "health_monitor.py"]
+    volumes:
+      - ./src:/app/src
+      - ./sb_utils:/app/sb_utils
+      - ./health_monitor.py:/app/health_monitor.py
+      - /var/run/docker.sock:/var/run/docker.sock  # Allow Docker control
+    env_file: .env
+    depends_on:
+      - app
+      - worker
+      - mongo
+      - rabbitmq
+    restart: unless-stopped
     networks:
       - studybuddy_network
 
