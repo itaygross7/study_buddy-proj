@@ -1,3 +1,23 @@
+"""
+🔒 SAFETY CLASSIFICATION: TEACHING MODE (CLASS B - EXTERNAL KNOWLEDGE OK)
+========================================================================
+This service provides interactive tutoring on general topics.
+
+SECURITY REQUIREMENTS:
+- ⚠️ External knowledge ALLOWED (this is for teaching general concepts)
+- ⚠️ Does NOT use user documents (teaches any topic)
+- ✅ Creates educational content for learning
+- ✅ User-specific progress tracking
+
+CONSTRAINT LEVEL: RELAXED (Teaching Mode)
+- Teaches general educational concepts
+- Does not claim to use user documents
+- Appropriate use of AI knowledge for education
+- NOT a document analysis feature
+
+PURPOSE: General education, not document analysis.
+"""
+
 import json
 import uuid
 from pymongo.database import Database
@@ -24,6 +44,9 @@ def create_tutor_session(user_id: str, topic: str, course_id: str = "",
     Creates a new interactive tutor session for a given topic.
     Generates a 5-step syllabus using AI.
     
+    🔒 SECURITY: TEACHING MODE - External knowledge allowed.
+    This creates general educational content, not document analysis.
+    
     Args:
         user_id: ID of the user
         topic: The topic the user wants to learn
@@ -34,7 +57,7 @@ def create_tutor_session(user_id: str, topic: str, course_id: str = "",
         Session ID
     """
     db = _get_db(db_conn)
-    logger.info(f"Creating tutor session for user {user_id} on topic: {topic}")
+    logger.info(f"💡 [TEACHING] Creating tutor session for user {user_id} on topic: {topic}")
     
     # Generate syllabus using GPT-4o for better planning
     prompt = f"""

@@ -64,8 +64,11 @@ class PromptOptimizer:
     Input: Raw user request → Output: Optimized prompt
     Fast, lightweight, single responsibility
     
-    🔒 ENFORCES app requirements (document-only constraint)
+    🔒 ENFORCES app requirements (document-only constraint) - MANDATORY
     👤 RESPECTS user preferences
+    
+    ⚠️ CRITICAL: This optimizer MUST enforce document-only constraints
+    It cannot and will not remove or weaken these constraints.
     """
     
     @staticmethod
@@ -79,8 +82,10 @@ class PromptOptimizer:
         FAST optimization: 200-300 tokens, <0.5s response time
         
         🔒 CRITICAL: Injects app requirements into optimization
-        - Document-only constraint (MANDATORY)
-        - User preferences (OPTIONAL)
+        - Document-only constraint (MANDATORY - always enforced)
+        - User preferences (OPTIONAL - for UX)
+        
+        ⚠️ The optimizer is instructed to STRENGTHEN constraints, never weaken them.
         
         Args:
             user_request: Raw user input
@@ -89,7 +94,7 @@ class PromptOptimizer:
             document_content: The document content (to determine if constraint needed)
             
         Returns:
-            Dict with optimized_prompt and system_context
+            Dict with optimized_prompt and system_context (constraints preserved)
         """
         if not settings.OPENAI_API_KEY:
             return {'optimized_prompt': user_request, 'system_context': ''}
@@ -98,39 +103,67 @@ class PromptOptimizer:
         constraint_level = get_task_constraint_level(task_type)
         has_document = bool(document_content and len(document_content.strip()) > 0)
         
-        # Build APP REQUIREMENTS (mandatory rules)
+        # Build APP REQUIREMENTS (mandatory rules) - THESE CANNOT BE REMOVED
         app_requirements = []
         
         if constraint_level == "strict" and has_document:
-            app_requirements.append("🔒 MANDATORY: Answer ONLY from provided document. NO external knowledge.")
+            app_requirements.append(
+                "🔒 MANDATORY CONSTRAINT (DO NOT REMOVE): "
+                "The AI MUST answer ONLY from the provided document. "
+                "NO external knowledge is allowed. "
+                "This constraint MUST be present in the optimized prompt."
+            )
+        elif constraint_level == "strict" and not has_document:
+            app_requirements.append(
+                "🔒 CRITICAL: No document provided but strict constraint required. "
+                "The AI MUST refuse to answer without a document."
+            )
         elif constraint_level == "moderate" and has_document:
-            app_requirements.append("📚 MANDATORY: Prioritize document content. Indicate when using external knowledge.")
+            app_requirements.append(
+                "🔒 MANDATORY: Prioritize document content. "
+                "Indicate clearly when using external knowledge."
+            )
         
-        # Build meta-prompt with APP REQUIREMENTS + USER PREFERENCES
+        # Build meta-prompt with EXPLICIT ENFORCEMENT INSTRUCTIONS
         requirements_text = "\n".join(app_requirements) if app_requirements else ""
         
         meta_prompt = f"""You are optimizing a prompt for educational AI.
 
+🔒 CRITICAL SECURITY INSTRUCTION:
+You are helping create a prompt that will enforce document-only constraints.
+Your optimization MUST PRESERVE and STRENGTHEN these constraints.
+DO NOT remove, weaken, or bypass any security requirements.
+
 USER REQUEST: "{user_request}"
 
-APP REQUIREMENTS (MUST include):
-{requirements_text if requirements_text else "No special requirements"}
+APP REQUIREMENTS (MANDATORY - MUST BE IN OPTIMIZED PROMPT):
+{requirements_text if requirements_text else "No special security requirements"}
 
-USER PREFERENCES (should include):
+USER PREFERENCES (should enhance UX):
 - Task: {task_type}
 - Level: {user_prefs.proficiency_level}
 - Language: {user_prefs.language}
 - Style: {user_prefs.explanation_style}
 {"- Include examples/analogies" if user_prefs.use_examples else ""}
 
-OPTIMIZE to:
-1. Make request clear and specific
-2. ENFORCE app requirements (document-only if applicable)
-3. Match user preferences
+YOUR JOB:
+1. Make the request clear and specific
+2. PRESERVE AND STRENGTHEN all app requirements (especially document-only constraint)
+3. Match user preferences where possible
 4. Request appropriate format
+5. ENSURE the AI knows it MUST ONLY use the provided document
 
-JSON output:
-{{"optimized_prompt": "...", "system_context": "..."}}"""
+OPTIMIZATION RULES:
+- ✅ DO clarify what the user wants
+- ✅ DO match their proficiency level
+- ✅ DO request appropriate format
+- ✅ DO include constraint reminders
+- ❌ DO NOT remove security constraints
+- ❌ DO NOT weaken document-only requirement
+- ❌ DO NOT add phrases that encourage external knowledge
+
+JSON output (constraints must be preserved):
+{{"optimized_prompt": "Clear prompt WITH constraints", "system_context": "System instructions WITH constraints"}}"""
 
         try:
             client = openai.OpenAI(api_key=settings.OPENAI_API_KEY, timeout=5.0)
@@ -139,20 +172,38 @@ JSON output:
                 model="gpt-4o-mini",
                 messages=[{"role": "user", "content": meta_prompt}],
                 response_format={"type": "json_object"},
-                temperature=0.2,
-                max_tokens=300  # SMALL: keep it fast
+                temperature=0.2,  # Low for consistency and security
+                max_tokens=300
             )
             
             result = json.loads(response.choices[0].message.content)
-            logger.debug(f"✓ Prompt optimized with {constraint_level} constraint")
+            
+            # 🔒 SECURITY CHECK: Verify constraint keywords are present
+            optimized_prompt = result.get('optimized_prompt', user_request)
+            system_context = result.get('system_context', '')
+            
+            if constraint_level == "strict" and has_document:
+                # Check that constraint-related keywords are present
+                combined = (optimized_prompt + system_context).lower()
+                constraint_keywords = ['document', 'only', 'provided', 'text', 'content', 'מסמך']
+                
+                if not any(keyword in combined for keyword in constraint_keywords):
+                    logger.warning(
+                        "⚠️ Optimizer may have removed constraints! Adding them back."
+                    )
+                    # Add constraint reminder to system context
+                    system_context += "\n🔒 CRITICAL: Use ONLY the provided document content."
+            
+            logger.debug(f"✓ Prompt optimized with {constraint_level} constraint preserved")
             
             return {
-                'optimized_prompt': result.get('optimized_prompt', user_request),
-                'system_context': result.get('system_context', '')
+                'optimized_prompt': optimized_prompt,
+                'system_context': system_context
             }
             
         except Exception as e:
             logger.warning(f"Prompt optimization failed: {e}")
+            # Fallback maintains original request (constraints will be added later)
             return {'optimized_prompt': user_request, 'system_context': ''}
 
 
