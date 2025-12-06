@@ -11,11 +11,10 @@ from pymongo import MongoClient
 from src.infrastructure.config import settings
 from src.infrastructure.repositories import MongoTaskRepository, MongoDocumentRepository
 from src.services import summary_service, flashcards_service, assess_service, homework_service, glossary_service, avner_service
-from src.services.file_service import FileService
-from src.domain.models.db_models import TaskStatus, DocumentStatus
+from src.domain.models.db_models import TaskStatus
 from src.domain.errors import DocumentNotFoundError
 from sb_utils.logger_utils import logger
-from src.utils.file_processing import process_uploaded_file
+from src.utils.file_processing import process_file_from_path
 from src.utils.document_chunking import index_document_chunks
 
 # --- Database Connection ---
@@ -25,8 +24,7 @@ try:
     db_conn.command('ping')
     task_repo = MongoTaskRepository(db_conn)
     doc_repo = MongoDocumentRepository(db_conn)
-    file_service = FileService(db_conn)
-    logger.info("Worker successfully connected to MongoDB and services initialized.")
+    logger.info("Worker successfully connected to MongoDB.")
 except Exception as e:
     logger.critical(f"Worker failed to connect to MongoDB on startup: {e}", exc_info=True)
     exit(1)
@@ -41,63 +39,72 @@ def process_task(body: bytes):
     logger.info(f"Starting processing for task {task_id}", extra={"queue": queue_name, "task_id": task_id})
     task_repo.update_status(task_id, TaskStatus.PROCESSING)
 
-    # This is the only task that doesn't need a document
-    if queue_name == 'homework':
-        result_id = homework_service.solve_homework_problem(data['problem_statement'])
-        task_repo.update_status(task_id, TaskStatus.COMPLETED, result_id=result_id)
-        logger.info(f"Successfully completed task {task_id}", extra={"task_id": task_id})
-        return
-
+    # --- THIS IS THE DEFINITIVE FIX ---
+    # If a temp_path is in the message, it means a file was uploaded.
+    # We MUST process it first to get the text content for the AI.
+    text_content = ""
     document_id = data.get('document_id')
-    if not document_id:
-        raise ValueError(f"Task {task_id} of type {queue_name} is missing a document_id.")
 
-    doc = doc_repo.get_by_id(document_id)
-    if not doc:
-        raise DocumentNotFoundError(f"Document {document_id} not found for task {task_id}.")
-
-    text_content = doc.content_text
-    if doc.gridfs_id and doc.status != DocumentStatus.READY:
-        logger.info(f"Worker is processing file from GridFS for doc {doc.id}")
-        file_stream = file_service.get_file_stream(doc.gridfs_id)
-        if not file_stream:
-            raise FileNotFoundError(f"File with GridFS ID {doc.gridfs_id} not found.")
-        
-        text_content = process_uploaded_file(file_stream)
-        
+    if 'temp_path' in data and document_id:
+        temp_path = data['temp_path']
+        filename = data['filename']
+        logger.info(f"Worker is processing file '{filename}' for task {task_id}")
         try:
-            index_document_chunks(db=db_conn, document_id=doc.id, filename=doc.filename, text=text_content, course_id=doc.course_id, user_id=doc.user_id)
-        except Exception as e:
-            logger.warning(f"Chunk indexing failed for doc {document_id}: {e}")
+            # Step 1: Extract text from the file (PDF, DOCX, PNG, etc.)
+            text_content = process_file_from_path(temp_path, filename)
+            doc = doc_repo.get_by_id(document_id)
+            if doc:
+                # Step 2: Update the document record with the real text
+                doc.content_text = text_content
+                doc_repo.update(doc)
+                logger.info(f"Successfully extracted text from file '{filename}'", extra={"document_id": document_id})
+                
+                # Step 3 (Enhancement): Safely index the chunks for RAG
+                try:
+                    index_document_chunks(db=db_conn, document_id=doc.id, filename=doc.filename, text=text_content, course_id=doc.course_id, user_id=doc.user_id)
+                except Exception as chunk_error:
+                    logger.error(f"Failed to index chunks for '{filename}': {chunk_error}", exc_info=True)
+        finally:
+            # Step 4: Always clean up the temporary file
+            if os.path.exists(temp_path):
+                shutil.rmtree(os.path.dirname(temp_path), ignore_errors=True)
+                logger.debug(f"Removed temp directory for: {temp_path}")
+    elif document_id:
+        # If there was no file, the text content is already in the document record.
+        doc = doc_repo.get_by_id(document_id)
+        if not doc: raise DocumentNotFoundError(f"Document {document_id} not found.")
+        text_content = doc.content_text
+    # --- END OF FIX ---
 
-        doc.status = DocumentStatus.READY
-        doc.content_text = text_content # Store the processed text
-        doc_repo.update(doc)
-        
-        # We no longer delete the GridFS file, it's the source of truth
-        # file_service.delete_file(doc.gridfs_id) 
-    
     result_id = None
+    # Now, with the correct `text_content`, run the AI task.
     if queue_name == 'summarize':
-        result_id = summary_service.generate_summary(doc.id, text_content, db_conn)
+        if not document_id: raise ValueError("Summarize task requires a document_id.")
+        result_id = summary_service.generate_summary(document_id, text_content, db_conn)
         try:
-            glossary_service.extract_terms_from_content(doc.id, text_content, doc.course_id, doc.user_id, doc.filename, db_conn)
+            glossary_service.extract_terms_from_content(document_id, text_content, data.get('course_id'), data.get('user_id'), data.get('filename'), db_conn)
         except Exception as e:
             logger.warning(f"Glossary extraction failed (non-critical): {e}")
 
     elif queue_name == 'flashcards':
-        result_id = flashcards_service.generate_flashcards(doc.id, text_content, data['num_cards'], db_conn)
+        if not document_id: raise ValueError("Flashcards task requires a document_id.")
+        result_id = flashcards_service.generate_flashcards(document_id, text_content, data['num_cards'], db_conn)
 
     elif queue_name == 'assess':
-        result_id = assess_service.generate_assessment(doc.id, text_content, data['num_questions'], data['question_type'], db_conn)
+        if not document_id: raise ValueError("Assess task requires a document_id.")
+        result_id = assess_service.generate_assessment(document_id, text_content, data['num_questions'], data['question_type'], db_conn)
+
+    elif queue_name == 'homework':
+        result_id = homework_service.solve_homework_problem(data['problem_statement'])
     
     elif queue_name == 'avner_chat':
         answer = avner_service.answer_question(question=data['question'], context=text_content, language=data.get('language', 'he'), baby_mode=data.get('baby_mode', False), user_id=data.get('user_id', ''), db_conn=db_conn)
         result_doc = {"_id": str(uuid.uuid4()), "answer": answer}
         db_conn.avner_results.insert_one(result_doc)
         result_id = result_doc["_id"]
+
     else:
-        raise ValueError(f"Unknown AI queue for worker: {queue_name}")
+        raise ValueError(f"Unknown queue: {queue_name}")
 
     if result_id:
         task_repo.update_status(task_id, TaskStatus.COMPLETED, result_id=result_id)
