@@ -18,6 +18,9 @@
 
 set -e  # Exit on any error
 
+# Constants
+readonly EXPECTED_MIN_CONTAINERS=3  # Minimum number of containers expected (app, worker, mongo, rabbitmq - but mongo/rabbit might be shared)
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -81,11 +84,16 @@ fix_script_permissions() {
     
     log_info "Setting execute permissions on all shell scripts..."
     
+    local script_count=0
+    
     # Main directory scripts
+    # Use nullglob to handle case when no .sh files exist
+    shopt -s nullglob
     for script in *.sh; do
         if [ -f "$script" ]; then
             chmod +x "$script" 2>/dev/null || $SUDO chmod +x "$script"
             log_success "Fixed: $script"
+            ((script_count++))
         fi
     done
     
@@ -95,11 +103,13 @@ fix_script_permissions() {
             if [ -f "$script" ]; then
                 chmod +x "$script" 2>/dev/null || $SUDO chmod +x "$script"
                 log_success "Fixed: $script"
+                ((script_count++))
             fi
         done
     fi
+    shopt -u nullglob
     
-    log_success "All script permissions fixed"
+    log_success "All script permissions fixed ($script_count scripts)"
     return 0
 }
 
@@ -425,11 +435,11 @@ fresh_deployment() {
     # Check container status
     RUNNING_COUNT=$($COMPOSE_CMD ps --format json 2>/dev/null | grep -c '"State":"running"' || echo 0)
     
-    if [ "$RUNNING_COUNT" -ge 3 ]; then
+    if [ "$RUNNING_COUNT" -ge "$EXPECTED_MIN_CONTAINERS" ]; then
         log_success "Deployment successful! $RUNNING_COUNT containers running"
         return 0
     else
-        log_warning "Only $RUNNING_COUNT containers running"
+        log_warning "Only $RUNNING_COUNT containers running (expected at least $EXPECTED_MIN_CONTAINERS)"
         log_info "Check status with: $COMPOSE_CMD ps"
         return 1
     fi
