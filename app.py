@@ -176,6 +176,11 @@ def create_app():
             flash(NO_FILES_MESSAGE, 'warning')
             return redirect(url_for('library.index'))
         return render_template('glossary.html', course_id=course_id)
+    
+    @app.route('/offline')
+    def offline():
+        """Offline fallback page for PWA."""
+        return render_template('offline.html')
 
     @app.route('/dashboard')
     @login_required

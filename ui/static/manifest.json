@@ -1,11 +1,11 @@
 {
-  "name": "StudyBuddyAI",
+  "name": "StudyBuddyAI - אבנר העוזר",
   "short_name": "StudyBuddy",
-  "description": "AI-powered learning assistant for Hebrew-speaking students",
+  "description": "עוזר למידה חכם עם בינה מלאכותית לסטודנטים דוברי עברית",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#FFF8E6",
-  "theme_color": "#FFF8E6",
+  "theme_color": "#8B5E34",
   "orientation": "any",
   "scope": "/",
   "lang": "he",
@@ -37,7 +37,7 @@
       "name": "צ'אט עם אבנר",
       "short_name": "צ'אט",
       "description": "שוחח עם אבנר העוזר",
-      "url": "/avner",
+      "url": "/chat",
       "icons": [{ "src": "/avner/avner_waving.jpeg", "sizes": "96x96" }]
     }
   ],

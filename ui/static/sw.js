@@ -1,7 +1,7 @@
 // StudyBuddy Service Worker
-// Version 1.0.0
-const CACHE_NAME = 'studybuddy-v1';
-const RUNTIME_CACHE = 'studybuddy-runtime-v1';
+// Version 1.0.1
+const CACHE_NAME = 'studybuddy-v1.0.1';
+const RUNTIME_CACHE = 'studybuddy-runtime-v1.0.1';
 
 // Essential files to cache on install
 const PRECACHE_URLS = [
@@ -12,8 +12,7 @@ const PRECACHE_URLS = [
   '/avner/avner_waving.jpeg',
   '/avner/mobile_bacround.jpeg',
   '/avner/desktop_ui_backround.jpeg',
-  'https://unpkg.com/htmx.org@1.9.10',
-  'https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700&display=swap'
+  '/offline'
 ];
 
 // Install event - cache essential files
@@ -83,7 +82,11 @@ self.addEventListener('fetch', event => {
           // Fall back to cache if network fails
           return caches.match(request)
             .then(cached => {
-              return cached || caches.match('/');
+              if (cached) {
+                return cached;
+              }
+              // If no cached page, show offline page
+              return caches.match('/offline');
             });
         })
     );
