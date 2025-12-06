@@ -58,7 +58,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: studybuddy_worker
     command: ["python", "worker.py"]
     volumes:
       - ./src:/app/src
