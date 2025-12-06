@@ -86,7 +86,7 @@
                 <a href="{{ url_for('library.index') }}" class="block rounded-lg px-4 py-3 text-base text-cream hover:bg-caramel transition-all font-medium mobile-touch-target">📚 הספרייה שלי</a>
                 <!-- Tools -->
                 <div class="pt-2 border-t border-caramel/50 mt-2">
-                    <p class="px-4 py-2 text-xs text-warm-yellow font-bold">🛠️ כלים</p>
+                    <div class="px-4 py-2 text-xs text-warm-yellow font-bold" role="heading" aria-level="3">🛠️ כלים</div>
                     <a href="{{ url_for('summary_tool') }}" class="block rounded-lg px-4 py-3 text-sm text-cream hover:bg-caramel transition-all mobile-touch-target">📖 מסכם חכם</a>
                     <a href="{{ url_for('flashcards_tool') }}" class="block rounded-lg px-4 py-3 text-sm text-cream hover:bg-caramel transition-all mobile-touch-target">🎴 כרטיסיות</a>
                     <a href="{{ url_for('assess_tool') }}" class="block rounded-lg px-4 py-3 text-sm text-cream hover:bg-caramel transition-all mobile-touch-target">✅ בחן עצמך</a>
@@ -180,7 +180,7 @@
                 menuIconOpen.classList.toggle('hidden');
                 menuIconClose.classList.toggle('hidden');
                 
-                // Add haptic feedback on supported devices
+                // Add haptic feedback on supported devices (Android only - iOS doesn't support navigator.vibrate)
                 if (navigator.vibrate) {
                     navigator.vibrate(10);
                 }
