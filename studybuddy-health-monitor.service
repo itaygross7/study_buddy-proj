@@ -1,0 +1,16 @@
+[Unit]
+Description=StudyBuddy Health Monitor
+After=network.target docker.service
+Requires=docker.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/study_buddy-proj
+Environment="PATH=/usr/local/bin:/usr/bin:/bin"
+ExecStart=/usr/bin/python3 /root/study_buddy-proj/scripts/health_monitor.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
