@@ -249,12 +249,19 @@ def create_app():
     @app.errorhandler(Exception)
     def handle_exception(error):
         logger.error(f"Unhandled exception for path {request.path}: {error}", exc_info=True)
-        if settings.FLASK_ENV == 'production':
+        
+        # Send error notification to admin (in both dev and production)
+        # This helps catch issues early
+        try:
             email_service.send_error_notification(
                 error_type=type(error).__name__,
                 error_message=str(error),
-                details=f"Path: {request.path}"
+                details=f"Path: {request.path}\nEnvironment: {settings.FLASK_ENV}"
             )
+        except Exception as email_error:
+            # Log but don't fail if email sending fails
+            logger.error(f"Failed to send error notification email: {email_error}", exc_info=True)
+        
         # Return JSON for API requests, HTML for web requests
         if request.path.startswith('/api/') or request.path.startswith('/webhook/'):
             return jsonify({"error": "Internal Server Error"}), 500
