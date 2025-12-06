@@ -34,19 +34,57 @@ from sb_utils.logger_utils import logger
 
 @dataclass
 class UserPreferences:
-    """Lightweight user preferences - stored in DB, cached in memory."""
+    """
+    Comprehensive user preferences for AI response personalization.
+    
+    🎯 EMPHASIS: These preferences are CRITICAL for personalization.
+    The AI must adapt to each user's unique learning profile.
+    """
     user_id: str
-    language: str = "he"
-    proficiency_level: str = "intermediate"  # beginner, intermediate, advanced
-    explanation_style: str = "detailed"  # concise, detailed, step_by_step
+    
+    # Language & Communication
+    language: str = "he"  # Hebrew by default
+    secondary_language: str = ""  # Optional second language
+    
+    # Knowledge & Study Level
+    proficiency_level: str = "intermediate"  # beginner, intermediate, advanced, expert
+    study_level: str = "high_school"  # elementary, middle_school, high_school, university, professional
+    subject_knowledge: Dict[str, str] = None  # {"math": "advanced", "history": "beginner"}
+    
+    # Learning Style & Preferences
+    explanation_style: str = "detailed"  # concise, detailed, step_by_step, visual
     use_examples: bool = True
     use_analogies: bool = True
-    baby_mode: bool = False
-    preferred_formats: list = None
+    use_real_world_examples: bool = True
+    preferred_formats: list = None  # ['bullet_points', 'paragraphs', 'numbered_lists', 'tables']
+    
+    # Study Habits & Behavior
+    learning_pace: str = "moderate"  # slow, moderate, fast
+    study_time_preference: str = "short"  # short (15-30min), medium (30-60min), long (60+min)
+    prefers_practice: bool = True  # Include practice questions
+    prefers_summary: bool = True  # Include summaries
+    
+    # Feedback & Adaptation
+    previous_feedback: List[str] = None  # User's past feedback
+    difficult_topics: List[str] = None  # Topics user struggles with
+    strong_topics: List[str] = None  # Topics user excels at
+    
+    # Accessibility
+    baby_mode: bool = False  # Simplified explanations
+    visual_learner: bool = False  # Emphasize diagrams/visuals
+    needs_more_detail: bool = False  # User requested more explanation
     
     def __post_init__(self):
         if self.preferred_formats is None:
             self.preferred_formats = ['bullet_points']
+        if self.subject_knowledge is None:
+            self.subject_knowledge = {}
+        if self.previous_feedback is None:
+            self.previous_feedback = []
+        if self.difficult_topics is None:
+            self.difficult_topics = []
+        if self.strong_topics is None:
+            self.strong_topics = []
     
     def to_dict(self):
         """Convert to dict for JSON serialization."""
@@ -55,7 +93,34 @@ class UserPreferences:
     @classmethod
     def from_dict(cls, data: dict):
         """Create from dict."""
+        # Handle dict fields that might be None
+        if 'subject_knowledge' in data and data['subject_knowledge'] is None:
+            data['subject_knowledge'] = {}
+        if 'previous_feedback' in data and data['previous_feedback'] is None:
+            data['previous_feedback'] = []
+        if 'difficult_topics' in data and data['difficult_topics'] is None:
+            data['difficult_topics'] = []
+        if 'strong_topics' in data and data['strong_topics'] is None:
+            data['strong_topics'] = []
         return cls(**data)
+    
+    def get_profile_summary(self) -> str:
+        """Get human-readable profile summary for AI prompts."""
+        summary_parts = [
+            f"Study Level: {self.study_level}",
+            f"Knowledge: {self.proficiency_level}",
+            f"Language: {self.language}",
+            f"Style: {self.explanation_style}",
+            f"Pace: {self.learning_pace}"
+        ]
+        
+        if self.difficult_topics:
+            summary_parts.append(f"Struggles with: {', '.join(self.difficult_topics[:3])}")
+        
+        if self.strong_topics:
+            summary_parts.append(f"Strong in: {', '.join(self.strong_topics[:3])}")
+        
+        return " | ".join(summary_parts)
 
 
 class PromptOptimizer:
@@ -127,6 +192,54 @@ class PromptOptimizer:
         # Build meta-prompt with EXPLICIT ENFORCEMENT INSTRUCTIONS
         requirements_text = "\n".join(app_requirements) if app_requirements else ""
         
+        # 🎯 BUILD COMPREHENSIVE USER PROFILE for personalization
+        user_profile = f"""
+USER LEARNING PROFILE (CRITICAL - Adapt to this user):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📚 Study Level: {user_prefs.study_level}
+🎓 Knowledge Level: {user_prefs.proficiency_level}
+🌍 Language: {user_prefs.language} (Primary)
+💡 Learning Style: {user_prefs.explanation_style}
+⏱️ Learning Pace: {user_prefs.learning_pace}
+⏰ Study Time: {user_prefs.study_time_preference} sessions
+
+LEARNING PREFERENCES:
+✓ Examples: {user_prefs.use_examples}
+✓ Analogies: {user_prefs.use_analogies}
+✓ Real-world examples: {user_prefs.use_real_world_examples}
+✓ Practice questions: {user_prefs.prefers_practice}
+✓ Summaries: {user_prefs.prefers_summary}
+✓ Format: {', '.join(user_prefs.preferred_formats)}
+"""
+
+        # Add subject-specific knowledge if available
+        if user_prefs.subject_knowledge:
+            user_profile += f"\nSubject Knowledge:\n"
+            for subject, level in user_prefs.subject_knowledge.items():
+                user_profile += f"  - {subject}: {level}\n"
+        
+        # Add learning challenges if available
+        if user_prefs.difficult_topics:
+            user_profile += f"\n⚠️ Struggles with: {', '.join(user_prefs.difficult_topics)}\n"
+        
+        # Add strengths if available
+        if user_prefs.strong_topics:
+            user_profile += f"✨ Strong in: {', '.join(user_prefs.strong_topics)}\n"
+        
+        # Add special needs
+        special_needs = []
+        if user_prefs.baby_mode:
+            special_needs.append("Simplified explanations (Baby Mode)")
+        if user_prefs.visual_learner:
+            special_needs.append("Visual/diagram emphasis")
+        if user_prefs.needs_more_detail:
+            special_needs.append("Extra detail required")
+        
+        if special_needs:
+            user_profile += f"\n🎯 Special Needs: {', '.join(special_needs)}\n"
+        
+        user_profile += "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+        
         meta_prompt = f"""You are optimizing a prompt for educational AI.
 
 🔒 CRITICAL SECURITY INSTRUCTION:
@@ -139,31 +252,42 @@ USER REQUEST: "{user_request}"
 APP REQUIREMENTS (MANDATORY - MUST BE IN OPTIMIZED PROMPT):
 {requirements_text if requirements_text else "No special security requirements"}
 
-USER PREFERENCES (should enhance UX):
-- Task: {task_type}
-- Level: {user_prefs.proficiency_level}
-- Language: {user_prefs.language}
-- Style: {user_prefs.explanation_style}
-{"- Include examples/analogies" if user_prefs.use_examples else ""}
+{user_profile}
+
+🎯 PERSONALIZATION EMPHASIS (CRITICAL):
+The optimized prompt MUST be tailored to THIS SPECIFIC USER:
+1. Match their study level ({user_prefs.study_level})
+2. Match their knowledge level ({user_prefs.proficiency_level})
+3. Use their preferred language ({user_prefs.language})
+4. Follow their learning style ({user_prefs.explanation_style})
+5. Adapt to their learning pace ({user_prefs.learning_pace})
+6. {"Include examples and analogies" if user_prefs.use_examples else "Keep it direct"}
+7. {"Include practice questions" if user_prefs.prefers_practice else "Focus on explanation"}
+8. Format as: {user_prefs.preferred_formats[0] if user_prefs.preferred_formats else "clear text"}
 
 YOUR JOB:
 1. Make the request clear and specific
 2. PRESERVE AND STRENGTHEN all app requirements (especially document-only constraint)
-3. Match user preferences where possible
-4. Request appropriate format
-5. ENSURE the AI knows it MUST ONLY use the provided document
+3. HEAVILY personalize based on user profile above
+4. Request format matching user preferences
+5. ENSURE the AI knows it MUST adapt to this user's level and style
+6. If user has difficult topics, acknowledge and support them
+7. If user has strengths, build on them
 
 OPTIMIZATION RULES:
 - ✅ DO clarify what the user wants
-- ✅ DO match their proficiency level
+- ✅ DO heavily emphasize personalization
+- ✅ DO match their exact study and knowledge level
+- ✅ DO use their preferred learning style
 - ✅ DO request appropriate format
 - ✅ DO include constraint reminders
 - ❌ DO NOT remove security constraints
 - ❌ DO NOT weaken document-only requirement
 - ❌ DO NOT add phrases that encourage external knowledge
+- ❌ DO NOT ignore user preferences
 
-JSON output (constraints must be preserved):
-{{"optimized_prompt": "Clear prompt WITH constraints", "system_context": "System instructions WITH constraints"}}"""
+JSON output (constraints preserved, heavily personalized):
+{{"optimized_prompt": "Personalized prompt WITH constraints", "system_context": "System instructions WITH constraints and personalization"}}"""
 
         try:
             client = openai.OpenAI(api_key=settings.OPENAI_API_KEY, timeout=5.0)
