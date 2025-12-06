@@ -70,7 +70,14 @@ class TripleHybridClient:
         full_prompt = create_safety_guard_prompt(prompt, "")
         
         try:
-            client = openai.OpenAI(api_key=settings.OPENAI_API_KEY, base_url=settings.SB_BASE_URL, timeout=30.0)
+            # --- THIS IS THE FIX ---
+            # Only pass base_url if it's actually set.
+            client_args = {"api_key": settings.OPENAI_API_KEY, "timeout": 30.0}
+            if settings.SB_BASE_URL:
+                client_args["base_url"] = settings.SB_BASE_URL
+            client = openai.OpenAI(**client_args)
+            # --- END OF FIX ---
+
             kwargs = {"model": settings.SB_OPENAI_MODEL, "messages": [{"role": "user", "content": full_prompt}], "max_tokens": 1500, "temperature": 0.7}
             if require_json:
                 kwargs["response_format"] = {"type": "json_object"}
@@ -90,11 +97,7 @@ class TripleHybridClient:
         full_prompt = create_safety_guard_prompt(prompt, "")
         
         try:
-            # --- THIS IS THE FIX ---
-            # Using the configurable model name from settings, not a hardcoded value.
             model = genai.GenerativeModel(settings.SB_GEMINI_MODEL)
-            # --- END OF FIX ---
-
             logger.debug(f"Using {settings.SB_GEMINI_MODEL} (multimodal: {file_path is not None})")
             
             if file_path and os.path.exists(file_path):
