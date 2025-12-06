@@ -10,19 +10,51 @@ from sb_utils.ai_safety import create_safety_guard_prompt
 from src.domain.errors import AIClientError
 
 
-TaskType = Literal["heavy_file", "quiz", "standard", "complex_reasoning", "baby_capy"]
+TaskType = Literal[
+    "heavy_file",      # Gemini: Audio, video, large PDFs
+    "summary",         # Gemini: Text summarization
+    "homework",        # Gemini: Problem solving & explanations
+    "diagram",         # Gemini: Mermaid diagrams, visual generation
+    "glossary",        # Gemini: Term extraction
+    "quiz",            # OpenAI: Quiz generation (JSON required)
+    "assessment",      # OpenAI: Assessment questions (JSON required)
+    "flashcards",      # OpenAI: Flashcard generation (JSON required)
+    "baby_capy",       # OpenAI: Simplified explanations
+    "chat",            # OpenAI: Conversational responses
+    "standard"         # Fallback to default provider
+]
 
 
 class TripleHybridClient:
     """
-    Triple Hybrid AI Client - Routes tasks to the optimal model for cost and performance.
+    Triple Hybrid AI Client - Intelligent routing to optimal model for each task.
     
-    Routing Strategy:
-    - Heavy files (audio/long PDF): Gemini 1.5 Flash (native multimodal)
-    - Quiz generation: GPT-4o-mini with JSON enforcement
-    - Baby Capy mode: GPT-4o-mini with simplified prompt
-    - Standard tasks: GPT-4o-mini
-    - Complex reasoning: GPT-4o
+    ROUTING RULES (Balanced 50/50 Distribution):
+    
+    === GEMINI FLASH (Cost-effective, multimodal, fast) ===
+    1. Heavy file processing (audio, video, large PDFs) - task_type="heavy_file"
+    2. Text summarization - task_type="summary"
+    3. Homework solutions & explanations - task_type="homework"
+    4. Diagram generation (Mermaid, etc.) - task_type="diagram"
+    5. Standard/unspecified tasks - task_type="standard"
+    
+    === GPT-4o-MINI (JSON enforcement, chat, structured output) ===
+    6. Quiz generation (requires JSON) - task_type="quiz" or require_json=True
+    7. Assessment questions (requires JSON) - task_type="assessment" or require_json=True
+    8. Flashcard generation (requires JSON) - task_type="flashcards" or require_json=True
+    9. Glossary/term extraction (requires JSON) - task_type="glossary" with require_json=True
+    10. Chat/conversational (Avner) - task_type="chat"
+    11. Baby Capy mode (simple explanations) - task_type="baby_capy" or baby_mode=True
+    
+    ROUTING PRIORITY:
+    1. baby_mode=True → OpenAI (override everything)
+    2. require_json=True → OpenAI (JSON enforcement needed)
+    3. task_type → Route to designated provider
+    4. default → Gemini Flash
+    
+    This ensures balanced distribution while leveraging each model's strengths:
+    - Gemini: Multimodal, summarization, explanations, cost-effective text
+    - OpenAI: JSON output, chat, structured data, simplified teaching
     
     Model selection is configurable via environment variables:
     - SB_OPENAI_MODEL: OpenAI model to use (default: gpt-4o-mini)
@@ -58,28 +90,71 @@ class TripleHybridClient:
     def route_task(self, task_type: TaskType, content: str, file_path: Optional[str] = None,
                    require_json: bool = False, baby_mode: bool = False) -> str:
         """
-        Smart router that selects the best model for the task.
+        Intelligent router that selects the optimal model based on explicit rules.
+        
+        ROUTING LOGIC:
+        - Gemini Flash: heavy_file, summary, homework, diagram, glossary
+        - GPT-4o-mini: quiz, assessment, flashcards, baby_capy, chat, JSON-required tasks
         
         Args:
-            task_type: Type of task to perform
+            task_type: Type of task to perform (determines model selection)
             content: The content/prompt to process
             file_path: Optional file path for multimodal tasks
-            require_json: Whether to enforce JSON output (OpenAI only)
-            baby_mode: Whether to use Baby Capy simplified explanations
+            require_json: Whether to enforce JSON output (routes to OpenAI)
+            baby_mode: Whether to use Baby Capy simplified explanations (routes to OpenAI)
             
         Returns:
-            Generated text from the AI model
+            Generated text from the selected AI model
         """
+        # Log routing decision for monitoring
+        logger.debug(f"Routing task_type='{task_type}' require_json={require_json} baby_mode={baby_mode}")
+        
+        # === OPENAI ROUTES ===
+        # Baby Capy mode always uses OpenAI for consistent simple explanations
         if baby_mode or task_type == "baby_capy":
+            logger.info(f"→ Routing to GPT-4o-mini (Baby Capy mode)")
             return self._call_gpt_mini(content, require_json=False, baby_mode=True)
-        elif task_type == "heavy_file":
-            return self._call_gemini_flash(content, file_path)
-        elif task_type == "quiz":
+        
+        # JSON-required tasks must use OpenAI (Gemini doesn't enforce JSON)
+        if require_json:
+            logger.info(f"→ Routing to GPT-4o-mini (JSON required)")
             return self._call_gpt_mini(content, require_json=True)
-        elif task_type == "complex_reasoning":
-            return self._call_gpt_4o(content)
-        else:  # standard
-            return self._call_gpt_mini(content, require_json=require_json)
+        
+        # Quiz, Assessment, Flashcards (JSON output needed)
+        if task_type in ["quiz", "assessment", "flashcards"]:
+            logger.info(f"→ Routing to GPT-4o-mini (task_type={task_type})")
+            return self._call_gpt_mini(content, require_json=True)
+        
+        # Chat/conversational (Avner chatbot)
+        if task_type == "chat":
+            logger.info(f"→ Routing to GPT-4o-mini (task_type=chat)")
+            return self._call_gpt_mini(content, require_json=False)
+        
+        # === GEMINI ROUTES ===
+        # Heavy files with multimodal support
+        if task_type == "heavy_file":
+            logger.info(f"→ Routing to Gemini Flash (task_type=heavy_file, multimodal={file_path is not None})")
+            return self._call_gemini_flash(content, file_path)
+        
+        # Text summarization
+        if task_type == "summary":
+            logger.info(f"→ Routing to Gemini Flash (task_type=summary)")
+            return self._call_gemini_flash(content, file_path)
+        
+        # Homework solutions & explanations
+        if task_type == "homework":
+            logger.info(f"→ Routing to Gemini Flash (task_type=homework)")
+            return self._call_gemini_flash(content, file_path)
+        
+        # Diagram generation (Mermaid, etc.)
+        if task_type == "diagram":
+            logger.info(f"→ Routing to Gemini Flash (task_type=diagram)")
+            return self._call_gemini_flash(content, file_path)
+        
+        # === DEFAULT ROUTE ===
+        # Standard/unspecified tasks use default provider (Gemini per config)
+        logger.info(f"→ Routing to Gemini Flash (task_type=standard/default)")
+        return self._call_gemini_flash(content, file_path)
 
     @retry(wait=wait_exponential(multiplier=1, min=2, max=10), stop=stop_after_attempt(3))
     def _call_gpt_mini(self, prompt: str, require_json: bool = False, baby_mode: bool = False) -> str:

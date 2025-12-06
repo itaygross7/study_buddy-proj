@@ -119,12 +119,9 @@ def check_ai_models() -> dict:
     if settings.OPENAI_API_KEY:
         try:
             ai_client = AIClient()
-            test_response = ai_client.generate_text(
-                prompt="Say 'OK' if you can read this.",
-                system_prompt="You are a test bot. Respond with exactly 'OK'.",
-                max_tokens=10,
-                temperature=0,
-                provider_override="openai"
+            # Directly call GPT mini for health check
+            test_response = ai_client._call_gpt_mini(
+                prompt="You are a test bot. Respond with exactly 'OK'. Say 'OK' if you can read this."
             )
             
             results["openai"] = {
@@ -150,12 +147,9 @@ def check_ai_models() -> dict:
     if settings.GEMINI_API_KEY:
         try:
             ai_client = AIClient()
-            test_response = ai_client.generate_text(
-                prompt="Say 'OK' if you can read this.",
-                system_prompt="You are a test bot. Respond with exactly 'OK'.",
-                max_tokens=10,
-                temperature=0,
-                provider_override="gemini"
+            # Directly call Gemini Flash for health check
+            test_response = ai_client._call_gemini_flash(
+                prompt="You are a test bot. Respond with exactly 'OK'. Say 'OK' if you can read this."
             )
             
             results["gemini"] = {

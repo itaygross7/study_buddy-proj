@@ -88,13 +88,15 @@ def answer_question(
         # Use AI client - it will automatically select the best model
         ai_client = AIClient()
         
-        # Chat-style short answers are good for gpt-4o-mini
-        # The TripleHybridClient will route this appropriately
+        # Combine system prompt and user prompt for context
+        full_context = system_prompt
+        
+        # Chat-style answers route to GPT-4o-mini
         answer = ai_client.generate_text(
             prompt=user_prompt,
-            system_prompt=system_prompt,
-            max_tokens=500,  # Short answers
-            temperature=0.8   # More creative for chat
+            context=full_context,
+            task_type="chat",  # Routes to GPT-4o-mini for chat
+            baby_mode=baby_mode  # Enable baby mode if requested
         )
         
         logger.info(f"Avner answered question for user {user_id}", extra={

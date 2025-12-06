@@ -13,7 +13,11 @@ def solve_homework_problem(problem_statement: str) -> str:
     Break down the problem, explain the concepts involved, and then show the work.
     """
 
-    solution_text = ai_client.generate_text(prompt=prompt, context=problem_statement)
+    solution_text = ai_client.generate_text(
+        prompt=prompt, 
+        context=problem_statement,
+        task_type="homework"  # Routes to Gemini Flash
+    )
 
     # For homework helper, the result is the text itself, not a DB entry.
     # We can consider saving it later if history is needed.
