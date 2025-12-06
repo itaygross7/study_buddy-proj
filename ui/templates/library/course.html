@@ -275,6 +275,12 @@
         return { valid: true };
     }
     
+    // Helper function to get the correct upload endpoint
+    function getUploadEndpoint(hasFiles) {
+        // Use faster GridFS endpoint for files, regular endpoint for text only
+        return hasFiles ? '/api/upload/files' : '/api/upload/';
+    }
+    
     // iOS-specific: Add visual feedback for file input selection
     if (isIOS) {
         var fileInputs = document.querySelectorAll('input[type="file"]');
@@ -364,8 +370,8 @@
             submitBtn.disabled = true;
             submitBtn.classList.add('opacity-75');
             
-            // Use faster GridFS endpoint for multiple files, or regular endpoint for text/single file
-            const uploadUrl = (files.length > 0) ? '/api/upload/files' : '/api/upload/';
+            // Get the appropriate upload endpoint
+            const uploadUrl = getUploadEndpoint(files.length > 0);
             
             // Use XMLHttpRequest for better iOS Safari compatibility
             const xhr = new XMLHttpRequest();
@@ -454,9 +460,9 @@
                 submitBtn.innerHTML = '<img src="/avner/loading.jpeg" class="w-6 h-6 inline-block animate-pulse"> מעלה...';
             }
             
-            // Use faster GridFS endpoint for file uploads
+            // Use the appropriate upload endpoint
             const xhr = new XMLHttpRequest();
-            xhr.open('POST', '/api/upload/files', true);
+            xhr.open('POST', getUploadEndpoint(true), true);
             
             xhr.onload = function() {
                 if (xhr.status >= 200 && xhr.status < 300) {

@@ -166,11 +166,11 @@
 
 {% block scripts %}
 <script>
-    // Auto-refresh page if there are processing tasks
+    // Auto-refresh page if there are processing tasks (every 10 seconds to avoid excessive load)
     {% if task_stats.processing > 0 %}
     setTimeout(function() {
         window.location.reload();
-    }, 5000); // Refresh every 5 seconds if tasks are processing
+    }, 10000); // Refresh every 10 seconds if tasks are processing
     {% endif %}
 </script>
 {% endblock %}
