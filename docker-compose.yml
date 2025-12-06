@@ -30,7 +30,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name:
     command: ["python", "worker.py"]
     volumes:
       - ./src:/app/src
