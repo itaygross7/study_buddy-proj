@@ -1,6 +1,7 @@
 """Routes for user library and course management."""
 import uuid
 from datetime import datetime, timezone
+from typing import Optional
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_required, current_user
 
@@ -8,6 +9,7 @@ from src.infrastructure.database import db
 from src.domain.models.db_models import Course, UserProfile, Language
 from src.api.routes_admin import get_system_config
 from src.services import auth_service
+from src.utils.document_chunking import smart_retrieve_chunks
 from sb_utils.logger_utils import logger
 
 library_bp = Blueprint('library', __name__)
@@ -47,24 +49,49 @@ def get_course_documents(course_id: str):
     return list(db.documents.find({"course_id": course_id}).sort("created_at", -1))
 
 
-def get_course_context(course_id: str, user_id: str, max_chars: int = 5000) -> str:
-    """Get combined context from all course documents for AI."""
-    documents = db.documents.find({"course_id": course_id, "user_id": user_id})
-    context_parts = []
-    total_chars = 0
+def get_course_context(course_id: str, user_id: str, query: Optional[str] = None, max_chars: int = 4000) -> str:
+    """
+    Get relevant context from course documents using smart chunk retrieval.
+    
+    Args:
+        course_id: Course ID
+        user_id: User ID
+        query: Optional search query for relevant chunks
+        max_chars: Maximum characters in context
+        
+    Returns:
+        Combined context string with relevant chunks
+    """
+    # Try smart retrieval first (using indexed chunks)
+    try:
+        return smart_retrieve_chunks(
+            db=db,
+            course_id=course_id,
+            user_id=user_id,
+            query=query,
+            max_chunks=5,
+            max_total_chars=max_chars
+        )
+    except Exception as e:
+        logger.warning(f"Smart retrieval failed, falling back to naive approach: {e}")
+        
+        # Fallback to old naive approach if chunking not available
+        documents = db.documents.find({"course_id": course_id, "user_id": user_id})
+        context_parts = []
+        total_chars = 0
 
-    for doc in documents:
-        content = doc.get("content_text", "")
-        if total_chars + len(content) > max_chars:
-            # Add truncated content
-            remaining = max_chars - total_chars
-            if remaining > 100:
-                context_parts.append(content[:remaining] + "...")
-            break
-        context_parts.append(content)
-        total_chars += len(content)
+        for doc in documents:
+            content = doc.get("content_text", "")
+            if total_chars + len(content) > max_chars:
+                # Add truncated content
+                remaining = max_chars - total_chars
+                if remaining > 100:
+                    context_parts.append(content[:remaining] + "...")
+                break
+            context_parts.append(content)
+            total_chars += len(content)
 
-    return "\n\n---\n\n".join(context_parts)
+        return "\n\n---\n\n".join(context_parts)
 
 
 @library_bp.route('/')
@@ -301,6 +328,47 @@ def course_tasks(course_id):
                            tasks_by_type=tasks_by_type,
                            profile=profile,
                            config=config)
+
+
+@library_bp.route('/course/<course_id>/progress')
+@login_required
+def course_progress(course_id):
+    """
+    API endpoint to get processing progress for a course.
+    Returns JSON with current processing status.
+    """
+    course = get_course_by_id(course_id, current_user.id)
+    if not course:
+        return jsonify({"error": "Course not found"}), 404
+    
+    # Get processing tasks
+    processing_tasks = list(db.tasks.find({
+        "user_id": current_user.id,
+        "course_id": course_id,
+        "status": {"$in": ["PENDING", "PROCESSING"]}
+    }))
+    
+    # Get document counts
+    total_docs = db.documents.count_documents({"course_id": course_id, "user_id": current_user.id})
+    
+    # Get chunked documents count
+    chunked_docs = db.document_chunks.aggregate([
+        {"$match": {"course_id": course_id, "user_id": current_user.id}},
+        {"$group": {"_id": "$document_id"}},
+        {"$count": "total"}
+    ])
+    chunked_count = next(chunked_docs, {}).get('total', 0)
+    
+    # Calculate progress
+    indexing_progress = (chunked_count / total_docs * 100) if total_docs > 0 else 0
+    
+    return jsonify({
+        "total_documents": total_docs,
+        "indexed_documents": chunked_count,
+        "indexing_progress": round(indexing_progress, 1),
+        "processing_tasks": len(processing_tasks),
+        "ready": len(processing_tasks) == 0 and chunked_count == total_docs
+    })
 
 
 # ============ User Profile Routes ============
