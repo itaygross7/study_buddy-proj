@@ -4,6 +4,10 @@ from src.infrastructure.database import db as flask_db
 from src.services.ai_client import AIClient
 from sb_utils.logger_utils import logger
 
+# Configuration constants
+MAX_CONTEXT_LENGTH = 4000  # Maximum total context length in characters
+MAX_DOCUMENT_CONTENT_LENGTH = 2000  # Maximum content per document
+
 
 def _get_db(db_conn: Database = None) -> Database:
     """Returns the provided db_conn or the default Flask db proxy."""
@@ -73,7 +77,7 @@ def answer_question(
             user_prompt = f"""השאלה שלי: {question}
 
 חומר הקורס (ענה רק על בסיס זה):
-{context[:4000]}  
+{context[:MAX_CONTEXT_LENGTH]}  
 """
         else:
             user_prompt = f"""השאלה שלי: {question}
@@ -137,7 +141,7 @@ def get_course_context(course_id: str, user_id: str, db_conn: Database = None) -
         for doc in documents:
             content = doc.get("content_text", "")
             if content and content != "[Processing...]":
-                context_parts.append(f"=== {doc.get('filename', 'Document')} ===\n{content[:2000]}")
+                context_parts.append(f"=== {doc.get('filename', 'Document')} ===\n{content[:MAX_DOCUMENT_CONTENT_LENGTH]}")
         
         context = "\n\n".join(context_parts)
         return context, language

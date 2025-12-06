@@ -4,6 +4,7 @@ import shutil
 import pika
 import time
 import uuid
+from datetime import datetime, timezone
 from tenacity import retry, stop_after_attempt, wait_fixed
 from pymongo import MongoClient
 
@@ -126,7 +127,6 @@ def process_task(body: bytes):
         )
         
         # Store the answer in a simple result document
-        from datetime import datetime, timezone
         result_doc = {
             "_id": str(uuid.uuid4()),
             "type": "avner_chat",
@@ -135,8 +135,15 @@ def process_task(body: bytes):
             "user_id": user_id,
             "created_at": datetime.now(timezone.utc)
         }
-        db_conn.avner_results.insert_one(result_doc)
-        result_id = result_doc["_id"]
+        
+        try:
+            db_conn.avner_results.insert_one(result_doc)
+            result_id = result_doc["_id"]
+        except Exception as db_error:
+            logger.error(f"Failed to store Avner result: {db_error}", exc_info=True)
+            # Still mark task as completed but with error in logs
+            result_id = None
+            raise  # Re-raise to trigger retry logic
 
     else:
         raise ValueError(f"Unknown queue: {queue_name}")
