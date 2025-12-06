@@ -458,6 +458,7 @@
 ==================================================================
   7. Utility Classes
      - Custom utility classes for spacing and effects
+     - Enhanced mobile interactions
 ==================================================================
 */
 @layer utilities {
@@ -466,7 +467,7 @@
     }
     
     .card-hover {
-        transition: all 0.3s ease;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
     
     .card-hover:hover {
@@ -474,13 +475,24 @@
         box-shadow: 0 8px 20px rgba(139, 94, 52, 0.15);
     }
     
+    /* Mobile: Add active state for touch feedback */
+    .card-hover:active {
+        transform: translateY(0px) scale(0.98);
+        transition: all 0.1s ease;
+    }
+    
     .btn-hover-lift {
-        transition: all 0.3s ease;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
     
     .btn-hover-lift:hover {
         transform: translateY(-2px);
         box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+    }
+    
+    .btn-hover-lift:active {
+        transform: translateY(0px) scale(0.97);
+        transition: all 0.1s ease;
     }
     
     .gradient-text {
@@ -506,10 +518,36 @@
         touch-action: manipulation;
     }
     
+    /* Touch feedback for all interactive elements */
+    a, button, .btn-primary, .btn-secondary {
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    a:active, button:active {
+        transform: scale(0.97);
+        opacity: 0.9;
+    }
+    
     /* Improve scrolling on mobile */
     .mobile-scroll {
         -webkit-overflow-scrolling: touch;
         scroll-behavior: smooth;
+    }
+    
+    /* Smooth page transitions */
+    .page-transition {
+        animation: fadeInUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
 }
 

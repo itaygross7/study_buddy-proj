@@ -79,49 +79,49 @@
 
         <!-- Mobile menu -->
         <div class="md:hidden hidden" id="mobile-menu">
-            <div class="space-y-1 px-4 pb-4 pt-2 bg-cozy-brown rounded-b-2xl border-t-2 border-caramel">
-                <a href="{{ url_for('index') }}" class="block rounded-lg px-3 py-3 text-base text-cream hover:bg-caramel transition-all font-medium">🏠 בית</a>
-                <a href="{{ url_for('avner_chat') }}" class="block rounded-lg px-3 py-3 text-base text-cream hover:bg-caramel transition-all font-medium">💬 צ'אט עם אבנר</a>
+            <div class="space-y-1 px-4 pb-4 pt-2 bg-cozy-brown rounded-b-2xl border-t-2 border-caramel shadow-2xl">
+                <a href="{{ url_for('index') }}" class="block rounded-lg px-4 py-3 text-base text-cream hover:bg-caramel transition-all font-medium mobile-touch-target">🏠 בית</a>
+                <a href="{{ url_for('avner_chat') }}" class="block rounded-lg px-4 py-3 text-base text-cream hover:bg-caramel transition-all font-medium mobile-touch-target">💬 צ'אט עם אבנר</a>
                 {% if current_user.is_authenticated %}
-                <a href="{{ url_for('library.index') }}" class="block rounded-lg px-3 py-3 text-base text-cream hover:bg-caramel transition-all font-medium">📚 הספרייה שלי</a>
+                <a href="{{ url_for('library.index') }}" class="block rounded-lg px-4 py-3 text-base text-cream hover:bg-caramel transition-all font-medium mobile-touch-target">📚 הספרייה שלי</a>
                 <!-- Tools -->
                 <div class="pt-2 border-t border-caramel/50 mt-2">
-                    <p class="px-3 py-2 text-xs text-warm-yellow font-bold">🛠️ כלים</p>
-                    <a href="{{ url_for('summary_tool') }}" class="block rounded-lg px-3 py-2 text-sm text-cream hover:bg-caramel transition-all">📖 מסכם חכם</a>
-                    <a href="{{ url_for('flashcards_tool') }}" class="block rounded-lg px-3 py-2 text-sm text-cream hover:bg-caramel transition-all">🎴 כרטיסיות</a>
-                    <a href="{{ url_for('assess_tool') }}" class="block rounded-lg px-3 py-2 text-sm text-cream hover:bg-caramel transition-all">✅ בחן עצמך</a>
-                    <a href="{{ url_for('homework_tool') }}" class="block rounded-lg px-3 py-2 text-sm text-cream hover:bg-caramel transition-all">📚 עזרה בשיעורים</a>
-                    <a href="{{ url_for('tutor_tool') }}" class="block rounded-lg px-3 py-2 text-sm text-cream hover:bg-caramel transition-all">🎓 מורה פרטי</a>
-                    <a href="{{ url_for('diagram_tool') }}" class="block rounded-lg px-3 py-2 text-sm text-cream hover:bg-caramel transition-all">📊 תרשימים</a>
-                    <a href="{{ url_for('glossary_page', course_id='default') }}" class="block rounded-lg px-3 py-2 text-sm text-cream hover:bg-caramel transition-all">📚 מונחון</a>
+                    <p class="px-4 py-2 text-xs text-warm-yellow font-bold">🛠️ כלים</p>
+                    <a href="{{ url_for('summary_tool') }}" class="block rounded-lg px-4 py-3 text-sm text-cream hover:bg-caramel transition-all mobile-touch-target">📖 מסכם חכם</a>
+                    <a href="{{ url_for('flashcards_tool') }}" class="block rounded-lg px-4 py-3 text-sm text-cream hover:bg-caramel transition-all mobile-touch-target">🎴 כרטיסיות</a>
+                    <a href="{{ url_for('assess_tool') }}" class="block rounded-lg px-4 py-3 text-sm text-cream hover:bg-caramel transition-all mobile-touch-target">✅ בחן עצמך</a>
+                    <a href="{{ url_for('homework_tool') }}" class="block rounded-lg px-4 py-3 text-sm text-cream hover:bg-caramel transition-all mobile-touch-target">📚 עזרה בשיעורים</a>
+                    <a href="{{ url_for('tutor_tool') }}" class="block rounded-lg px-4 py-3 text-sm text-cream hover:bg-caramel transition-all mobile-touch-target">🎓 מורה פרטי</a>
+                    <a href="{{ url_for('diagram_tool') }}" class="block rounded-lg px-4 py-3 text-sm text-cream hover:bg-caramel transition-all mobile-touch-target">📊 תרשימים</a>
+                    <a href="{{ url_for('glossary_page', course_id='default') }}" class="block rounded-lg px-4 py-3 text-sm text-cream hover:bg-caramel transition-all mobile-touch-target">📚 מונחון</a>
                 </div>
                 <div class="pt-3 border-t-2 border-caramel mt-2">
-                    <a href="{{ url_for('library.profile') }}" class="block rounded-lg px-3 py-3 text-base text-warm-yellow font-bold hover:bg-caramel transition-all">👤 פרופיל</a>
+                    <a href="{{ url_for('library.profile') }}" class="block rounded-lg px-4 py-3 text-base text-warm-yellow font-bold hover:bg-caramel transition-all mobile-touch-target">👤 פרופיל</a>
                     {% if current_user.user.role.value == 'admin' %}
-                    <a href="{{ url_for('admin.dashboard') }}" class="block rounded-lg px-3 py-3 text-base text-cream hover:bg-caramel transition-all font-medium">⚙️ ניהול</a>
+                    <a href="{{ url_for('admin.dashboard') }}" class="block rounded-lg px-4 py-3 text-base text-cream hover:bg-caramel transition-all font-medium mobile-touch-target">⚙️ ניהול</a>
                     {% endif %}
                     <!-- Language Switcher in Mobile Menu -->
-                    <div class="block rounded-lg px-3 py-3 text-base">
+                    <div class="block rounded-lg px-4 py-3 text-base mobile-touch-target">
                         {% if current_locale == 'he' %}
-                            <a href="{{ url_for('set_lang', lang='en') }}" class="text-cream hover:text-warm-yellow font-medium">🌐 Switch to English</a>
+                            <a href="{{ url_for('set_lang', lang='en') }}" class="text-cream hover:text-warm-yellow font-medium inline-block py-2">🌐 Switch to English</a>
                         {% else %}
-                            <a href="{{ url_for('set_lang', lang='he') }}" class="text-cream hover:text-warm-yellow font-medium">🌐 החלף לעברית</a>
+                            <a href="{{ url_for('set_lang', lang='he') }}" class="text-cream hover:text-warm-yellow font-medium inline-block py-2">🌐 החלף לעברית</a>
                         {% endif %}
                     </div>
-                    <a href="{{ url_for('auth.logout') }}" class="block rounded-lg px-3 py-3 text-base text-cream hover:bg-caramel transition-all font-medium">🚪 התנתק</a>
+                    <a href="{{ url_for('auth.logout') }}" class="block rounded-lg px-4 py-3 text-base text-cream hover:bg-caramel transition-all font-medium mobile-touch-target">🚪 התנתק</a>
                 </div>
                 {% else %}
                 <div class="pt-3 border-t-2 border-caramel mt-2">
                     <!-- Language Switcher in Mobile Menu -->
-                    <div class="block rounded-lg px-3 py-3 text-base">
+                    <div class="block rounded-lg px-4 py-3 text-base mobile-touch-target">
                         {% if current_locale == 'he' %}
-                            <a href="{{ url_for('set_lang', lang='en') }}" class="text-cream hover:text-warm-yellow font-medium">🌐 Switch to English</a>
+                            <a href="{{ url_for('set_lang', lang='en') }}" class="text-cream hover:text-warm-yellow font-medium inline-block py-2">🌐 Switch to English</a>
                         {% else %}
-                            <a href="{{ url_for('set_lang', lang='he') }}" class="text-cream hover:text-warm-yellow font-medium">🌐 החלף לעברית</a>
+                            <a href="{{ url_for('set_lang', lang='he') }}" class="text-cream hover:text-warm-yellow font-medium inline-block py-2">🌐 החלף לעברית</a>
                         {% endif %}
                     </div>
-                    <a href="{{ url_for('auth.login') }}" class="block rounded-lg px-3 py-3 text-base text-cream hover:bg-caramel transition-all font-medium">🔑 התחבר</a>
-                    <a href="{{ url_for('auth.signup') }}" class="block rounded-lg px-3 py-3 text-base text-warm-yellow font-bold hover:bg-caramel transition-all">✨ הרשמה</a>
+                    <a href="{{ url_for('auth.login') }}" class="block rounded-lg px-4 py-3 text-base text-cream hover:bg-caramel transition-all font-medium mobile-touch-target">🔑 התחבר</a>
+                    <a href="{{ url_for('auth.signup') }}" class="block rounded-lg px-4 py-3 text-base text-warm-yellow font-bold hover:bg-caramel transition-all mobile-touch-target">✨ הרשמה</a>
                 </div>
                 {% endif %}
             </div>
@@ -162,18 +162,41 @@
             mobileMenuButton.addEventListener('click', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
-                mobileMenu.classList.toggle('hidden');
+                const isOpen = !mobileMenu.classList.contains('hidden');
+                
+                if (isOpen) {
+                    // Closing animation
+                    mobileMenu.style.animation = 'slideUp 0.2s ease-out';
+                    setTimeout(() => {
+                        mobileMenu.classList.add('hidden');
+                        mobileMenu.style.animation = '';
+                    }, 200);
+                } else {
+                    // Opening animation
+                    mobileMenu.classList.remove('hidden');
+                    mobileMenu.style.animation = 'slideDown 0.3s ease-out';
+                }
+                
                 menuIconOpen.classList.toggle('hidden');
                 menuIconClose.classList.toggle('hidden');
+                
+                // Add haptic feedback on supported devices
+                if (navigator.vibrate) {
+                    navigator.vibrate(10);
+                }
             });
             
             // Close menu when clicking menu items
             const menuLinks = mobileMenu.querySelectorAll('a');
             menuLinks.forEach(link => {
                 link.addEventListener('click', function() {
-                    mobileMenu.classList.add('hidden');
-                    menuIconOpen.classList.remove('hidden');
-                    menuIconClose.classList.add('hidden');
+                    mobileMenu.style.animation = 'slideUp 0.2s ease-out';
+                    setTimeout(() => {
+                        mobileMenu.classList.add('hidden');
+                        menuIconOpen.classList.remove('hidden');
+                        menuIconClose.classList.add('hidden');
+                        mobileMenu.style.animation = '';
+                    }, 200);
                 });
             });
             
@@ -181,9 +204,13 @@
             document.addEventListener('click', function(e) {
                 if (!mobileMenu.contains(e.target) && !mobileMenuButton.contains(e.target)) {
                     if (!mobileMenu.classList.contains('hidden')) {
-                        mobileMenu.classList.add('hidden');
-                        menuIconOpen.classList.remove('hidden');
-                        menuIconClose.classList.add('hidden');
+                        mobileMenu.style.animation = 'slideUp 0.2s ease-out';
+                        setTimeout(() => {
+                            mobileMenu.classList.add('hidden');
+                            menuIconOpen.classList.remove('hidden');
+                            menuIconClose.classList.add('hidden');
+                            mobileMenu.style.animation = '';
+                        }, 200);
                     }
                 }
             });
@@ -193,6 +220,67 @@
                 e.stopPropagation();
             });
         }
+        
+        // Add slide animations
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideDown {
+                from {
+                    opacity: 0;
+                    transform: translateY(-10px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+            @keyframes slideUp {
+                from {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+                to {
+                    opacity: 0;
+                    transform: translateY(-10px);
+                }
+            }
+        `;
+        document.head.appendChild(style);
+        
+        // Add page transition effect on load
+        document.addEventListener('DOMContentLoaded', function() {
+            const main = document.querySelector('main');
+            if (main) {
+                main.classList.add('page-transition');
+            }
+        });
+        
+        // Add smooth scroll behavior for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                const href = this.getAttribute('href');
+                if (href !== '#' && href !== '#!') {
+                    e.preventDefault();
+                    const target = document.querySelector(href);
+                    if (target) {
+                        target.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    }
+                }
+            });
+        });
+        
+        // Improve touch feedback for all buttons and links
+        document.querySelectorAll('button, a, .btn-primary, .btn-secondary').forEach(element => {
+            element.addEventListener('touchstart', function() {
+                this.style.opacity = '0.9';
+            });
+            element.addEventListener('touchend', function() {
+                this.style.opacity = '';
+            });
+        });
     </script>
     {% block scripts %}{% endblock %}
 </body>
