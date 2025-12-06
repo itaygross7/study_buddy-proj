@@ -175,7 +175,7 @@ class TripleHybridClient:
             )
             
             kwargs = {
-                "model": "gpt-4o-mini",
+                "model": settings.SB_OPENAI_MODEL,
                 "messages": [{"role": "user", "content": full_prompt}],
                 "max_tokens": 1500,
                 "temperature": 0.7,
@@ -188,7 +188,7 @@ class TripleHybridClient:
                 if "json" not in full_prompt.lower():
                     kwargs["messages"][0]["content"] = full_prompt + "\nReturn your response as valid JSON."
             
-            logger.debug(f"Using GPT-4o-mini (JSON mode: {require_json}, Baby mode: {baby_mode})")
+            logger.debug(f"Using {settings.SB_OPENAI_MODEL} (JSON mode: {require_json}, Baby mode: {baby_mode})")
             response = client.chat.completions.create(**kwargs)
             return response.choices[0].message.content.strip()
             
@@ -209,9 +209,9 @@ class TripleHybridClient:
                 timeout=60.0
             )
             
-            logger.debug("Using GPT-4o for complex reasoning")
+            logger.debug(f"Using {settings.SB_OPENAI_MODEL} for complex reasoning")
             response = client.chat.completions.create(
-                model="gpt-4o",
+                model=settings.SB_OPENAI_MODEL,
                 messages=[{"role": "user", "content": full_prompt}],
                 max_tokens=2000,
                 temperature=0.7,
