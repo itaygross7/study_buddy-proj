@@ -268,6 +268,15 @@ def create_app():
         return render_template('500.html'), 500
 
     logger.info(f"Flask App created successfully in {settings.FLASK_ENV} mode.")
+    
+    # Test email configuration at startup
+    email_config = email_service.test_email_config()
+    if not email_config["configured"]:
+        logger.warning(f"⚠️  Email notifications are NOT configured properly: {email_config['issues']}")
+        logger.warning("    Error notifications will not be sent to admin!")
+    else:
+        logger.info(f"✅ Email notifications configured - Admin: {email_config['admin_email']}")
+    
     return app
 
 if __name__ == '__main__':

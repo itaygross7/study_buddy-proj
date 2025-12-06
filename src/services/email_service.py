@@ -178,3 +178,37 @@ def send_error_notification(error_type: str, error_message: str, details: str = 
     if not result:
         logger.error(f"Failed to send error notification to {settings.ADMIN_EMAIL} for {error_type}")
     return result
+
+
+def test_email_config() -> dict:
+    """Test email configuration and return diagnostics."""
+    issues = []
+    warnings = []
+    
+    if not settings.ADMIN_EMAIL:
+        issues.append("ADMIN_EMAIL not configured")
+    
+    if not settings.MAIL_USERNAME:
+        issues.append("MAIL_USERNAME not configured")
+    
+    if not settings.MAIL_PASSWORD:
+        issues.append("MAIL_PASSWORD not configured")
+    
+    if not settings.MAIL_SERVER:
+        warnings.append("MAIL_SERVER not configured (using default)")
+    
+    config_status = {
+        "configured": len(issues) == 0,
+        "issues": issues,
+        "warnings": warnings,
+        "admin_email": settings.ADMIN_EMAIL if settings.ADMIN_EMAIL else "Not set",
+        "mail_server": f"{settings.MAIL_SERVER}:{settings.MAIL_PORT}" if settings.MAIL_SERVER else "Not set",
+        "mail_tls": settings.MAIL_USE_TLS
+    }
+    
+    if not config_status["configured"]:
+        logger.warning(f"Email not fully configured: {', '.join(issues)}")
+    else:
+        logger.info(f"Email configured - Admin: {config_status['admin_email']}, Server: {config_status['mail_server']}")
+    
+    return config_status
