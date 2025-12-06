@@ -1,64 +1,106 @@
 version: '3.8'
 
+networks:
+  studybuddy-net:
+    driver: bridge
+
 services:
   app:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: studybuddy_app
-    ports:
-      - "5000:5000"
+    # The port is now exposed only to the internal network, not the host
+    expose:
+      - "5000"
     volumes:
       - ./src:/app/src
       - ./ui:/app/ui
       - ./app.py:/app/app.py
-      - ./worker.py:/app/worker.py # Ensure worker script is available
+      - ./worker.py:/app/worker.py
+      - ./health_monitor.py:/app/health_monitor.py
     env_file: .env
     depends_on:
       - mongo
       - rabbitmq
     restart: on-failure
+    networks:
+      - studybuddy-net
 
   worker:
     build:
       context: .
       dockerfile: Dockerfile
-    # --- THIS IS THE FIX ---
-    # The command now correctly points to the worker script at the root.
+    container_name: studybuddy_worker
     command: ["python", "worker.py"]
-    # --- END OF FIX ---
     volumes:
       - ./src:/app/src
-      - ./ui:/app/ui
-      - ./app.py:/app/app.py
-      - ./worker.py:/app/worker.py # Ensure worker script is available
+      - ./worker.py:/app/worker.py
     env_file: .env
     depends_on:
       - app
       - rabbitmq
     restart: on-failure
+    networks:
+      - studybuddy-net
+
+  health_monitor:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: studybuddy_health_monitor
+    command: ["python", "health_monitor.py"]
+    volumes:
+      - ./src:/app/src
+      - ./health_monitor.py:/app/health_monitor.py
+      - /var/run/docker.sock:/var/run/docker.sock
+    env_file: .env
+    depends_on:
+      - app
+      - worker
+    restart: always
+    networks:
+      - studybuddy-net
 
   mongo:
     image: mongo:5.0
     container_name: studybuddy_mongo
-    ports:
-      - "27017:27017"
+    expose: # Expose only to the internal network
+      - "27017"
     volumes:
       - mongo_data:/data/db
     restart: always
+    networks:
+      - studybuddy-net
 
   rabbitmq:
     image: rabbitmq:3.9-management
     container_name: studybuddy_rabbitmq
     ports:
-      - "5672:5672"
+      # The management UI can remain on the host for debugging
       - "15672:15672"
+    expose:
+      - "5672"
     environment:
       RABBITMQ_DEFAULT_USER: user
       RABBITMQ_DEFAULT_PASS: password
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
     restart: always
+    networks:
+      - studybuddy-net
+
+  # --- RESTORED SERVICE ---
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: studybuddy_cloudflared
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
+    depends_on:
+      - app
+    networks:
+      - studybuddy-net
+  # --- END OF RESTORATION ---
 
 volumes:
   mongo_data:
