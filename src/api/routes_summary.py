@@ -1,6 +1,4 @@
 import uuid
-import os
-import tempfile
 from flask import Blueprint, request, jsonify, url_for
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
@@ -9,6 +7,7 @@ from src.infrastructure.database import db
 from src.infrastructure.repositories import MongoDocumentRepository, MongoTaskRepository
 from src.infrastructure.rabbitmq import publish_task
 from src.domain.models.db_models import Document, Task
+from src.services.file_service import get_file_service # IMPORT THE FACTORY
 from sb_utils.logger_utils import logger
 
 summary_bp = Blueprint('summary_bp', __name__)
@@ -16,9 +15,6 @@ summary_bp = Blueprint('summary_bp', __name__)
 @summary_bp.route('/trigger', methods=['POST'])
 @login_required
 def trigger_summary():
-    """
-    (CORRECTED) Creates a single 'summary' task for text, file, or existing doc.
-    """
     user_id = current_user.id
     course_id = request.form.get('course_id', 'default')
     text_input = request.form.get('text', '').strip()
@@ -36,30 +32,25 @@ def trigger_summary():
             task_body['document_id'] = document_id
 
         elif text_input:
-            document = Document(_id=str(uuid.uuid4()), user_id=user_id, course_id=course_id, filename="הדבקת טקסט.txt", content_text=text_input)
+            document = Document(_id=str(uuid.uuid4()), user_id=user_id, course_id=course_id, filename="הדבקת טקסט.txt", content_text=text_input, gridfs_id=None)
             doc_repo.create(document)
             task_body['document_id'] = document.id
 
         elif file and file.filename:
+            file_service = get_file_service() # GET THE INSTANCE HERE
             filename = secure_filename(file.filename)
-            temp_dir = tempfile.mkdtemp()
-            temp_path = os.path.join(temp_dir, filename)
-            file.save(temp_path)
+            gridfs_id = file_service.save_file(file, user_id, course_id)
 
-            document = Document(_id=str(uuid.uuid4()), user_id=user_id, course_id=course_id, filename=filename, content_text="[File content to be processed by worker...]")
+            document = Document(_id=str(uuid.uuid4()), user_id=user_id, course_id=course_id, filename=filename, content_text="[File content stored in GridFS]", gridfs_id=str(gridfs_id))
             doc_repo.create(document)
             task_body['document_id'] = document.id
-            task_body['temp_path'] = temp_path
-            task_body['filename'] = filename
         
         else:
             return jsonify({"error": "No input provided"}), 400
 
         task = task_repo.create(user_id=user_id, document_id=task_body['document_id'], task_type='summary')
         task_body['task_id'] = task.id
-        task_body['user_id'] = user_id
-        task_body['course_id'] = course_id
-        
+
         publish_task(queue_name='summarize', task_body=task_body)
 
         return jsonify({
