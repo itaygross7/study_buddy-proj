@@ -52,11 +52,11 @@ def extract_terms_from_content(document_id: str, document_content: str,
     """
     
     try:
-        # Use Gemini Flash for this extraction task (cost-effective)
+        # Use OpenAI for JSON extraction (Gemini doesn't enforce JSON format)
         json_string = ai_client.generate_text(
             prompt=prompt, 
             context=document_content,
-            task_type="quiz",
+            task_type="glossary",  # Routes to OpenAI (needs JSON)
             require_json=True
         )
         

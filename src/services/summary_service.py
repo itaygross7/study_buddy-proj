@@ -20,7 +20,11 @@ def generate_summary(document_id: str, document_content: str, db_conn: Database 
               "Then, provide three follow-up questions a student could use "
               "to test their understanding.")
 
-    summary_text = ai_client.generate_text(prompt=prompt, context=document_content)
+    summary_text = ai_client.generate_text(
+        prompt=prompt, 
+        context=document_content,
+        task_type="summary"  # Routes to Gemini Flash
+    )
 
     # For this scaffold, we'll store the raw summary text in a new collection
     result_id = f"summary_{document_id}"

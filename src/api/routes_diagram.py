@@ -50,7 +50,7 @@ def generate_diagram():
         mermaid_code = ai_client.generate_text(
             prompt=prompt,
             context="",
-            task_type="standard"
+            task_type="diagram"  # Routes to Gemini Flash
         )
         
         # Clean up the response - remove markdown code blocks if present
