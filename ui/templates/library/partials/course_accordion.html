@@ -1,0 +1,21 @@
+{% if courses %}
+    <div class="space-y-4">
+        {% for course in courses %}
+            <details class="bg-gray-50 p-4 rounded-lg shadow-sm" open>
+                <summary class="font-semibold text-lg text-warm-brown cursor-pointer">
+                    {{ course.course_name }} ({{ course.files|length }} קבצים)
+                </summary>
+                <div class="mt-4">
+                    {% include 'library/partials/file_list.html' with context %}
+                </div>
+            </details>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="text-center py-12">
+        <div class="flex flex-col items-center">
+            <img src="{{ url_for('serve_avner', filename='avner_empty.jpeg') }}" alt="אבנר" class="h-24 mb-4">
+            <p class="text-gray-500">עדיין לא העלית קבצים. בוא נתחיל!</p>
+        </div>
+    </div>
+{% endif %}

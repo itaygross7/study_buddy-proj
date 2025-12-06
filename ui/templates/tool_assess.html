@@ -4,57 +4,34 @@
 
 {% block content %}
 <div class="space-y-8 text-right">
-    {% if course %}
-    <!-- Course Context Header -->
-    <div class="mb-6">
-        <nav class="text-sm text-cozy-brown mb-2">
-            <a href="{{ url_for('library.index') }}" class="hover:text-golden-yellow transition-colors">📚 הספרייה</a>
-            <span class="mx-2">/</span>
-            <a href="{{ url_for('library.course_page', course_id=course.id) }}" class="hover:text-golden-yellow transition-colors">{{ course.icon }} {{ course.name }}</a>
-            <span class="mx-2">/</span>
-            <span class="text-dark-brown">בחן אותי</span>
-        </nav>
-    </div>
-    {% endif %}
-    
     <!-- Input Card -->
     <div class="bg-white/80 p-6 rounded-2xl shadow-md">
         <div class="flex items-start space-x-4 space-x-reverse">
-            <img src="{{ url_for('serve_avner', filename='avner_with_laptop.jpeg') }}" alt="אבנר עם לפטופ" class="h-16 w-16 flex-shrink-0">
+            <img src="{{ url_for('serve_avner', filename='avner_laptop.jpeg') }}" alt="אבנר עם לפטופ" class="h-16 w-16 flex-shrink-0">
             <div>
                 <h2 class="text-xl font-bold text-warm-brown">בחן אותי</h2>
-                {% if course %}
-                <p class="text-ink-brown/80 mt-1">יצירת בוחן מהחומרים של קורס {{ course.name }}</p>
-                {% else %}
                 <p class="text-ink-brown/80 mt-1">העלו קובץ או הדביקו טקסט, ואני אצור לכם בוחן קצר לבדיקת הידע שלכם.</p>
-                {% endif %}
             </div>
         </div>
         
         <div class="mt-6">
             <form id="assess-form"
-                  hx-post="{{ url_for('assess_bp.trigger_assessment') }}"
-                  hx-swap="innerHTML"
-                  hx-target="#task-status-container"
-                  hx-indicator="#task-status-container">
+                  hx-post="{{ url_for('upload_bp.upload_route') }}"
+                  hx-encoding="multipart/form-data"
+                  hx-target="#upload-result"
+                  hx-swap="innerHTML">
                 
-                <input type="hidden" name="user_id" value="{{ current_user.id }}">
-                <input type="hidden" name="course_id" value="{{ course.id if course else 'default' }}">
-                
-                {% if course and context %}
-                <!-- Course mode: use existing context -->
-                <input type="hidden" name="text" value="{{ context }}">
-                <div class="bg-warm-beige rounded-lg p-4 mb-4">
-                    <p class="text-sm text-dark-brown">✅ יוצר בוחן מהחומרים שהעלית לקורס ({{ documents|length }} מסמכים)</p>
+                <!-- Course ID Input -->
+                <div class="mb-4">
+                    <label for="course_id" class="block text-sm font-medium text-gray-700 text-right">שם הקורס (אופציונלי)</label>
+                    <input type="text" name="course_id" id="course_id" placeholder="לדוגמה: פסיכולוגיה קוגניטיבית" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm text-right">
                 </div>
-                {% else %}
-                <!-- Standalone mode: need upload -->
+                
                 <textarea name="text" class="w-full p-3 border rounded-lg text-right" rows="8" placeholder="הדביקו כאן את החומר לבוחן..."></textarea>
                 
                 <div class="my-4 text-center text-gray-500">או</div>
                 
                 <input type="file" name="file" class="block w-full text-sm text-ink-brown file:ml-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:font-semibold file:bg-orange-100 file:text-capy-orange hover:file:bg-orange-200"/>
-                {% endif %}
                 
                 <div class="mt-4">
                     <label for="num_questions" class="block text-sm font-medium text-gray-700 text-right">מספר שאלות (3-10):</label>
@@ -73,6 +50,7 @@
                     ✨ יצירת בוחן
                 </button>
             </form>
+            <div id="upload-result" class="mt-4 text-center"></div>
         </div>
     </div>
 
