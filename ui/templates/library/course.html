@@ -233,6 +233,10 @@
     const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
     const MAX_FILE_SIZE_MB = 50;
     
+    // iOS detection
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+    
     // Helper function to validate file size
     function validateFileSize(file) {
         if (!file || file.size === 0) return { valid: false, error: 'יש לבחור קובץ להעלאה 📝' };
@@ -248,132 +252,205 @@
         return { valid: true };
     }
     
-    // Upload form handler
-    document.getElementById('upload-form')?.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        const formData = new FormData(this);
-        const submitBtn = document.getElementById('upload-submit-btn');
-        const originalText = submitBtn.innerHTML;
-        const statusDiv = document.getElementById('upload-status');
-        const statusText = document.getElementById('upload-status-text');
-        const avnerImg = document.getElementById('upload-avner-img');
-        
-        // Check if user provided either text or file
-        const textInput = formData.get('text');
-        const fileInput = formData.get('file');
-        
-        if ((!textInput || textInput.trim() === '') && (!fileInput || fileInput.size === 0)) {
-            alert('יש להזין טקסט או לבחור קובץ להעלאה 📝');
-            return;
-        }
-        
-        // Validate file size if file provided
-        if (fileInput && fileInput.size > 0) {
+    // iOS-specific: Add visual feedback for file input selection
+    if (isIOS) {
+        const fileInputs = document.querySelectorAll('input[type="file"]');
+        fileInputs.forEach(function(input) {
+            input.addEventListener('change', function(e) {
+                if (this.files && this.files.length > 0) {
+                    console.log('File selected on iOS:', this.files[0].name);
+                    // Add visual feedback that file was selected
+                    const fileName = this.files[0].name;
+                    const fileSizeKB = (this.files[0].size / 1024).toFixed(0);
+                    
+                    // Create a subtle notification
+                    const notification = document.createElement('div');
+                    notification.textContent = '✓ ' + fileName + ' (' + fileSizeKB + 'KB)';
+                    notification.style.cssText = 'position: fixed; top: 80px; right: 20px; background: #F2C94C; color: #4B2E16; padding: 12px 20px; border-radius: 8px; font-size: 14px; z-index: 9999; box-shadow: 0 4px 12px rgba(0,0,0,0.15);';
+                    document.body.appendChild(notification);
+                    
+                    setTimeout(function() {
+                        notification.style.transition = 'opacity 0.3s';
+                        notification.style.opacity = '0';
+                        setTimeout(function() {
+                            document.body.removeChild(notification);
+                        }, 300);
+                    }, 2000);
+                }
+            });
+            
+            // iOS-specific: Ensure file input is tappable
+            input.style.cursor = 'pointer';
+            input.style.minHeight = '48px';
+        });
+    }
+    
+    // Upload form handler - Enhanced for iOS Safari compatibility
+    const uploadForm = document.getElementById('upload-form');
+    if (uploadForm) {
+        uploadForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const formData = new FormData(this);
+            const submitBtn = document.getElementById('upload-submit-btn');
+            const originalText = submitBtn.innerHTML;
+            const statusDiv = document.getElementById('upload-status');
+            const statusText = document.getElementById('upload-status-text');
+            const avnerImg = document.getElementById('upload-avner-img');
+            
+            // Check if user provided either text or file
+            const textInput = formData.get('text');
+            const fileInput = formData.get('file');
+            
+            if ((!textInput || textInput.trim() === '') && (!fileInput || fileInput.size === 0)) {
+                alert('יש להזין טקסט או לבחור קובץ להעלאה 📝');
+                return;
+            }
+            
+            // Validate file size if file provided
+            if (fileInput && fileInput.size > 0) {
+                const validation = validateFileSize(fileInput);
+                if (!validation.valid) {
+                    alert(validation.error);
+                    return;
+                }
+            }
+            
+            // Show Avner loading animation
+            statusDiv.classList.remove('hidden');
+            avnerImg.src = '/avner/loading.jpeg';
+            avnerImg.classList.add('animate-pulse');
+            statusText.textContent = 'מעלה את הקובץ...';
+            
+            // Disable button
+            submitBtn.disabled = true;
+            submitBtn.classList.add('opacity-75');
+            
+            // Use XMLHttpRequest for better iOS Safari compatibility
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/upload/', true);
+            
+            xhr.onload = function() {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    try {
+                        const data = JSON.parse(xhr.responseText);
+                        
+                        if (data.status === 'processing') {
+                            avnerImg.src = '/avner/progress.jpeg';
+                            statusText.textContent = 'הקובץ הועלה! אבנר מעבד את התוכן...';
+                            // Poll for completion
+                            pollDocumentStatus(data.document_id, avnerImg, statusText);
+                        } else {
+                            // Text input - completed immediately
+                            avnerImg.src = '/avner/avner_celebrating.jpeg';
+                            avnerImg.classList.remove('animate-pulse');
+                            statusText.textContent = '✅ הועלה בהצלחה!';
+                            setTimeout(function() { window.location.reload(); }, 800);
+                        }
+                    } catch (parseError) {
+                        console.error('Parse error:', parseError);
+                        statusDiv.classList.add('hidden');
+                        submitBtn.disabled = false;
+                        submitBtn.classList.remove('opacity-75');
+                        alert('❌ שגיאה בעיבוד התגובה מהשרת');
+                    }
+                } else {
+                    statusDiv.classList.add('hidden');
+                    submitBtn.disabled = false;
+                    submitBtn.classList.remove('opacity-75');
+                    try {
+                        const data = JSON.parse(xhr.responseText);
+                        const errorMsg = data.error || 'אירעה שגיאה בהעלאה. אנא נסה שוב';
+                        alert('❌ שגיאה: ' + errorMsg);
+                    } catch (e) {
+                        alert('❌ שגיאה בהעלאה. אנא נסה שוב.');
+                    }
+                }
+            };
+            
+            xhr.onerror = function() {
+                statusDiv.classList.add('hidden');
+                submitBtn.disabled = false;
+                submitBtn.classList.remove('opacity-75');
+                alert('❌ שגיאה בהעלאה. אנא בדוק את החיבור לאינטרנט ונסה שוב.');
+                console.error('Upload error: Network error');
+            };
+            
+            xhr.send(formData);
+        });
+    }
+    
+    // Upload more form handler - Enhanced for iOS Safari compatibility
+    const uploadMoreForm = document.getElementById('upload-more-form');
+    if (uploadMoreForm) {
+        uploadMoreForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const formData = new FormData(this);
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            const fileInput = formData.get('file');
+            
+            // Validate file
             const validation = validateFileSize(fileInput);
             if (!validation.valid) {
                 alert(validation.error);
                 return;
             }
-        }
-        
-        // Show Avner loading animation
-        statusDiv.classList.remove('hidden');
-        avnerImg.src = '/avner/loading.jpeg';
-        avnerImg.classList.add('animate-pulse');
-        statusText.textContent = 'מעלה את הקובץ...';
-        
-        // Disable button
-        submitBtn.disabled = true;
-        submitBtn.classList.add('opacity-75');
-        
-        try {
-            const res = await fetch('/api/upload/', {
-                method: 'POST',
-                body: formData
-            });
             
-            const data = await res.json();
+            // Disable button and show loading with Avner
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<img src="/avner/loading.jpeg" class="w-6 h-6 inline-block animate-pulse"> מעלה...';
             
-            if (res.ok) {
-                // Check if file is being processed in background
-                if (data.status === 'processing') {
-                    avnerImg.src = '/avner/progress.jpeg';
-                    statusText.textContent = 'הקובץ הועלה! אבנר מעבד את התוכן...';
-                    // Poll for completion
-                    await pollDocumentStatus(data.document_id, avnerImg, statusText);
+            // Use XMLHttpRequest for better iOS Safari compatibility
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/upload/', true);
+            
+            xhr.onload = function() {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    try {
+                        const data = JSON.parse(xhr.responseText);
+                        
+                        if (data.status === 'processing') {
+                            submitBtn.innerHTML = '<img src="/avner/progress.jpeg" class="w-6 h-6 inline-block animate-pulse"> מעבד...';
+                            // Poll for completion
+                            pollDocumentStatusSimple(data.document_id, submitBtn, originalText);
+                        } else {
+                            // Text input - completed immediately
+                            submitBtn.innerHTML = '✅ הועלה!';
+                            setTimeout(function() { window.location.reload(); }, 500);
+                        }
+                    } catch (parseError) {
+                        console.error('Parse error:', parseError);
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = originalText;
+                        alert('❌ שגיאה בעיבוד התגובה מהשרת');
+                    }
                 } else {
-                    // Text input - completed immediately
-                    avnerImg.src = '/avner/avner_celebrating.jpeg';
-                    avnerImg.classList.remove('animate-pulse');
-                    statusText.textContent = '✅ הועלה בהצלחה!';
-                    setTimeout(() => window.location.reload(), 800);
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalText;
+                    try {
+                        const data = JSON.parse(xhr.responseText);
+                        const errorMsg = data.error || 'אירעה שגיאה בהעלאה. אנא נסה שוב';
+                        alert('❌ שגיאה: ' + errorMsg);
+                    } catch (e) {
+                        alert('❌ שגיאה בהעלאה. אנא נסה שוב.');
+                    }
                 }
-            } else {
-                statusDiv.classList.add('hidden');
-                submitBtn.disabled = false;
-                submitBtn.classList.remove('opacity-75');
-                const errorMsg = data.error || 'אירעה שגיאה בהעלאה. אנא נסה שוב';
-                alert('❌ שגיאה: ' + errorMsg);
-            }
-        } catch (error) {
-            statusDiv.classList.add('hidden');
-            submitBtn.disabled = false;
-            submitBtn.classList.remove('opacity-75');
-            alert('❌ שגיאה בהעלאה. אנא בדוק את החיבור לאינטרנט ונסה שוב.');
-            console.error('Upload error:', error);
-        }
-    });
-    
-    document.getElementById('upload-more-form')?.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        const formData = new FormData(this);
-        const submitBtn = this.querySelector('button[type="submit"]');
-        const originalText = submitBtn.innerHTML;
-        const fileInput = formData.get('file');
-        
-        // Validate file
-        const validation = validateFileSize(fileInput);
-        if (!validation.valid) {
-            alert(validation.error);
-            return;
-        }
-        
-        // Disable button and show loading with Avner
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<img src="/avner/loading.jpeg" class="w-6 h-6 inline-block animate-pulse"> מעלה...';
-        
-        try {
-            const res = await fetch('/api/upload/', {
-                method: 'POST',
-                body: formData
-            });
+            };
             
-            const data = await res.json();
-            
-            if (res.ok) {
-                // Check if file is being processed in background
-                if (data.status === 'processing') {
-                    submitBtn.innerHTML = '<img src="/avner/progress.jpeg" class="w-6 h-6 inline-block animate-pulse"> מעבד...';
-                    // Poll for completion - simple version without status elements
-                    await pollDocumentStatusSimple(data.document_id, submitBtn, originalText);
-                } else {
-                    // Text input - completed immediately
-                    submitBtn.innerHTML = '✅ הועלה!';
-                    setTimeout(() => window.location.reload(), 500);
-                }
-            } else {
+            xhr.onerror = function() {
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = originalText;
-                const errorMsg = data.error || 'אירעה שגיאה בהעלאה. אנא נסה שוב';
-                alert('❌ שגיאה: ' + errorMsg);
-            }
-        } catch (error) {
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = originalText;
-            alert('❌ שגיאה בהעלאה. אנא בדוק את החיבור לאינטרנט ונסה שוב.');
-            console.error('Upload error:', error);
-        }
-    });
+                alert('❌ שגיאה בהעלאה. אנא בדוק את החיבור לאינטרנט ונסה שוב.');
+                console.error('Upload error: Network error');
+            };
+            
+            xhr.send(formData);
+        });
+    }
     
     // Poll for document processing status with Avner animation
     async function pollDocumentStatus(documentId, avnerImg, statusText) {
