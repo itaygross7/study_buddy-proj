@@ -35,7 +35,7 @@ def _utc_now():
 
 
 def _get_db(db_conn: Database = None) -> Database:
-    return db_conn or flask_db
+    return db_conn if db_conn is not None else flask_db
 
 
 def create_tutor_session(user_id: str, topic: str, course_id: str = "", 

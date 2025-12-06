@@ -23,6 +23,7 @@ class FlaskUser:
         self.is_authenticated = True
         self.is_active = user.is_active
         self.is_anonymous = False
+        self.role = user.role
 
     def get_id(self):
         return self.id

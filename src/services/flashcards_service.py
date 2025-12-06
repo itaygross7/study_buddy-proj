@@ -7,7 +7,7 @@ from sb_utils.logger_utils import logger
 
 
 def _get_db(db_conn: Database = None) -> Database:
-    return db_conn or flask_db
+    return db_conn if db_conn is not None else flask_db
 
 
 def generate_flashcards(document_id: str, document_content: str, num_cards: int, db_conn: Database = None) -> str:

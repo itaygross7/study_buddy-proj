@@ -50,7 +50,7 @@
                 <!-- Left side: User menu, Admin, Lang Switcher -->
                 <div class="hidden md:flex items-center gap-3">
                     {% if current_user.is_authenticated %}
-                        {% if current_user.user.role.value == 'admin' %}
+                        {% if current_user.role == 'admin' %}
                         <a href="{{ url_for('admin.dashboard') }}" class="text-cream hover:text-warm-yellow text-sm font-medium px-3 py-2 rounded-lg hover:bg-caramel transition-all">⚙️ ניהול</a>
                         {% endif %}
                         <a href="{{ url_for('library.profile') }}" class="inline-flex items-center gap-2 bg-gradient-to-r from-golden-yellow to-warm-yellow text-dark-brown text-sm px-4 py-2 rounded-full font-bold shadow-md hover:shadow-lg transition-all btn-hover-lift">
@@ -109,7 +109,7 @@
                 </div>
                 <div class="pt-3 border-t-2 border-caramel mt-2">
                     <a href="{{ url_for('library.profile') }}" class="block rounded-lg px-4 py-3 text-base text-warm-yellow font-bold hover:bg-caramel transition-all mobile-touch-target">👤 פרופיל</a>
-                    {% if current_user.user.role.value == 'admin' %}
+                    {% if current_user.role == 'admin' %}
                     <a href="{{ url_for('admin.dashboard') }}" class="block rounded-lg px-4 py-3 text-base text-cream hover:bg-caramel transition-all font-medium mobile-touch-target">⚙️ ניהול</a>
                     {% endif %}
                     <!-- Language Switcher in Mobile Menu -->

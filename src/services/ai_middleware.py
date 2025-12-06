@@ -397,7 +397,7 @@ class PreferencesService:
     """
     
     def __init__(self, db_conn: Database = None):
-        self.db = db_conn or flask_db
+        self.db = db_conn if db_conn is not None else flask_db
         self._cache = {}  # Simple cache for performance
     
     def get(self, user_id: str, use_cache: bool = True) -> UserPreferences:

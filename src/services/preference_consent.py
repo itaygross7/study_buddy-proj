@@ -49,7 +49,7 @@ class PreferenceConsentManager:
     """
     
     def __init__(self, db_conn: Database = None):
-        self.db = db_conn or flask_db
+        self.db = db_conn if db_conn is not None else flask_db
     
     def get_consent_status(self, user_id: str) -> ConsentStatus:
         """Get user's consent status."""
@@ -435,7 +435,7 @@ def process_preference_responses(responses: Dict, user_id: str, db_conn: Databas
     Returns:
         Dict with preferences ready to save
     """
-    db = db_conn or flask_db
+    db = db_conn if db_conn is not None else flask_db
     
     # Build preferences from responses
     preferences = {

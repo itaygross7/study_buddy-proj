@@ -19,7 +19,7 @@
                class="btn-secondary mobile-touch-target text-center">
                 👤 הפרופיל שלי
             </a>
-            {% if current_user.user.role.value == 'admin' or courses|length < max_courses %}
+            {% if current_user.role == 'admin' or courses|length < max_courses %}
             <a href="{{ url_for('library.new_course') }}" 
                class="btn-primary shadow-warm mobile-touch-target text-center">
                 ➕ קורס חדש
@@ -108,12 +108,12 @@
     {% endfor %}
     
     <!-- Add Course Card -->
-    {% if current_user.user.role.value == 'admin' or courses|length < max_courses %}
+    {% if current_user.role == 'admin' or courses|length < max_courses %}
     <a href="{{ url_for('library.new_course') }}" 
        class="content-card border-2 border-dashed border-warm-gray hover:border-golden-yellow transition-all flex flex-col items-center justify-center min-h-[250px] group bg-warm-beige">
         <div class="text-6xl mb-3 group-hover:scale-110 transition-transform">➕</div>
         <span class="text-cozy-brown font-bold text-lg group-hover:text-dark-brown">הוסף קורס חדש</span>
-        {% if current_user.user.role.value == 'admin' %}
+        {% if current_user.role == 'admin' %}
         <span class="text-xs text-warm-gray mt-2">{{ courses|length }} קורסים (מנהל - ללא הגבלה)</span>
         {% else %}
         <span class="text-xs text-warm-gray mt-2">{{ courses|length }}/{{ max_courses }}</span>
