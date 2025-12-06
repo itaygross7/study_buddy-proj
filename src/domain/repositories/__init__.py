@@ -21,7 +21,8 @@ class ITaskRepository(ABC):
         pass
 
     @abstractmethod
-    def create(self) -> Task:
+    def create(self, user_id: Optional[str] = None, document_id: Optional[str] = None, 
+               task_type: str = "") -> Task:
         pass
 
     @abstractmethod

@@ -31,25 +31,159 @@ class AvnerAvatar {
             ...options
         };
         
-        // Image sets for different states
+        // Image sets for different states - using more images for variety!
         this.images = {
-            idle: ['avner_waving.jpeg', 'avner_signing_ok.jpeg', 'avner_arms_in_pockets.jpeg'],
-            listening: ['avner_looking_at_page_acratching_head.jpeg', 'avner_thinking.jpeg'],
-            thinking: ['avner_thinking.jpeg', 'avner_looking_at_page_acratching_head.jpeg', 'avner_douting.jpeg'],
-            answering: ['avner_signing_ok.jpeg', 'avner_waving.jpeg', 'avner_reading.jpeg'],
-            success: ['avner_horay.jpeg', 'avner_celebrating.jpeg', 'avner_dancing.jpeg'],
-            error: ['avner_shy.jpeg', 'avner_annoied.jpeg', 'avner_cluless.jpeg'],
-            blink: ['avner_apatic.jpeg'], // Used for blink effect
+            idle: [
+                'avner_waving.jpeg', 
+                'avner_signing_ok.jpeg', 
+                'avner_arms_in_pockets.jpeg',
+                'avner_arms_crossed.jpeg',
+                'avner_with_laptop.jpeg'
+            ],
+            listening: [
+                'avner_looking_at_page_acratching_head.jpeg', 
+                'avner_thinking.jpeg',
+                'avner_reading.jpeg',
+                'avner_studing.jpeg'
+            ],
+            thinking: [
+                'avner_thinking.jpeg', 
+                'avner_looking_at_page_acratching_head.jpeg', 
+                'avner_douting.jpeg',
+                'avner_scroling_phon.jpeg'
+            ],
+            answering: [
+                'avner_signing_ok.jpeg', 
+                'avner_waving.jpeg', 
+                'avner_reading.jpeg',
+                'avner_holding_backbak.jpeg',
+                'avner_with_laptop.jpeg'
+            ],
+            success: [
+                'avner_horay.jpeg', 
+                'avner_celebrating.jpeg', 
+                'avner_dancing.jpeg',
+                'avner_laghting.jpeg',
+                'avner_in_love.jpeg',
+                'avner_happy_drinking_alcohol.jpeg'
+            ],
+            error: [
+                'avner_shy.jpeg', 
+                'avner_annoied.jpeg', 
+                'avner_cluless.jpeg',
+                'avner_dont_understand.jpeg',
+                'avner_says_nope.jpeg',
+                'avner_tierd.jpeg'
+            ],
+            blink: ['avner_apatic.jpeg'],
+            // New states for more comedy!
+            working: [
+                'avner_cleaning.jpeg',
+                'avner_drinnking_coffee.jpeg',
+                'avner_studing.jpeg',
+                'avner_eating.jpeg'
+            ],
+            tired: [
+                'avner_tierd.jpeg',
+                'avner_yaning.jpeg',
+                'avner_drunk.jpeg',
+                'avner_apatic.jpeg'
+            ],
+            sarcastic: [
+                'avner_says_nope.jpeg',
+                'avner_cursing.jpeg',
+                'avner_smoking.jpeg',
+                'avner_annoied.jpeg',
+                'avner_toung_out.jpeg'
+            ],
+            excited: [
+                'avner_horay.jpeg',
+                'avner_celebrating.jpeg',
+                'avner_laghting.jpeg',
+                'avner_in_love.jpeg'
+            ]
         };
         
-        // Messages for bubble
+        // Messages for bubble - MORE COMEDY & SARCASM!
         this.messages = {
-            idle: ['היי! צריך עזרה? 🦫', 'אני כאן בשבילך!', 'בוא נלמד יחד!'],
-            listening: ['אני מקשיב...', 'ספר לי עוד...', 'מעניין!'],
-            thinking: ['רגע, אני חושב... 🤔', 'עובד על זה...', 'עוד רגע קט...'],
-            answering: ['הנה מה שמצאתי!', 'אני אסביר...', 'שים לב לזה:'],
-            success: ['יופי! הצלחנו! 🎉', 'מעולה!', 'כל הכבוד!'],
-            error: ['אופס... 😅', 'משהו השתבש', 'נסה שוב?'],
+            idle: [
+                'היי! צריך עזרה? 🦫', 
+                'אני כאן בשבילך!', 
+                'בוא נלמד יחד!',
+                'מה נשמע? איך הלימודים? 😎',
+                'עוד קצת קפה ואני מוכן לכל דבר ☕',
+                'אז מה, מתחילים? 💪'
+            ],
+            listening: [
+                'אני מקשיב...', 
+                'ספר לי עוד...', 
+                'מעניין!',
+                'המממ... מעניין מאוד 🤔',
+                'אני כולי אוזניים! 👂',
+                'המשך, אני עוקב 🎯'
+            ],
+            thinking: [
+                'רגע, אני חושב... 🤔', 
+                'עובד על זה...', 
+                'עוד רגע קט...',
+                'רגע, שכחתי את הקפה... אה לא, עובד על השאלה ☕',
+                'זה מסובך... אבל אני על זה! 💡',
+                'מחשבון מוח מסתובב... 🧠',
+                'רגע, צריך להתרכז... 🎯'
+            ],
+            answering: [
+                'הנה מה שמצאתי!', 
+                'אני אסביר...', 
+                'שים לב לזה:',
+                'בוא נראה מה יש לנו פה 📚',
+                'יש לי תשובה טובה! 🎉',
+                'OK, אז ככה זה עובד... 🦫'
+            ],
+            success: [
+                'יופי! הצלחנו! 🎉', 
+                'מעולה!', 
+                'כל הכבוד!',
+                'וואו! אתה/את מלך/ה! 👑',
+                'בול! זה בדיוק מה שרציתי! ⭐',
+                'יש! עוד אחד כזה ואני עובר למקצועיות! 🚀',
+                'מושלם! אתה גאון/את גאונה! 🧠✨'
+            ],
+            error: [
+                'אופס... 😅', 
+                'משהו השתבש', 
+                'נסה שוב?',
+                'אה... זה לא עבד כמו שתכננתי 🤦',
+                'הפעם לא יצא... אבל יש פעם הבאה! 💪',
+                'אוקיי זה מביך קצת... 😳',
+                'אז... זה לא הלך כמו שחשבתי 🦫'
+            ],
+            sarcastic: [
+                'בטח... עוד שאלה כזאת ואני מתפטר 😏',
+                'ווואו, זה ממש פשוט... לא 🙄',
+                'אז... זה מה שעושים בשעה הזאת של הלילה? ☕',
+                'שאלה מעניינת... אבל יש לי שאלה יותר טובה: למה? 🤔',
+                'בטוח שזה מה שרצית לשאול? 😅',
+                'Could this BE any more complicated? 🦫',
+                'OK... אז זה מה שעושים היום 🎯'
+            ],
+            encouraging: [
+                'אתה/את על זה! בוא נמשיך! 💪',
+                'לא נורא! כולם טועים - זה חלק מהלמידה! 🌟',
+                'עוד קצת מאמץ ותגיע לזה! 🚀',
+                'גם אינשטיין התחיל ממקום... בוא נמשיך! 🧠',
+                'זה קשה אבל אני מאמין בך! 🦫',
+                'Wow wow wow... אתה/את כבר כמעט שם! ⭐',
+                'עוד טיפה מאמץ! אני רואה שאתה/את משתפר/ת! 📈'
+            ],
+            jokes: [
+                'למה קפיברה לא משחקת קלפים? כי היא תמיד רוצה להיות במים! 🃏💦',
+                'מה קפיברה עושה כשהיא עצובה? הולכת למרכז המסחרי - קפיברה מול! 😂',
+                'למה קפיברה טובה במתמטיקה? כי היא תמיד סופרת על החברים שלה! 🧮',
+                'איך קורים לספר של קפיברה? קפיבריקה! 📚',
+                'למה אבנר לא אוהב מבחנים? כי הוא מעדיף לשכב על הדשא! 🌿',
+                'מה אבנר אומר כשמישהו מצליח? קפיבראוו! 👏',
+                'למה אבנר לא מפחד מלימודים? כי הוא יודע שזה רק זמני - אחר כך יש פסקה! ☕'
+            ]
         };
         
         this.currentState = 'idle';

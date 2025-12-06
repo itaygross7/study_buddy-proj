@@ -33,11 +33,15 @@ class MongoTaskRepository(ITaskRepository):
         task_data = self.db.tasks.find_one({"_id": task_id})
         return Task(**task_data) if task_data else None
 
-    def create(self) -> Task:
+    def create(self, user_id: Optional[str] = None, document_id: Optional[str] = None, 
+               task_type: str = "") -> Task:
         now = datetime.now(timezone.utc)
         task = Task(
             _id=str(uuid.uuid4()),
             status=TaskStatus.PENDING,
+            user_id=user_id,
+            result_id=document_id,
+            task_type=task_type,
             created_at=now,
             updated_at=now
         )

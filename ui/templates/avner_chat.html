@@ -127,15 +127,161 @@
     const courseSelector = document.getElementById('course-selector');
     const promptsCounter = document.getElementById('prompts-counter');
 
-    // Avner personality variations
+    // Avner personality variations - MORE IMAGES FOR COMEDY!
     const avnerImages = {
         thinking: '{{ url_for("serve_avner", filename="avner_thinking.jpeg") }}',
         happy: '{{ url_for("serve_avner", filename="avner_signing_ok.jpeg") }}',
         explaining: '{{ url_for("serve_avner", filename="avner_reading.jpeg") }}',
         baby: '{{ url_for("serve_avner", filename="baby_avner.png") }}',
         encouraging: '{{ url_for("serve_avner", filename="avner_celebrating.jpeg") }}',
-        sarcastic: '{{ url_for("serve_avner", filename="avner_says_nope.jpeg") }}'
+        sarcastic: '{{ url_for("serve_avner", filename="avner_says_nope.jpeg") }}',
+        confused: '{{ url_for("serve_avner", filename="avner_cluless.jpeg") }}',
+        excited: '{{ url_for("serve_avner", filename="avner_horay.jpeg") }}',
+        dancing: '{{ url_for("serve_avner", filename="avner_dancing.jpeg") }}',
+        tired: '{{ url_for("serve_avner", filename="avner_tierd.jpeg") }}',
+        coffee: '{{ url_for("serve_avner", filename="avner_drinnking_coffee.jpeg") }}',
+        studying: '{{ url_for("serve_avner", filename="avner_studing.jpeg") }}',
+        laptop: '{{ url_for("serve_avner", filename="avner_with_laptop.jpeg") }}',
+        smoking: '{{ url_for("serve_avner", filename="avner_smoking.jpeg") }}',
+        drinking: '{{ url_for("serve_avner", filename="avner_holding_whiskey.jpeg") }}',
+        love: '{{ url_for("serve_avner", filename="avner_in_love.jpeg") }}',
+        laughing: '{{ url_for("serve_avner", filename="avner_laghting.jpeg") }}',
+        annoyed: '{{ url_for("serve_avner", filename="avner_annoied.jpeg") }}',
+        nope: '{{ url_for("serve_avner", filename="avner_says_nope.jpeg") }}'
     };
+
+    // Capybara jokes and funny sayings!
+    const capybaraJokes = [
+        '🦫 ידעת? קפיברות הן היצורים הכי צ\'יל בעולם - כמו אבנר אחרי קפה!',
+        '🦫 קפיברה זה בעצם "ניפוצ\'ו" בשפה שלהם - כן, חיפשתי בגוגל',
+        '🦫 למה קפיברות תמיד רגועות? כי הן יודעות שהכל יסתדר בסוף!',
+        '🦫 קפיברות אוהבות לשכב על הדשא - אבל רק אחרי שהן סיימו את השיעורים!',
+        '🦫 ידעת שקפיברות הן החברות הכי טובות של כולם? אפילו תנינים אוהבים אותן!',
+        '🦫 קפיברה + לימודים = הצלחה מובטחת (לפי מחקרים של אבנר)',
+        '🦫 Could this BE any more capybara? - אבנר בסגנון צ\'נדלר',
+        '🦫 קפיברות לא לוחצות - ואתה גם לא צריך! נשב, נתרכז, ונצליח!'
+    ];
+
+    // Sarcastic/funny encouragements from Avner
+    const avnerSarcasm = [
+        '😏 וואו, שאלה קשה... אבל ראיתי קשות יותר. בוא נתמודד!',
+        '🦫 עוד שאלה כזאת ואני צריך חופשה... אבל בינתיים, בוא נענה',
+        '☕ רגע, תן לי לגמור את הקפה... אוקיי, מוכן!',
+        '😅 אתה בטוח שזו השאלה? בסדר, אני עובד על זה...',
+        '🎯 אז זה מה שעושים היום? מעניין! בוא נראה...',
+        '🤔 המממ... מעניין. אני אדאג שתבין את זה (גם אם זה יקח קצת זמן)',
+        '💪 זה נראה קשה? אבנר לא נרתע מאתגרים! בוא נעשה את זה!',
+        '😎 OK, זה מסובך קצת... אבל קפיברות לא נכנעות!'
+    ];
+
+    // Random encouraging messages
+    const encouragements = [
+        '🌟 אתה עושה מעולה! ממשיך ככה!',
+        '💪 כל שאלה מקרבת אותך להצלחה!',
+        '🚀 וואו! אתה משתפר עם כל שאלה!',
+        '⭐ המשך ככה ותהיה אלוף/ה!',
+        '🎯 בול! ממש על זה!',
+        '🦫 אבנר גאה בך! (רצינית)',
+        '🎉 אם למידה הייתה ספורט, היית אלוף עולם!',
+        '💡 המוח שלך עובד בטירוף - אני אוהב את זה!'
+    ];
+
+    // Show random joke occasionally
+    function maybeShowRandomJoke() {
+        // 10% chance to show a joke
+        if (Math.random() < 0.1) {
+            const joke = capybaraJokes[Math.floor(Math.random() * capybaraJokes.length)];
+            setTimeout(function() {
+                addMessage(joke, false, 'laughing');
+            }, 1000);
+        }
+    }
+
+    // Show random encouragement
+    function maybeShowEncouragement() {
+        // 15% chance to show encouragement
+        if (Math.random() < 0.15) {
+            const msg = encouragements[Math.floor(Math.random() * encouragements.length)];
+            setTimeout(function() {
+                addMessage(msg, false, 'encouraging');
+            }, 500);
+        }
+    }
+
+    // Show random sarcasm
+    function maybeShowSarcasm() {
+        // 20% chance for sarcastic comment
+        if (Math.random() < 0.2) {
+            const msg = avnerSarcasm[Math.floor(Math.random() * avnerSarcasm.length)];
+            return msg;
+        }
+        return null;
+    }
+
+    function pollTaskResult(taskId, babyMode, promptsUsed, promptsLimit) {
+        const maxAttempts = 30; // 30 seconds max
+        let attempts = 0;
+        
+        const poll = function() {
+            attempts++;
+            
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET', '/api/task/' + taskId + '/status', true);
+            
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    try {
+                        const data = JSON.parse(xhr.responseText);
+                        
+                        if (data.status === 'COMPLETED') {
+                            loadingIndicator.classList.add('hidden');
+                            
+                            let imageVariant = babyMode ? 'baby' : 'explaining';
+                            addMessage(data.result || 'אני קיבלתי את התשובה!', false, imageVariant);
+                            
+                            // Maybe show encouragement after answer
+                            maybeShowEncouragement();
+                            
+                            if (promptsUsed && promptsLimit && promptsCounter) {
+                                promptsCounter.textContent = 'שאלות היום: ' + promptsUsed + '/' + promptsLimit;
+                            }
+                        } else if (data.status === 'FAILED') {
+                            loadingIndicator.classList.add('hidden');
+                            addMessage('אופס! משהו השתבש בעיבוד השאלה. נסה שוב 🦫', false, 'sarcastic');
+                        } else if (attempts < maxAttempts) {
+                            // Still processing, poll again
+                            setTimeout(poll, 1000);
+                        } else {
+                            loadingIndicator.classList.add('hidden');
+                            addMessage('אופס! התגובה לוקחת יותר מדי זמן. נסה שוב 🦫', false, 'sarcastic');
+                        }
+                    } catch (e) {
+                        loadingIndicator.classList.add('hidden');
+                        addMessage('אופס! שגיאה בעיבוד התגובה 🦫', false, 'sarcastic');
+                    }
+                } else if (attempts < maxAttempts) {
+                    setTimeout(poll, 1000);
+                } else {
+                    loadingIndicator.classList.add('hidden');
+                    addMessage('אופס! לא הצלחתי לקבל תשובה. נסה שוב 🦫', false, 'sarcastic');
+                }
+            };
+            
+            xhr.onerror = function() {
+                if (attempts < maxAttempts) {
+                    setTimeout(poll, 1000);
+                } else {
+                    loadingIndicator.classList.add('hidden');
+                    addMessage('אופס! בעיית חיבור. נסה שוב 🦫', false, 'sarcastic');
+                }
+            };
+            
+            xhr.send();
+        };
+        
+        // Start polling after 500ms
+        setTimeout(poll, 500);
+    }
 
     function addMessage(content, isUser = false, imageVariant = 'happy') {
         const messageDiv = document.createElement('div');
@@ -186,12 +332,21 @@
         const question = questionInput.value.trim();
         if (!question) return;
         
+        // Maybe show sarcastic loading message
+        const sarcasticMsg = maybeShowSarcasm();
+        
         // Add user message
         addMessage(question, true);
         questionInput.value = '';
         
-        // Show loading
+        // Show loading with optional sarcasm
+        if (sarcasticMsg) {
+            addMessage(sarcasticMsg, false, 'coffee');
+        }
         loadingIndicator.classList.remove('hidden');
+        
+        // Maybe show a random joke while waiting
+        maybeShowRandomJoke();
         
         // Use XMLHttpRequest for better iOS Safari compatibility
         const xhr = new XMLHttpRequest();
@@ -202,16 +357,16 @@
         const courseId = courseSelector ? courseSelector.value : '';
         
         xhr.onload = function() {
-            loadingIndicator.classList.add('hidden');
-            
             if (xhr.status >= 200 && xhr.status < 300) {
                 try {
                     const data = JSON.parse(xhr.responseText);
                     
                     if (data.error) {
+                        loadingIndicator.classList.add('hidden');
                         addMessage('שגיאה: ' + data.error, false, 'sarcastic');
-                    } else {
-                        // Determine image variant based on context
+                    } else if (data.answer) {
+                        // Synchronous response (local answer)
+                        loadingIndicator.classList.add('hidden');
                         let imageVariant = 'happy';
                         if (babyMode) {
                             imageVariant = 'baby';
@@ -225,12 +380,31 @@
                         if (data.prompts_used && data.prompts_limit && promptsCounter) {
                             promptsCounter.textContent = 'שאלות היום: ' + data.prompts_used + '/' + data.prompts_limit;
                         }
+                    } else if (data.task_id) {
+                        // Asynchronous response (AI processing) - poll for result
+                        pollTaskResult(data.task_id, babyMode, data.prompts_used, data.prompts_limit);
+                    } else {
+                        loadingIndicator.classList.add('hidden');
+                        addMessage('אופס! תגובה לא צפויה מהשרת 🦫', false, 'sarcastic');
                     }
                 } catch (parseError) {
+                    loadingIndicator.classList.add('hidden');
                     console.error('Parse error:', parseError);
                     addMessage('אופס! שגיאה בעיבוד התגובה מהשרת 🦫', false, 'sarcastic');
                 }
+            } else if (xhr.status === 202) {
+                // Accepted - processing async
+                try {
+                    const data = JSON.parse(xhr.responseText);
+                    if (data.task_id) {
+                        pollTaskResult(data.task_id, babyMode, data.prompts_used, data.prompts_limit);
+                    }
+                } catch (e) {
+                    loadingIndicator.classList.add('hidden');
+                    addMessage('אופס! שגיאת שרת. אנא נסה שוב 🦫', false, 'sarcastic');
+                }
             } else {
+                loadingIndicator.classList.add('hidden');
                 addMessage('אופס! שגיאת שרת. אנא נסה שוב 🦫', false, 'sarcastic');
             }
         };
