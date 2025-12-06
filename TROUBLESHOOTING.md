@@ -292,6 +292,43 @@ This will test actual API connections and show if they work.
 docker compose logs -f app | grep -i "ai\|avner\|openai\|gemini"
 ```
 
+#### F. Gemini 404 Model Not Found Error
+
+**Symptoms:**
+- Error: `404 models/gemini-1.5-flash is not found for API version v1beta`
+- Gemini health check fails during deployment
+- AI features work with OpenAI but not with Gemini
+
+**Cause:**
+The environment variable `SB_GEMINI_MODEL` is set to an older model name without the `-latest` suffix.
+
+**Solution:**
+1. Edit your `.env` file:
+   ```bash
+   nano .env  # or vim, code, etc.
+   ```
+
+2. Update the Gemini model setting:
+   ```bash
+   # ❌ WRONG (old value - will cause 404):
+   SB_GEMINI_MODEL="gemini-1.5-flash"
+   
+   # ✅ CORRECT (use -latest suffix):
+   SB_GEMINI_MODEL="gemini-1.5-flash-latest"
+   ```
+
+3. Restart the application:
+   ```bash
+   docker compose restart app worker health_monitor
+   ```
+
+4. Verify the fix:
+   ```bash
+   docker compose logs app | grep -i "gemini"
+   ```
+
+**Note:** Google's Gemini API requires the `-latest` suffix for stable model versions. Always use `gemini-1.5-flash-latest` or `gemini-1.5-pro-latest`.
+
 ---
 
 ### 5. Landing Page Missing Features 🎨
