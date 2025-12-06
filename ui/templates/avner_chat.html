@@ -136,21 +136,6 @@
         sarcastic: '{{ url_for("serve_avner", filename="avner_says_nope.jpeg") }}'
     };
 
-    // Add Avner encouragements/sarcasm
-    const avnerEncouragements = [
-        "יופי! שאלה מעולה! 🎉",
-        "אה, עכשיו זה מעניין... 🤔",
-        "Could this BE any easier? (אבל אני כאן לעזור 😄)",
-        "בדיוק מה שרציתי לדבר עליו! 🦫",
-        "שאלת שאלה? תקבל תשובה! ⚡",
-        "אוקיי, תן לי שנייה לחשוב... 💭",
-        "אה, עוד אחד שרוצה ללמוד! אוהב את זה! 📚"
-    ];
-
-    function getRandomEncouragement() {
-        return avnerEncouragements[Math.floor(Math.random() * avnerEncouragements.length)];
-    }
-
     function addMessage(content, isUser = false, imageVariant = 'happy') {
         const messageDiv = document.createElement('div');
         messageDiv.className = 'flex gap-3 items-start animate-fade-in ' + (isUser ? 'flex-row-reverse' : '');
