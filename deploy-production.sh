@@ -27,9 +27,16 @@ IFS=$'\n\t'
 # =============================================================================
 
 # Script version
-VERSION="2.0.0"
+VERSION="2.1.0"
 DEPLOY_START_TIME=$(date +%s)
 DEPLOY_DATE=$(date +%Y%m%d_%H%M%S)
+
+# Deployment modes
+FULL_RESTART=false
+FORCE_REBUILD=false
+SKIP_BACKUP=false
+SKIP_GIT_PULL=false
+QUICK_MODE=false
 
 # Colors for output
 readonly RED='\033[0;31m'
@@ -63,6 +70,127 @@ TUNNEL_CONTAINER="studybuddy_tunnel"
 # Health check settings
 MAX_HEALTH_RETRIES=30
 HEALTH_CHECK_INTERVAL=5
+
+# =============================================================================
+# COMMAND LINE ARGUMENTS
+# =============================================================================
+
+show_usage() {
+    cat << EOF
+${BLUE}╔══════════════════════════════════════════════════════════════╗
+║        StudyBuddy AI - Ultimate Deployment Script v${VERSION}       ║
+╚══════════════════════════════════════════════════════════════╝${NC}
+
+${WHITE}USAGE:${NC}
+    sudo ./deploy-production.sh [OPTIONS]
+
+${WHITE}OPTIONS:${NC}
+    ${GREEN}-h, --help${NC}              Show this help message
+    
+    ${YELLOW}Deployment Modes:${NC}
+    ${GREEN}--full-restart${NC}          Complete system restart (stops all, removes volumes, rebuilds everything)
+    ${GREEN}--force-rebuild${NC}         Force Docker rebuild without cache
+    ${GREEN}--quick${NC}                 Quick deployment (skip backups, minimal checks)
+    
+    ${YELLOW}Skip Options:${NC}
+    ${GREEN}--skip-backup${NC}           Skip backup creation (faster but risky)
+    ${GREEN}--skip-git${NC}              Skip git pull (use current code)
+    ${GREEN}--skip-health${NC}           Skip health checks (not recommended)
+    
+    ${YELLOW}Maintenance:${NC}
+    ${GREEN}--rollback${NC}              Rollback to previous deployment
+    ${GREEN}--cleanup${NC}               Clean up old backups and logs
+    ${GREEN}--status${NC}                Show current deployment status
+
+${WHITE}EXAMPLES:${NC}
+    ${CYAN}# Standard deployment${NC}
+    sudo ./deploy-production.sh
+    
+    ${CYAN}# Full restart (clean slate)${NC}
+    sudo ./deploy-production.sh --full-restart
+    
+    ${CYAN}# Quick update without backup${NC}
+    sudo ./deploy-production.sh --quick
+    
+    ${CYAN}# Force rebuild containers${NC}
+    sudo ./deploy-production.sh --force-rebuild
+    
+    ${CYAN}# Rollback to previous version${NC}
+    sudo ./deploy-production.sh --rollback
+
+${WHITE}NOTES:${NC}
+    - Must be run with sudo
+    - Creates automatic backups before deployment
+    - Supports automatic rollback on failures
+    - Logs saved to logs/deploy_*.log
+
+${WHITE}DOCUMENTATION:${NC}
+    See DEPLOYMENT_GUIDE.md for complete documentation
+
+EOF
+}
+
+# Parse command line arguments
+parse_arguments() {
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            -h|--help)
+                show_usage
+                exit 0
+                ;;
+            --full-restart)
+                FULL_RESTART=true
+                FORCE_REBUILD=true
+                log_info "Mode: Full Restart (complete system reset)"
+                shift
+                ;;
+            --force-rebuild)
+                FORCE_REBUILD=true
+                log_info "Mode: Force Rebuild"
+                shift
+                ;;
+            --quick)
+                QUICK_MODE=true
+                SKIP_BACKUP=true
+                log_info "Mode: Quick Deployment"
+                shift
+                ;;
+            --skip-backup)
+                SKIP_BACKUP=true
+                log_warning "Skipping backup creation"
+                shift
+                ;;
+            --skip-git)
+                SKIP_GIT_PULL=true
+                log_warning "Skipping git pull"
+                shift
+                ;;
+            --skip-health)
+                MAX_HEALTH_RETRIES=5
+                log_warning "Minimal health checks only"
+                shift
+                ;;
+            --rollback)
+                perform_rollback
+                exit $?
+                ;;
+            --cleanup)
+                cleanup_old_files
+                exit 0
+                ;;
+            --status)
+                show_deployment_status
+                exit 0
+                ;;
+            *)
+                log_error "Unknown option: $1"
+                echo ""
+                show_usage
+                exit 1
+                ;;
+        esac
+    done
+}
 
 # =============================================================================
 # LOGGING & OUTPUT FUNCTIONS
@@ -143,7 +271,7 @@ print_banner() {
 ║         ██████╔╝╚██████╔╝██████╔╝██████╔╝   ██║            ║
 ║         ╚═════╝  ╚═════╝ ╚═════╝ ╚═════╝    ╚═╝            ║
 ║                                                              ║
-║              Ultimate Production Deployment v2.0.0          ║
+║              Ultimate Production Deployment v2.1.0          ║
 ║              Your Complete DevOps Team in One Script        ║
 ║                                                              ║
 ╚══════════════════════════════════════════════════════════════╝
@@ -188,6 +316,127 @@ cleanup_handler() {
         # Send success notification
         send_notification "✅ Deployment Successful" "Deployment ${DEPLOYMENT_ID} completed in ${duration}s"
     fi
+}
+
+# =============================================================================
+# UTILITY FUNCTIONS
+# =============================================================================
+
+cleanup_old_files() {
+    log_info "Cleaning up old files..."
+    
+    # Clean old backups (keep last 10)
+    if [ -d "$BACKUP_DIR" ]; then
+        cd "$BACKUP_DIR"
+        local backup_count=$(ls -1 | wc -l)
+        if [ "$backup_count" -gt 10 ]; then
+            log_info "Found $backup_count backups, keeping last 10..."
+            ls -t | tail -n +11 | xargs -r rm -rf
+            log_success "Cleaned old backups"
+        else
+            log_info "Backup count is $backup_count (within limit)"
+        fi
+    fi
+    
+    # Clean old logs (keep last 30 days)
+    if [ -d "$LOG_DIR" ]; then
+        log_info "Cleaning old logs (older than 30 days)..."
+        find "$LOG_DIR" -name "*.log" -type f -mtime +30 -delete
+        find "$LOG_DIR" -name "*.txt" -type f -mtime +30 -delete
+        log_success "Cleaned old logs"
+    fi
+    
+    # Clean Docker system
+    log_info "Cleaning Docker system..."
+    docker system prune -f --volumes 2>&1 | tee -a "$DEPLOY_LOG" > /dev/null || true
+    log_success "Docker system cleaned"
+}
+
+show_deployment_status() {
+    echo -e "${BLUE}╔══════════════════════════════════════════════════════════════╗${NC}"
+    echo -e "${BLUE}║              Current Deployment Status                      ║${NC}"
+    echo -e "${BLUE}╚══════════════════════════════════════════════════════════════╝${NC}"
+    echo ""
+    
+    # Git information
+    echo -e "${CYAN}Git Information:${NC}"
+    echo -e "  Branch: $(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo 'unknown')"
+    echo -e "  Commit: $(git rev-parse --short HEAD 2>/dev/null || echo 'unknown')"
+    echo -e "  Last Update: $(git log -1 --format=%cd --date=relative 2>/dev/null || echo 'unknown')"
+    echo ""
+    
+    # Container status
+    echo -e "${CYAN}Container Status:${NC}"
+    docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" 2>/dev/null || echo "  No containers running"
+    echo ""
+    
+    # Resource usage
+    echo -e "${CYAN}Resource Usage:${NC}"
+    docker stats --no-stream --format "table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}" 2>/dev/null || echo "  Unable to get stats"
+    echo ""
+    
+    # Health check
+    echo -e "${CYAN}Health Status:${NC}"
+    if curl -sf http://localhost:5000/health > /dev/null 2>&1; then
+        echo -e "  ${GREEN}✓${NC} Application is healthy"
+    else
+        echo -e "  ${RED}✗${NC} Application health check failed"
+    fi
+    echo ""
+    
+    # Backup information
+    echo -e "${CYAN}Backups:${NC}"
+    if [ -d "$BACKUP_DIR" ]; then
+        local backup_count=$(ls -1 "$BACKUP_DIR" 2>/dev/null | wc -l)
+        echo -e "  Total backups: $backup_count"
+        if [ "$backup_count" -gt 0 ]; then
+            echo -e "  Latest: $(ls -t "$BACKUP_DIR" | head -1)"
+        fi
+    else
+        echo -e "  No backups found"
+    fi
+    echo ""
+    
+    # Disk usage
+    echo -e "${CYAN}Disk Usage:${NC}"
+    df -h "$SCRIPT_DIR" | tail -1 | awk '{print "  Used: "$3" / "$2" ("$5")"}'
+    echo ""
+}
+
+full_system_restart() {
+    log_step "FULL RESTART" "Performing Complete System Restart"
+    
+    log_warning "This will:"
+    log_warning "  - Stop all containers"
+    log_warning "  - Remove all volumes (INCLUDING DATABASE)"
+    log_warning "  - Delete all images"
+    log_warning "  - Rebuild everything from scratch"
+    echo ""
+    
+    # Confirmation if not in automated mode
+    if [ -t 0 ]; then
+        read -p "Are you sure? This will DELETE ALL DATA! Type 'yes' to continue: " confirmation
+        if [ "$confirmation" != "yes" ]; then
+            log_info "Full restart cancelled"
+            exit 0
+        fi
+    fi
+    
+    log_warning "Starting full system restart..."
+    
+    # Stop and remove everything
+    log_info "Stopping all containers..."
+    docker compose down -v --remove-orphans 2>&1 | tee -a "$DEPLOY_LOG" || true
+    
+    # Remove all images
+    log_info "Removing all StudyBuddy images..."
+    docker images | grep studybuddy | awk '{print $3}' | xargs -r docker rmi -f 2>&1 | tee -a "$DEPLOY_LOG" || true
+    
+    # Clean Docker system
+    log_info "Cleaning Docker system..."
+    docker system prune -af --volumes 2>&1 | tee -a "$DEPLOY_LOG" || true
+    
+    log_success "System cleaned, ready for fresh build"
 }
 
 # =============================================================================
@@ -290,6 +539,11 @@ install_dependencies() {
 # =============================================================================
 
 create_backup() {
+    if [ "$SKIP_BACKUP" = true ]; then
+        log_warning "Skipping backup creation (--skip-backup flag)"
+        return 0
+    fi
+    
     log_step "3" "Creating Backup"
     
     local backup_name="backup_${DEPLOY_DATE}"
@@ -338,6 +592,11 @@ create_backup() {
 # =============================================================================
 
 update_code() {
+    if [ "$SKIP_GIT_PULL" = true ]; then
+        log_warning "Skipping git pull (--skip-git flag)"
+        return 0
+    fi
+    
     log_step "4" "Updating Code from Git"
     
     cd "$SCRIPT_DIR"
@@ -558,13 +817,24 @@ build_and_deploy() {
     
     cd "$SCRIPT_DIR"
     
+    # Full restart if requested
+    if [ "$FULL_RESTART" = true ]; then
+        full_system_restart
+    fi
+    
     # Pull latest base images
     log_info "Pulling latest base images..."
     docker compose pull 2>&1 | tee -a "$DEPLOY_LOG" || true
     
     # Build new images
     log_info "Building Docker images (this may take a few minutes)..."
-    if docker compose build --no-cache 2>&1 | tee -a "$DEPLOY_LOG"; then
+    local build_flags=""
+    if [ "$FORCE_REBUILD" = true ]; then
+        build_flags="--no-cache"
+        log_info "Force rebuild enabled (no cache)"
+    fi
+    
+    if docker compose build $build_flags 2>&1 | tee -a "$DEPLOY_LOG"; then
         log_success "Docker images built successfully"
     else
         log_error "Failed to build Docker images"
@@ -1083,8 +1353,23 @@ EOF
 # =============================================================================
 
 main() {
+    # Parse command line arguments
+    parse_arguments "$@"
+    
     # Print banner
     print_banner
+    
+    # Show deployment mode
+    if [ "$FULL_RESTART" = true ]; then
+        log_warning "MODE: Full System Restart"
+    elif [ "$FORCE_REBUILD" = true ]; then
+        log_info "MODE: Force Rebuild"
+    elif [ "$QUICK_MODE" = true ]; then
+        log_info "MODE: Quick Deployment"
+    else
+        log_info "MODE: Standard Deployment"
+    fi
+    echo ""
     
     # Execute deployment steps
     check_prerequisites

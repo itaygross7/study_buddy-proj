@@ -79,10 +79,44 @@ sudo ./deploy-production.sh
 
 ```bash
 cd /path/to/study_buddy-proj
+
+# Standard deployment
 sudo ./deploy-production.sh
+
+# Full system restart (clean slate - WARNING: Deletes ALL data!)
+sudo ./deploy-production.sh --full-restart
+
+# Force rebuild without cache
+sudo ./deploy-production.sh --force-rebuild
+
+# Quick deployment (skip backups - faster but risky)
+sudo ./deploy-production.sh --quick
+
+# Custom options
+sudo ./deploy-production.sh --skip-backup --force-rebuild
 ```
 
-That's it! The script handles everything else.
+### Available Options
+
+```bash
+# Show help
+sudo ./deploy-production.sh --help
+
+# Deployment modes
+--full-restart       # Complete system restart (stops all, removes volumes, rebuilds)
+--force-rebuild      # Force Docker rebuild without cache
+--quick              # Quick deployment (skip backups, minimal checks)
+
+# Skip options
+--skip-backup        # Skip backup creation (faster but risky)
+--skip-git           # Skip git pull (use current code)
+--skip-health        # Skip extensive health checks
+
+# Maintenance
+--rollback           # Rollback to previous deployment
+--cleanup            # Clean up old backups and logs
+--status             # Show current deployment status
+```
 
 ## 📁 Directory Structure
 
