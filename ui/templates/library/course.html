@@ -254,35 +254,39 @@
     
     // iOS-specific: Add visual feedback for file input selection
     if (isIOS) {
-        const fileInputs = document.querySelectorAll('input[type="file"]');
-        fileInputs.forEach(function(input) {
-            input.addEventListener('change', function(e) {
-                if (this.files && this.files.length > 0) {
-                    console.log('File selected on iOS:', this.files[0].name);
-                    // Add visual feedback that file was selected
-                    const fileName = this.files[0].name;
-                    const fileSizeKB = (this.files[0].size / 1024).toFixed(0);
-                    
-                    // Create a subtle notification
-                    const notification = document.createElement('div');
-                    notification.textContent = '✓ ' + fileName + ' (' + fileSizeKB + 'KB)';
-                    notification.style.cssText = 'position: fixed; top: 80px; right: 20px; background: #F2C94C; color: #4B2E16; padding: 12px 20px; border-radius: 8px; font-size: 14px; z-index: 9999; box-shadow: 0 4px 12px rgba(0,0,0,0.15);';
-                    document.body.appendChild(notification);
-                    
-                    setTimeout(function() {
-                        notification.style.transition = 'opacity 0.3s';
-                        notification.style.opacity = '0';
+        var fileInputs = document.querySelectorAll('input[type="file"]');
+        for (var i = 0; i < fileInputs.length; i++) {
+            (function(input) {
+                input.addEventListener('change', function(e) {
+                    if (this.files && this.files.length > 0) {
+                        console.log('File selected on iOS:', this.files[0].name);
+                        // Add visual feedback that file was selected
+                        var fileName = this.files[0].name;
+                        var fileSizeKB = (this.files[0].size / 1024).toFixed(0);
+                        
+                        // Create a subtle notification
+                        var notification = document.createElement('div');
+                        notification.textContent = '✓ ' + fileName + ' (' + fileSizeKB + 'KB)';
+                        notification.style.cssText = 'position: fixed; top: 80px; right: 20px; background: #F2C94C; color: #4B2E16; padding: 12px 20px; border-radius: 8px; font-size: 14px; z-index: 9999; box-shadow: 0 4px 12px rgba(0,0,0,0.15);';
+                        document.body.appendChild(notification);
+                        
                         setTimeout(function() {
-                            document.body.removeChild(notification);
-                        }, 300);
-                    }, 2000);
-                }
-            });
-            
-            // iOS-specific: Ensure file input is tappable
-            input.style.cursor = 'pointer';
-            input.style.minHeight = '48px';
-        });
+                            notification.style.transition = 'opacity 0.3s';
+                            notification.style.opacity = '0';
+                            setTimeout(function() {
+                                if (notification.parentNode) {
+                                    notification.parentNode.removeChild(notification);
+                                }
+                            }, 300);
+                        }, 2000);
+                    }
+                });
+                
+                // iOS-specific: Ensure file input is tappable
+                input.style.cursor = 'pointer';
+                input.style.minHeight = '48px';
+            })(fileInputs[i]);
+        }
     }
     
     // Upload form handler - Enhanced for iOS Safari compatibility
@@ -484,8 +488,11 @@
                             return;
                         }
                         
-                        // Update status text with dots animation
-                        var dots = '.'.repeat((attempts % 3) + 1);
+                        // Update status text with dots animation - iOS 8 compatible
+                        var dots = '';
+                        for (var d = 0; d <= (attempts % 3); d++) {
+                            dots += '.';
+                        }
                         statusText.textContent = 'אבנר מעבד את הקובץ' + dots;
                         
                         // Continue polling

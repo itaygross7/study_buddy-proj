@@ -248,11 +248,18 @@
         }));
     });
 
-    // Enter to send (Shift+Enter for new line)
+    // Enter to send (Shift+Enter for new line) - iOS 8 compatible
     questionInput.addEventListener('keydown', function(e) {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
-            chatForm.dispatchEvent(new Event('submit'));
+            // iOS 8 compatible event dispatch
+            if (typeof Event === 'function') {
+                chatForm.dispatchEvent(new Event('submit'));
+            } else {
+                var event = document.createEvent('Event');
+                event.initEvent('submit', true, true);
+                chatForm.dispatchEvent(event);
+            }
         }
     });
 
@@ -262,7 +269,15 @@
         questionInput.addEventListener('focus', function() {
             // Small delay to ensure keyboard is shown
             setTimeout(function() {
-                questionInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                // iOS 8 compatible scrollIntoView
+                if (questionInput.scrollIntoView) {
+                    try {
+                        questionInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    } catch (e) {
+                        // Fallback for older iOS
+                        questionInput.scrollIntoView(true);
+                    }
+                }
             }, 300);
         });
         
