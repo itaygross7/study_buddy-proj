@@ -63,7 +63,7 @@ services:
   mongo:
     image: mongo:5.0
     container_name: studybuddy_mongo
-    ports: # Restore original port mapping for host access if needed
+    ports:
       - "27017:27017"
     volumes:
       - mongo_data:/data/db
@@ -74,12 +74,9 @@ services:
   rabbitmq:
     image: rabbitmq:3.9-management
     container_name: studybuddy_rabbitmq
-    # --- THIS IS THE FIX ---
-    # Restoring the original port mapping for the AMQP protocol
     ports:
       - "5672:5672"
       - "15672:15672"
-    # --- END OF FIX ---
     environment:
       RABBITMQ_DEFAULT_USER: user
       RABBITMQ_DEFAULT_PASS: password
@@ -89,15 +86,19 @@ services:
     networks:
       - studybuddy-net
 
+  # --- THIS IS THE FIX ---
   cloudflared:
     image: cloudflare/cloudflared:latest
     container_name: studybuddy_cloudflared
     restart: unless-stopped
-    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
+    # The command now explicitly tells the tunnel to forward traffic
+    # to the 'app' service on port 5000 within the Docker network.
+    command: tunnel --no-autoupdate --url http://app:5000 run --token ${CLOUDFLARE_TUNNEL_TOKEN}
     depends_on:
       - app
     networks:
       - studybuddy-net
+  # --- END OF FIX ---
 
 volumes:
   mongo_data:
