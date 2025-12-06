@@ -16,7 +16,7 @@ from src.api.routes_summary import summary_bp
 from src.api.routes_flashcards import flashcards_bp
 from src.api.routes_assess import assess_bp
 from src.api.routes_homework import homework_bp
-from src.api.routes_upload import upload_bp
+# from src.api.routes_upload import upload_bp # This is the line to be removed
 from src.api.routes_task import task_bp
 from src.api.routes_results import results_bp
 from src.api.routes_pdf import pdf_bp
@@ -44,10 +44,7 @@ def check_user_has_documents():
     return db.documents.count_documents({"user_id": current_user.id}) > 0
 
 def require_uploaded_files(template_name):
-    """Helper function to check if user has uploaded files before rendering a tool template.
-    
-    Returns the rendered template if user has documents, otherwise redirects to library.
-    """
+    """Helper function to check if user has uploaded files before rendering a tool template."""
     if not check_user_has_documents():
         flash(NO_FILES_MESSAGE, 'warning')
         return redirect(url_for('library.index'))
@@ -57,17 +54,14 @@ def create_app():
     """Application factory for Flask."""
     app = Flask(__name__, template_folder='ui/templates', static_folder='ui/static')
 
-    # --- Core Configuration ---
     app.config.from_object(settings)
     app.config['JSON_AS_ASCII'] = False
 
-    # --- Security Configuration ---
     app.config['SESSION_COOKIE_SECURE'] = settings.FLASK_ENV == 'production'
     app.config['SESSION_COOKIE_HTTPONLY'] = True
     app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
     CORS(app, resources={r"/api/*": {"origins": "*"}}, supports_credentials=True)
 
-    # --- Initialize Extensions ---
     init_db(app)
     babel.init_app(app, locale_selector=get_locale_from_session)
     login_manager.init_app(app)
@@ -77,14 +71,11 @@ def create_app():
     login_manager.login_message = 'יש להתחבר כדי לגשת לעמוד זה'
     login_manager.login_message_category = 'warning'
 
-    # --- Static File Serving for Avner ---
     avner_folder = os.path.join(os.path.dirname(__file__), 'ui', 'Avner')
     @app.route('/avner/<path:filename>')
     def serve_avner(filename):
         return send_from_directory(avner_folder, filename)
 
-    # --- Blueprints Registration ---
-    # All blueprints are confirmed to be present and registered.
     app.register_blueprint(auth_bp, url_prefix='/auth')
     app.register_blueprint(oauth_bp, url_prefix='/oauth')
     app.register_blueprint(admin_bp, url_prefix='/admin')
@@ -95,7 +86,7 @@ def create_app():
     app.register_blueprint(flashcards_bp, url_prefix='/api/flashcards')
     app.register_blueprint(assess_bp, url_prefix='/api/assess')
     app.register_blueprint(homework_bp, url_prefix='/api/homework')
-    app.register_blueprint(upload_bp, url_prefix='/api/upload')
+    # app.register_blueprint(upload_bp, url_prefix='/api/upload') # This is the line to be removed
     app.register_blueprint(task_bp, url_prefix='/api/tasks')
     app.register_blueprint(results_bp, url_prefix='/results')
     app.register_blueprint(pdf_bp, url_prefix='/export/pdf')
@@ -103,13 +94,11 @@ def create_app():
     app.register_blueprint(tutor_bp, url_prefix='/api/tutor')
     app.register_blueprint(diagram_bp, url_prefix='/api/diagram')
 
-    # --- Request Hooks & Context Processors ---
     @app.after_request
     def add_security_headers(response):
         response.headers['X-Content-Type-Options'] = 'nosniff'
         response.headers['X-Frame-Options'] = 'SAMEORIGIN'
         response.headers['X-XSS-Protection'] = '1; mode=block'
-        # Updated CSP to allow service worker and inline scripts
         response.headers['Content-Security-Policy'] = "default-src 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' https://unpkg.com https://cdn.jsdelivr.net; connect-src 'self'; worker-src 'self'; manifest-src 'self';"
         return response
 
@@ -122,7 +111,6 @@ def create_app():
             apple_oauth_enabled=bool(settings.APPLE_CLIENT_ID)
         )
 
-    # --- Main UI Routes ---
     @app.route('/')
     def index():
         from src.services.capybara_of_the_day_service import get_capybara_of_the_day, get_random_family_fact
@@ -130,7 +118,6 @@ def create_app():
         family_fact = get_random_family_fact()
         return render_template('index.html', capybara_of_day=capybara_of_day, family_fact=family_fact)
 
-    # Tool routes - redirect to library if no files uploaded
     @app.route('/tools/summary')
     @login_required
     def summary_tool():
@@ -163,10 +150,8 @@ def create_app():
 
     @app.route('/chat')
     def avner_chat():
-        """Avner live chat - available for everyone."""
         courses = []
         if current_user.is_authenticated:
-            # Get user's courses for context selector
             courses = list(db.courses.find({"user_id": current_user.id}).sort("created_at", -1))
         return render_template('avner_chat.html', courses=courses)
 
@@ -174,7 +159,6 @@ def create_app():
     @app.route('/glossary/<course_id>')
     @login_required
     def glossary_page(course_id='default'):
-        # Check if user has any documents for default glossary
         if course_id == 'default' and not check_user_has_documents():
             flash(NO_FILES_MESSAGE, 'warning')
             return redirect(url_for('library.index'))
@@ -182,66 +166,42 @@ def create_app():
     
     @app.route('/offline')
     def offline():
-        """Offline fallback page for PWA."""
         return render_template('offline.html')
 
     @app.route('/dashboard')
     @login_required
     def dashboard():
-        # Redirect dashboard to library - new flow
         return redirect(url_for('library.index'))
 
     @app.route('/tasks/<task_id>')
     def task_status(task_id):
         return render_template('task_status.html', task_id=task_id)
 
-    # --- Language Switching ---
     @app.route('/set-lang/<lang>')
     def set_lang(lang):
-        """Switch language between Hebrew (he) and English (en)."""
-        from flask import redirect, url_for
         if lang in ['he', 'en']:
             session['lang'] = lang
         return redirect(request.referrer or url_for('index'))
 
-    # --- Health Checks (Enhanced) ---
     @app.route('/health')
     def health_check():
-        """Simple health check for load balancers."""
         return jsonify({"status": "healthy"}), 200
     
     @app.route('/health/detailed')
     def detailed_health_check():
-        """
-        Comprehensive health check testing all components:
-        - MongoDB
-        - RabbitMQ + Worker
-        - AI Models (OpenAI, Gemini)
-        - File Upload capability
-        - Git connectivity for auto-updates
-        """
         from src.services.health_service import get_comprehensive_health
-        
         try:
             health_report = get_comprehensive_health(db)
-            
-            # Return appropriate HTTP status code
             if health_report["overall_status"] == "healthy":
                 return jsonify(health_report), 200
             elif health_report["overall_status"] == "degraded":
-                return jsonify(health_report), 200  # Still operational
+                return jsonify(health_report), 200
             else:
-                return jsonify(health_report), 503  # Service unavailable
-                
+                return jsonify(health_report), 503
         except Exception as e:
             logger.error(f"Health check failed with exception: {e}", exc_info=True)
-            return jsonify({
-                "status": "unhealthy",
-                "error": "Health check failed to complete",
-                "details": str(e)
-            }), 503
+            return jsonify({"status": "unhealthy", "error": "Health check failed to complete", "details": str(e)}), 503
 
-    # --- Error Handling ---
     @app.errorhandler(NotFound)
     def handle_not_found(error):
         logger.warning(f"Not Found error for path: {request.path}")
@@ -252,34 +212,27 @@ def create_app():
     @app.errorhandler(Exception)
     def handle_exception(error):
         logger.error(f"Unhandled exception for path {request.path}: {error}", exc_info=True)
-        
-        # Send error notification to admin (in both dev and production)
-        # This helps catch issues early
         try:
             email_service.send_error_notification(
                 error_type=type(error).__name__,
                 error_message=str(error),
-                details=f"Path: {request.path}\nEnvironment: {settings.FLASK_ENV}"
+                details=f"Path: {request.path}\\nEnvironment: {settings.FLASK_ENV}"
             )
         except Exception as email_error:
-            # Log but don't fail if email sending fails
             logger.error(f"Failed to send error notification email: {email_error}", exc_info=True)
         
-        # Return JSON for API requests, HTML for web requests
         if request.path.startswith('/api/') or request.path.startswith('/webhook/'):
             return jsonify({"error": "Internal Server Error"}), 500
         return render_template('500.html'), 500
 
     logger.info(f"Flask App created successfully in {settings.FLASK_ENV} mode.")
     
-    # Test email configuration at startup
     email_config = email_service.test_email_config()
     if not email_config["configured"]:
         logger.warning(f"⚠️  Email notifications are NOT configured properly: {email_config['issues']}")
-        logger.warning("    Error notifications will not be sent to admin!")
     else:
         logger.info(f"✅ Email notifications configured - Admin: {email_config['admin_email']}")
-    
+
     return app
 
 if __name__ == '__main__':
