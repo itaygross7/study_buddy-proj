@@ -141,9 +141,8 @@ def process_task(body: bytes):
             result_id = result_doc["_id"]
         except Exception as db_error:
             logger.error(f"Failed to store Avner result: {db_error}", exc_info=True)
-            # Still mark task as completed but with error in logs
-            result_id = None
-            raise  # Re-raise to trigger retry logic
+            # Re-raise to trigger retry logic and mark task as failed
+            raise
 
     else:
         raise ValueError(f"Unknown queue: {queue_name}")
