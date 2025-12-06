@@ -179,7 +179,7 @@ Already installed:
 Environment variables (optional - defaults provided):
 ```bash
 SB_OPENAI_MODEL="gpt-4o-mini"        # Default: gpt-4o-mini
-SB_GEMINI_MODEL="gemini-1.5-flash"   # Default: gemini-1.5-flash
+SB_GEMINI_MODEL="gemini-1.5-flash-latest"   # Default: gemini-1.5-flash-latest
 SB_DEFAULT_PROVIDER="gemini"         # Default: gemini
 ```
 

@@ -271,7 +271,7 @@ Get API keys:
 3. Add to `.env`:
    ```bash
    GEMINI_API_KEY="AIza..."
-   SB_GEMINI_MODEL="gemini-1.5-flash"
+   SB_GEMINI_MODEL="gemini-1.5-flash-latest"
    SB_DEFAULT_PROVIDER="gemini"
    ```
 

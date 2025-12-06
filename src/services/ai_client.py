@@ -58,7 +58,7 @@ class TripleHybridClient:
     
     Model selection is configurable via environment variables:
     - SB_OPENAI_MODEL: OpenAI model to use (default: gpt-4o-mini)
-    - SB_GEMINI_MODEL: Gemini model to use (default: gemini-1.5-flash)
+    - SB_GEMINI_MODEL: Gemini model to use (default: gemini-1.5-flash-latest)
     - SB_DEFAULT_PROVIDER: Default AI provider (default: gemini)
     - SB_BASE_URL: Optional custom base URL for API
     """

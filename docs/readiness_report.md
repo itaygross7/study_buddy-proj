@@ -166,7 +166,7 @@ curl https://studybuddyai.my/health
 | GEMINI_API_KEY | One required | | For Gemini provider |
 | SB_DEFAULT_PROVIDER | Recommended | gemini or openai | |
 | SB_OPENAI_MODEL | Optional | gpt-4o-mini | |
-| SB_GEMINI_MODEL | Optional | gemini-1.5-flash | |
+| SB_GEMINI_MODEL | Optional | gemini-1.5-flash-latest | |
 | LOG_LEVEL | Optional | INFO | |
 
 ---

@@ -157,7 +157,7 @@ study_buddy-proj/
 | Variable | Description | Default |
 |----------|-------------|---------|
 | SB_OPENAI_MODEL | OpenAI model name | gpt-4o-mini |
-| SB_GEMINI_MODEL | Gemini model name | gemini-1.5-flash |
+| SB_GEMINI_MODEL | Gemini model name | gemini-1.5-flash-latest |
 | SB_DEFAULT_PROVIDER | Default AI provider | gemini |
 | SB_BASE_URL | Custom API base URL | (empty) |
 | OPENAI_API_KEY | OpenAI API key | - |

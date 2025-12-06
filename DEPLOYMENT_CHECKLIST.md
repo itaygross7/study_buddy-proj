@@ -80,7 +80,7 @@ sudo ./deploy-production.sh
 ✓ Latest code pulled from git
 ✓ Environment variables validated
 ✓ OpenAI API configured (gpt-4o-mini)
-✓ Gemini API configured (gemini-1.5-flash)
+✓ Gemini API configured (gemini-1.5-flash-latest)
 ✓ All containers running
 ✓ Worker connected and ready
 ✓ PWA service worker enabled

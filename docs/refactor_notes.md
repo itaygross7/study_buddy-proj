@@ -19,7 +19,7 @@ This document tracks technical debt, refactoring opportunities, and architectura
 **Environment Variables Added**:
 ```python
 SB_OPENAI_MODEL = "gpt-4o-mini"      # Configurable OpenAI model
-SB_GEMINI_MODEL = "gemini-1.5-flash" # Configurable Gemini model
+SB_GEMINI_MODEL = "gemini-1.5-flash-latest" # Configurable Gemini model
 SB_DEFAULT_PROVIDER = "gemini"        # Default AI provider
 SB_BASE_URL = ""                      # Custom API base URL
 ```
