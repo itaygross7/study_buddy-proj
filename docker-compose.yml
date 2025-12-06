@@ -1,15 +1,15 @@
+version: '3.8'
+
+networks:
+  studybuddy_network:
+    driver: bridge
+
 services:
-  # ==================================================================
-  # Main Flask Application
-  # ==================================================================
   app:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: studybuddy_app
-    # SECURITY: Ports are commented out because we use the Tunnel now.
-    # ports:
-    #   - "5000:5000" 
+    # REMOVED: container_name to allow scaling
     volumes:
       - ./src:/app/src
       - ./sb_utils:/app/sb_utils
@@ -29,35 +29,30 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-    # DNS fallbacks for container networking
     dns:
       - 8.8.8.8
       - 1.1.1.1
     networks:
       - studybuddy_network
 
-  # ==================================================================
-  # Cloudflare Tunnel (Replaces Caddy & Port Forwarding)
-  # ==================================================================
   tunnel:
     image: cloudflare/cloudflared:latest
     container_name: studybuddy_tunnel
     restart: always
     command: tunnel run
     env_file: .env
-    # The token connects this container to your Cloudflare account
     environment:
       - TUNNEL_TOKEN=${TUNNEL_TOKEN}
     networks:
       - studybuddy_network
 
-  # ==================================================================
-  # Background Worker
-  # ==================================================================
   worker:
     build:
       context: .
       dockerfile: Dockerfile
+    # --- THIS IS THE FIX ---
+    # REMOVED: container_name to allow scaling with 'docker-compose up --scale worker=9'
+    # --- END OF FIX ---
     command: ["python", "worker.py"]
     volumes:
       - ./src:/app/src
@@ -79,9 +74,6 @@ services:
     networks:
       - studybuddy_network
 
-  # ==================================================================
-  # Health Monitor - Self-Healing Service
-  # ==================================================================
   health_monitor:
     build:
       context: .
@@ -92,7 +84,7 @@ services:
       - ./src:/app/src
       - ./sb_utils:/app/sb_utils
       - ./health_monitor.py:/app/health_monitor.py
-      - /var/run/docker.sock:/var/run/docker.sock  # Allow Docker control
+      - /var/run/docker.sock:/var/run/docker.sock
     env_file: .env
     depends_on:
       - app
@@ -103,9 +95,6 @@ services:
     networks:
       - studybuddy_network
 
-  # ==================================================================
-  # MongoDB Database
-  # ==================================================================
   mongo:
     image: mongo:5.0
     container_name: studybuddy_mongo
@@ -120,14 +109,10 @@ services:
     networks:
       - studybuddy_network
 
-  # ==================================================================
-  # RabbitMQ Message Broker
-  # ==================================================================
   rabbitmq:
     image: rabbitmq:3.9-management
     container_name: studybuddy_rabbitmq
     ports:
-      # Only binding to localhost for security (access via SSH tunnel if needed)
       - "127.0.0.1:15672:15672" 
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-user}
@@ -142,11 +127,3 @@ services:
       retries: 5
     networks:
       - studybuddy_network
-
-networks:
-  studybuddy_network:
-    driver: bridge
-
-volumes:
-  mongo_data:
-  rabbitmq_data:
