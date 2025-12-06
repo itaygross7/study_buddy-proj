@@ -249,15 +249,34 @@ def create_app():
     @app.errorhandler(Exception)
     def handle_exception(error):
         logger.error(f"Unhandled exception for path {request.path}: {error}", exc_info=True)
-        if settings.FLASK_ENV == 'production':
+        
+        # Send error notification to admin (in both dev and production)
+        # This helps catch issues early
+        try:
             email_service.send_error_notification(
                 error_type=type(error).__name__,
                 error_message=str(error),
-                details=f"Path: {request.path}"
+                details=f"Path: {request.path}\nEnvironment: {settings.FLASK_ENV}"
             )
-        return jsonify({"error": "Internal Server Error"}), 500
+        except Exception as email_error:
+            # Log but don't fail if email sending fails
+            logger.error(f"Failed to send error notification email: {email_error}", exc_info=True)
+        
+        # Return JSON for API requests, HTML for web requests
+        if request.path.startswith('/api/') or request.path.startswith('/webhook/'):
+            return jsonify({"error": "Internal Server Error"}), 500
+        return render_template('500.html'), 500
 
     logger.info(f"Flask App created successfully in {settings.FLASK_ENV} mode.")
+    
+    # Test email configuration at startup
+    email_config = email_service.test_email_config()
+    if not email_config["configured"]:
+        logger.warning(f"⚠️  Email notifications are NOT configured properly: {email_config['issues']}")
+        logger.warning("    Error notifications will not be sent to admin!")
+    else:
+        logger.info(f"✅ Email notifications configured - Admin: {email_config['admin_email']}")
+    
     return app
 
 if __name__ == '__main__':

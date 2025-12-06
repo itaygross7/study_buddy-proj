@@ -52,7 +52,7 @@ def admin_required(f):
     def decorated_function(*args, **kwargs):
         if not current_user.is_authenticated:
             return redirect(url_for('auth.login'))
-        if current_user.user.role != UserRole.ADMIN:
+        if current_user.role != UserRole.ADMIN:
             flash('אין לך הרשאה לגשת לעמוד זה', 'error')
             return redirect(url_for('index'))
         return f(*args, **kwargs)
@@ -262,12 +262,4 @@ def reset_password(token):
 
     return render_template('auth/reset_password.html', token=token)
 
-@auth_bp.route('/set-lang/<lang>')
-def set_lang(lang: str):
-    """
-    Sets the user's language preference in the session.
-    """
-    if lang in ['he', 'en']:
-        session['lang'] = lang
-    # Redirect back to the page the user was on, or home as a fallback
-    return redirect(request.referrer or url_for('index'))
+

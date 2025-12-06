@@ -11,7 +11,8 @@ from sb_utils.logger_utils import logger
 def send_email(to_email: str, subject: str, html_body: str, text_body: Optional[str] = None) -> bool:
     """Send an email using SMTP."""
     if not settings.MAIL_USERNAME or not settings.MAIL_PASSWORD:
-        logger.warning("Email not configured, skipping email send")
+        logger.warning("Email not configured - MAIL_USERNAME or MAIL_PASSWORD missing")
+        logger.warning(f"Attempted to send email to {to_email} with subject: {subject}")
         return False
 
     try:
@@ -32,10 +33,11 @@ def send_email(to_email: str, subject: str, html_body: str, text_body: Optional[
             server.login(settings.MAIL_USERNAME, settings.MAIL_PASSWORD)
             server.sendmail(msg['From'], to_email, msg.as_string())
 
-        logger.info(f"Email sent successfully to {to_email}")
+        logger.info(f"Email sent successfully to {to_email} - Subject: {subject}")
         return True
     except Exception as e:
         logger.error(f"Failed to send email to {to_email}: {e}", exc_info=True)
+        logger.error(f"Email config - Server: {settings.MAIL_SERVER}:{settings.MAIL_PORT}, TLS: {settings.MAIL_USE_TLS}")
         return False
 
 
@@ -138,6 +140,7 @@ def send_new_user_notification(user_email: str, user_name: str) -> bool:
 def send_error_notification(error_type: str, error_message: str, details: str = "") -> bool:
     """Send error notification to admin."""
     if not settings.ADMIN_EMAIL:
+        logger.warning(f"ADMIN_EMAIL not configured - cannot send error notification for {error_type}")
         return False
 
     html_body = f"""
@@ -171,4 +174,41 @@ def send_error_notification(error_type: str, error_message: str, details: str = 
     </html>
     """
 
-    return send_email(settings.ADMIN_EMAIL, f"[StudyBuddy Alert] {error_type}", html_body)
+    result = send_email(settings.ADMIN_EMAIL, f"[StudyBuddy Alert] {error_type}", html_body)
+    if not result:
+        logger.error(f"Failed to send error notification to {settings.ADMIN_EMAIL} for {error_type}")
+    return result
+
+
+def test_email_config() -> dict:
+    """Test email configuration and return diagnostics."""
+    issues = []
+    warnings = []
+    
+    if not settings.ADMIN_EMAIL:
+        issues.append("ADMIN_EMAIL not configured")
+    
+    if not settings.MAIL_USERNAME:
+        issues.append("MAIL_USERNAME not configured")
+    
+    if not settings.MAIL_PASSWORD:
+        issues.append("MAIL_PASSWORD not configured")
+    
+    if not settings.MAIL_SERVER:
+        warnings.append("MAIL_SERVER not configured (using default)")
+    
+    config_status = {
+        "configured": len(issues) == 0,
+        "issues": issues,
+        "warnings": warnings,
+        "admin_email": settings.ADMIN_EMAIL if settings.ADMIN_EMAIL else "Not set",
+        "mail_server": f"{settings.MAIL_SERVER}:{settings.MAIL_PORT}" if settings.MAIL_SERVER else "Not set",
+        "mail_tls": settings.MAIL_USE_TLS
+    }
+    
+    if not config_status["configured"]:
+        logger.warning(f"Email not fully configured: {', '.join(issues)}")
+    else:
+        logger.info(f"Email configured - Admin: {config_status['admin_email']}, Server: {config_status['mail_server']}")
+    
+    return config_status

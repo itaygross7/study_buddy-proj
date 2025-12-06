@@ -17,6 +17,7 @@ class UserWrapper:
     def __init__(self, user):
         self.user = user
         self.id = user.id
+        self.role = user.role  # Add role for easy access
         self.is_authenticated = True
         self.is_active = user.is_active
         self.is_anonymous = False
