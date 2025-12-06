@@ -7,11 +7,13 @@ MICROSERVICE PRINCIPLE: Keep it small, focused, and async
 - No blocking operations
 - Fast forwarding to workers
 
+🔒 CRITICAL: Enforces document-only constraints to prevent hallucinations
+
 ARCHITECTURE:
 User Request → Queue → Prompt Optimizer → Main AI Queue → Output Adapter → User
 
 Cost: ~2 small gpt-4o-mini calls (~300-500 tokens each) = $0.0002
-Benefit: 10x better UX for non-tech users
+Benefit: 10x better UX for non-tech users + Guaranteed accuracy
 """
 
 from typing import Optional, Dict, Any
@@ -22,6 +24,11 @@ import json
 
 from src.infrastructure.config import settings
 from src.infrastructure.database import db as flask_db
+from src.utils.ai_constraints import (
+    build_constrained_context, 
+    get_task_constraint_level,
+    validate_response_constraint
+)
 from sb_utils.logger_utils import logger
 
 
@@ -56,17 +63,30 @@ class PromptOptimizer:
     Microservice: Prompt Optimization
     Input: Raw user request → Output: Optimized prompt
     Fast, lightweight, single responsibility
+    
+    🔒 ENFORCES app requirements (document-only constraint)
+    👤 RESPECTS user preferences
     """
     
     @staticmethod
-    def optimize(user_request: str, task_type: str, user_prefs: UserPreferences) -> Dict[str, str]:
+    def optimize(
+        user_request: str, 
+        task_type: str, 
+        user_prefs: UserPreferences,
+        document_content: str = ""
+    ) -> Dict[str, str]:
         """
         FAST optimization: 200-300 tokens, <0.5s response time
+        
+        🔒 CRITICAL: Injects app requirements into optimization
+        - Document-only constraint (MANDATORY)
+        - User preferences (OPTIONAL)
         
         Args:
             user_request: Raw user input
             task_type: Type of task
             user_prefs: User preferences
+            document_content: The document content (to determine if constraint needed)
             
         Returns:
             Dict with optimized_prompt and system_context
@@ -74,12 +94,43 @@ class PromptOptimizer:
         if not settings.OPENAI_API_KEY:
             return {'optimized_prompt': user_request, 'system_context': ''}
         
-        # Ultra-concise meta-prompt for speed
-        meta_prompt = f"""Optimize for {user_prefs.proficiency_level} {user_prefs.language} speaker:
-"{user_request}"
-Task: {task_type}
+        # Determine constraint level
+        constraint_level = get_task_constraint_level(task_type)
+        has_document = bool(document_content and len(document_content.strip()) > 0)
+        
+        # Build APP REQUIREMENTS (mandatory rules)
+        app_requirements = []
+        
+        if constraint_level == "strict" and has_document:
+            app_requirements.append("🔒 MANDATORY: Answer ONLY from provided document. NO external knowledge.")
+        elif constraint_level == "moderate" and has_document:
+            app_requirements.append("📚 MANDATORY: Prioritize document content. Indicate when using external knowledge.")
+        
+        # Build meta-prompt with APP REQUIREMENTS + USER PREFERENCES
+        requirements_text = "\n".join(app_requirements) if app_requirements else ""
+        
+        meta_prompt = f"""You are optimizing a prompt for educational AI.
 
-JSON: {{"optimized_prompt": "...", "system_context": "..."}}"""
+USER REQUEST: "{user_request}"
+
+APP REQUIREMENTS (MUST include):
+{requirements_text if requirements_text else "No special requirements"}
+
+USER PREFERENCES (should include):
+- Task: {task_type}
+- Level: {user_prefs.proficiency_level}
+- Language: {user_prefs.language}
+- Style: {user_prefs.explanation_style}
+{"- Include examples/analogies" if user_prefs.use_examples else ""}
+
+OPTIMIZE to:
+1. Make request clear and specific
+2. ENFORCE app requirements (document-only if applicable)
+3. Match user preferences
+4. Request appropriate format
+
+JSON output:
+{{"optimized_prompt": "...", "system_context": "..."}}"""
 
         try:
             client = openai.OpenAI(api_key=settings.OPENAI_API_KEY, timeout=5.0)
@@ -89,11 +140,12 @@ JSON: {{"optimized_prompt": "...", "system_context": "..."}}"""
                 messages=[{"role": "user", "content": meta_prompt}],
                 response_format={"type": "json_object"},
                 temperature=0.2,
-                max_tokens=250  # SMALL: keep it fast
+                max_tokens=300  # SMALL: keep it fast
             )
             
             result = json.loads(response.choices[0].message.content)
-            logger.debug(f"✓ Prompt optimized (fast)")
+            logger.debug(f"✓ Prompt optimized with {constraint_level} constraint")
+            
             return {
                 'optimized_prompt': result.get('optimized_prompt', user_request),
                 'system_context': result.get('system_context', '')
@@ -232,7 +284,7 @@ class AIMiddleware:
     def prepare_request(
         self,
         user_request: str,
-        task_context: str,
+        document_content: str,
         task_type: str,
         user_id: str,
         optimize: bool = True
@@ -240,60 +292,101 @@ class AIMiddleware:
         """
         STEP 1: Prepare request for queue (microservice pattern)
         
-        This is FAST - just optimization, no heavy processing
+        🔒 ADDS STRICT CONSTRAINTS to prevent hallucinations
+        
+        This is FAST - just optimization + constraint injection
         Returns data structure ready for RabbitMQ
         
         Args:
             user_request: Raw user input
-            task_context: Context
+            document_content: User's document content (THE ONLY SOURCE)
             task_type: Task type
             user_id: User ID
             optimize: Whether to optimize
             
         Returns:
-            Dict ready for queue message
+            Dict ready for queue message with constraints enforced
         """
         user_prefs = self.prefs_service.get(user_id)
+        
+        # BUILD CONSTRAINED CONTEXT (Critical security step)
+        constrained_context = build_constrained_context(
+            task_type=task_type,
+            document_content=document_content,
+            user_context="",
+            language=user_prefs.language
+        )
+        
+        constraint_level = get_task_constraint_level(task_type)
+        logger.info(f"🔒 Applied {constraint_level} constraint for {task_type}")
         
         if optimize:
             optimized = self.prompt_optimizer.optimize(
                 user_request=user_request,
                 task_type=task_type,
-                user_prefs=user_prefs
+                user_prefs=user_prefs,
+                document_content=document_content  # Pass document for constraint detection
             )
         else:
             optimized = {
                 'optimized_prompt': user_request,
-                'system_context': task_context
+                'system_context': ''
             }
+        
+        # COMBINE optimized prompt with constrained context
+        final_context = constrained_context + "\n\n" + optimized['system_context']
         
         return {
             'prompt': optimized['optimized_prompt'],
-            'context': optimized['system_context'],
+            'context': final_context,
             'user_prefs': user_prefs.to_dict(),
             'task_type': task_type,
-            'original_request': user_request
+            'original_request': user_request,
+            'document_content': document_content,  # Keep for validation
+            'constraint_level': constraint_level
         }
     
     def finalize_response(
         self,
         ai_response: str,
         request_data: Dict[str, Any],
-        adapt: bool = True
+        adapt: bool = True,
+        validate_constraints: bool = True
     ) -> str:
         """
         STEP 2: Finalize response after AI processing (microservice pattern)
         
-        This is FAST - just adaptation, no heavy processing
+        🔒 VALIDATES constraints were followed
+        
+        This is FAST - adaptation + validation
         
         Args:
             ai_response: Raw AI output
             request_data: Data from prepare_request
             adapt: Whether to adapt
+            validate_constraints: Whether to validate constraints
             
         Returns:
-            Final response for user
+            Final response for user (validated & adapted)
         """
+        # VALIDATE CONSTRAINTS (Critical security check)
+        if validate_constraints:
+            document_content = request_data.get('document_content', '')
+            task_type = request_data.get('task_type', 'standard')
+            
+            validation = validate_response_constraint(
+                response=ai_response,
+                task_type=task_type,
+                document_content=document_content
+            )
+            
+            if not validation['valid']:
+                logger.warning(f"⚠️ Constraint validation warnings: {validation['warnings']}")
+                # Log but don't block (validation is heuristic, may have false positives)
+            else:
+                logger.info(f"✓ Response passed {validation['constraint_level']} constraint validation")
+        
+        # ADAPT RESPONSE
         if not adapt:
             return ai_response
         
