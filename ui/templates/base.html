@@ -9,6 +9,15 @@
     <meta name="format-detection" content="telephone=no">
     <meta name="theme-color" content="#FFF8E6">
     <meta name="apple-mobile-web-app-title" content="StudyBuddy">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    
+    <!-- Apple Touch Icons -->
+    <link rel="apple-touch-icon" href="{{ url_for('serve_avner', filename='app_logo.jpeg') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('serve_avner', filename='app_logo.jpeg') }}">
+    <link rel="icon" type="image/jpeg" href="{{ url_for('serve_avner', filename='app_logo.jpeg') }}">
+    
     <title>{% block title %}StudyBuddyAI{% endblock %}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -300,6 +309,60 @@
                 this.style.opacity = '';
             });
         }
+        
+        // Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/static/sw.js', { scope: '/' })
+                    .then(function(registration) {
+                        console.log('[SW] Service Worker registered successfully:', registration.scope);
+                        
+                        // Check for updates
+                        registration.addEventListener('updatefound', function() {
+                            const newWorker = registration.installing;
+                            console.log('[SW] New service worker found, installing...');
+                            
+                            newWorker.addEventListener('statechange', function() {
+                                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                    console.log('[SW] New service worker installed, update available');
+                                    // Optionally show update notification to user
+                                }
+                            });
+                        });
+                    })
+                    .catch(function(error) {
+                        console.log('[SW] Service Worker registration failed:', error);
+                    });
+                
+                // Listen for messages from service worker
+                navigator.serviceWorker.addEventListener('message', function(event) {
+                    console.log('[SW] Message from service worker:', event.data);
+                });
+                
+                // Handle service worker updates
+                let refreshing = false;
+                navigator.serviceWorker.addEventListener('controllerchange', function() {
+                    if (refreshing) return;
+                    refreshing = true;
+                    console.log('[SW] Controller changed, reloading page');
+                    window.location.reload();
+                });
+            });
+        }
+        
+        // Add to home screen prompt (iOS doesn't support this, but useful for Android)
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', function(e) {
+            console.log('[PWA] Install prompt available');
+            e.preventDefault();
+            deferredPrompt = e;
+            // Could show a custom install button here
+        });
+        
+        window.addEventListener('appinstalled', function() {
+            console.log('[PWA] App installed successfully');
+            deferredPrompt = null;
+        });
     </script>
     {% block scripts %}{% endblock %}
 </body>
