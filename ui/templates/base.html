@@ -64,9 +64,17 @@
                     <!-- Language Switcher -->
                     <div class="text-sm">
                         {% if current_locale == 'he' %}
-                            <a href="{{ url_for('set_lang', lang='en') }}" class="text-cream hover:text-warm-yellow font-medium px-3 py-2 rounded-lg hover:bg-caramel transition-all">EN</a>
+                            <a href="{{ url_for('set_lang', lang='en') }}" 
+                               class="flex items-center gap-1 text-cream hover:text-warm-yellow font-bold px-3 py-2 rounded-lg hover:bg-caramel transition-all border-2 border-warm-yellow/30 hover:border-warm-yellow"
+                               title="Switch to English 🦫">
+                                🌐 EN
+                            </a>
                         {% else %}
-                            <a href="{{ url_for('set_lang', lang='he') }}" class="text-cream hover:text-warm-yellow font-medium px-3 py-2 rounded-lg hover:bg-caramel transition-all">עב</a>
+                            <a href="{{ url_for('set_lang', lang='he') }}" 
+                               class="flex items-center gap-1 text-cream hover:text-warm-yellow font-bold px-3 py-2 rounded-lg hover:bg-caramel transition-all border-2 border-warm-yellow/30 hover:border-warm-yellow"
+                               title="עבור לעברית 🦫">
+                                🌐 עב
+                            </a>
                         {% endif %}
                     </div>
                 </div>
@@ -76,9 +84,17 @@
                     <!-- Language Switcher for Mobile -->
                     <div class="text-sm">
                         {% if current_locale == 'he' %}
-                            <a href="{{ url_for('set_lang', lang='en') }}" class="text-cream hover:text-warm-yellow font-medium px-3 py-2 rounded-lg hover:bg-caramel transition-all mobile-touch-target">EN</a>
+                            <a href="{{ url_for('set_lang', lang='en') }}" 
+                               class="flex items-center gap-1 text-cream hover:text-warm-yellow font-bold px-3 py-2 rounded-lg hover:bg-caramel transition-all mobile-touch-target border-2 border-warm-yellow/30 hover:border-warm-yellow"
+                               title="Switch to English 🦫">
+                                🌐 EN
+                            </a>
                         {% else %}
-                            <a href="{{ url_for('set_lang', lang='he') }}" class="text-cream hover:text-warm-yellow font-medium px-3 py-2 rounded-lg hover:bg-caramel transition-all mobile-touch-target">עב</a>
+                            <a href="{{ url_for('set_lang', lang='he') }}" 
+                               class="flex items-center gap-1 text-cream hover:text-warm-yellow font-bold px-3 py-2 rounded-lg hover:bg-caramel transition-all mobile-touch-target border-2 border-warm-yellow/30 hover:border-warm-yellow"
+                               title="עבור לעברית 🦫">
+                                🌐 עב
+                            </a>
                         {% endif %}
                     </div>
                     <button type="button" id="mobile-menu-button" class="inline-flex items-center justify-center rounded-lg p-3 text-cream hover:bg-caramel mobile-touch-target">
