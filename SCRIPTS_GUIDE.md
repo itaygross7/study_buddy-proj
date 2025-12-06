@@ -8,6 +8,7 @@ This guide documents all scripts in the project and their current status.
 
 | Script | Purpose | When to Use |
 |--------|---------|-------------|
+| **hard-restart-deploy.sh** 🔥 | Complete system reset with permission fixes | When auto-update fails, permission issues, or need clean slate |
 | **start-local.sh** ⭐ | Start for local network access | Testing on home network, access from phone/tablet |
 | **deploy-production.sh** ⭐ | Full production deployment | Production servers with domain and HTTPS |
 | **deploy-simple.sh** ⭐ | Simple one-click deployment | Quick testing, development |
@@ -37,6 +38,52 @@ This guide documents all scripts in the project and their current status.
 ---
 
 ## 🚀 Deployment Scripts (Root Directory)
+
+### 🔥 hard-restart-deploy.sh (NEW - Critical for Permission Fixes)
+
+**Purpose:** Complete system reset with comprehensive permission fixes for auto-update flow
+
+**When to use:**
+- Auto-update script fails or has permission errors
+- Docker permission denied errors
+- After system updates or user changes
+- When deployment scripts can't execute
+- Need to fix all permissions at once
+- Starting from a broken state
+
+**What it does:**
+- Fixes ALL script permissions (chmod +x on all .sh files)
+- Fixes directory ownership and permissions
+- Adds user to docker group and fixes Docker socket permissions
+- Fixes git repository permissions for auto-update
+- Secures .env file with proper permissions
+- Forces complete Docker cleanup (stops all containers)
+- Performs fresh deployment from scratch
+- Verifies auto-update setup
+- Tests application health
+
+**Usage:**
+```bash
+# Run as regular user (recommended)
+./hard-restart-deploy.sh
+
+# Or with sudo if needed
+sudo ./hard-restart-deploy.sh
+```
+
+**What gets fixed:**
+- ✓ All script permissions (chmod +x)
+- ✓ Directory ownership and permissions
+- ✓ Docker permissions and user groups
+- ✓ Git repository permissions
+- ✓ Environment file security
+- ✓ Log file permissions
+- ✓ Systemd service configuration
+- ✓ Auto-update script setup
+
+**See also:** [HARD_RESTART_GUIDE.md](HARD_RESTART_GUIDE.md) for detailed documentation
+
+---
 
 ### ⭐ start-local.sh (NEW - Recommended)
 

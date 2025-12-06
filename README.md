@@ -49,6 +49,22 @@ This application provides a suite of tools to help students learn more effective
 
 ### Running the Application
 
+#### Quick Start (One Command)
+
+For a simple deployment with automatic Docker setup:
+
+```bash
+./deploy-simple.sh
+```
+
+Or for a complete system reset with permission fixes:
+
+```bash
+./hard-restart-deploy.sh
+```
+
+#### Manual Docker Compose
+
 1.  **Build and Run with Docker Compose**: This single command builds the images, starts all services (web, worker, database, queue), and runs the application.
     ```bash
     docker-compose up --build -d
@@ -69,6 +85,18 @@ This application provides a suite of tools to help students learn more effective
     ```bash
     docker-compose down
     ```
+
+### Troubleshooting Deployment
+
+If you encounter permission errors or auto-update issues:
+
+```bash
+# Run the hard restart script to fix all permissions
+./hard-restart-deploy.sh
+```
+
+See [HARD_RESTART_GUIDE.md](HARD_RESTART_GUIDE.md) for detailed troubleshooting.
+
 
 ## 🧪 Local Development & Testing
 
