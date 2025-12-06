@@ -24,7 +24,7 @@ def test_sb_config_fields_exist():
     # Verify default values
     assert settings.SB_DEFAULT_PROVIDER == "gemini", "Default provider should be gemini"
     assert settings.SB_BASE_URL == "", "Default base URL should be empty string"
-    assert settings.SB_GEMINI_MODEL == "gemini-1.5-flash", "Default Gemini model should be gemini-1.5-flash"
+    assert settings.SB_GEMINI_MODEL == "gemini-1.5-flash-latest", "Default Gemini model should be gemini-1.5-flash-latest"
     assert settings.SB_OPENAI_MODEL == "gpt-4o-mini", "Default OpenAI model should be gpt-4o-mini"
 
 

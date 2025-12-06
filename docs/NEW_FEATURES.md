@@ -34,7 +34,7 @@ GEMINI_API_KEY="your_gemini_api_key"
 
 # Model Selection (optional - defaults shown)
 SB_OPENAI_MODEL="gpt-4o-mini"        # For standard tasks
-SB_GEMINI_MODEL="gemini-1.5-flash"   # For heavy files
+SB_GEMINI_MODEL="gemini-1.5-flash-latest"   # For heavy files
 SB_DEFAULT_PROVIDER="gemini"         # Default provider
 ```
 

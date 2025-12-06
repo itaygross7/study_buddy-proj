@@ -38,7 +38,7 @@ class TripleHybridClient:
     4. Diagram generation (Mermaid, etc.) - task_type="diagram"
     5. Standard/unspecified tasks - task_type="standard"
     
-    === GPT-4o-MINI (JSON enforcement, chat, structured output) ===
+    === OpenAI (JSON enforcement, chat, structured output) ===
     6. Quiz generation (requires JSON) - task_type="quiz" or require_json=True
     7. Assessment questions (requires JSON) - task_type="assessment" or require_json=True
     8. Flashcard generation (requires JSON) - task_type="flashcards" or require_json=True
@@ -58,7 +58,7 @@ class TripleHybridClient:
     
     Model selection is configurable via environment variables:
     - SB_OPENAI_MODEL: OpenAI model to use (default: gpt-4o-mini)
-    - SB_GEMINI_MODEL: Gemini model to use (default: gemini-1.5-flash)
+    - SB_GEMINI_MODEL: Gemini model to use (default: gemini-1.5-flash-latest)
     - SB_DEFAULT_PROVIDER: Default AI provider (default: gemini)
     - SB_BASE_URL: Optional custom base URL for API
     """
@@ -94,7 +94,7 @@ class TripleHybridClient:
         
         ROUTING LOGIC:
         - Gemini Flash: heavy_file, summary, homework, diagram, glossary
-        - GPT-4o-mini: quiz, assessment, flashcards, baby_capy, chat, JSON-required tasks
+        - OpenAI: quiz, assessment, flashcards, baby_capy, chat, JSON-required tasks
         
         Args:
             task_type: Type of task to perform (determines model selection)
@@ -112,22 +112,22 @@ class TripleHybridClient:
         # === OPENAI ROUTES ===
         # Baby Capy mode always uses OpenAI for consistent simple explanations
         if baby_mode or task_type == "baby_capy":
-            logger.info(f"→ Routing to GPT-4o-mini (Baby Capy mode)")
+            logger.info(f"→ Routing to {settings.SB_OPENAI_MODEL} (Baby Capy mode)")
             return self._call_gpt_mini(content, require_json=False, baby_mode=True)
         
         # JSON-required tasks must use OpenAI (Gemini doesn't enforce JSON)
         if require_json:
-            logger.info(f"→ Routing to GPT-4o-mini (JSON required)")
+            logger.info(f"→ Routing to {settings.SB_OPENAI_MODEL} (JSON required)")
             return self._call_gpt_mini(content, require_json=True)
         
         # Quiz, Assessment, Flashcards (JSON output needed)
         if task_type in ["quiz", "assessment", "flashcards"]:
-            logger.info(f"→ Routing to GPT-4o-mini (task_type={task_type})")
+            logger.info(f"→ Routing to {settings.SB_OPENAI_MODEL} (task_type={task_type})")
             return self._call_gpt_mini(content, require_json=True)
         
         # Chat/conversational (Avner chatbot)
         if task_type == "chat":
-            logger.info(f"→ Routing to GPT-4o-mini (task_type=chat)")
+            logger.info(f"→ Routing to {settings.SB_OPENAI_MODEL} (task_type=chat)")
             return self._call_gpt_mini(content, require_json=False)
         
         # === GEMINI ROUTES ===
@@ -158,7 +158,7 @@ class TripleHybridClient:
 
     @retry(wait=wait_exponential(multiplier=1, min=2, max=10), stop=stop_after_attempt(3))
     def _call_gpt_mini(self, prompt: str, require_json: bool = False, baby_mode: bool = False) -> str:
-        """Call GPT-4o-mini for standard and quiz tasks."""
+        """Call OpenAI API for standard and quiz tasks using configured model."""
         self._ensure_openai_initialized()
         
         # Apply Baby Capy mode prompt modification
@@ -175,7 +175,7 @@ class TripleHybridClient:
             )
             
             kwargs = {
-                "model": "gpt-4o-mini",
+                "model": settings.SB_OPENAI_MODEL,
                 "messages": [{"role": "user", "content": full_prompt}],
                 "max_tokens": 1500,
                 "temperature": 0.7,
@@ -188,17 +188,17 @@ class TripleHybridClient:
                 if "json" not in full_prompt.lower():
                     kwargs["messages"][0]["content"] = full_prompt + "\nReturn your response as valid JSON."
             
-            logger.debug(f"Using GPT-4o-mini (JSON mode: {require_json}, Baby mode: {baby_mode})")
+            logger.debug(f"Using {settings.SB_OPENAI_MODEL} (JSON mode: {require_json}, Baby mode: {baby_mode})")
             response = client.chat.completions.create(**kwargs)
             return response.choices[0].message.content.strip()
             
         except Exception as e:
-            logger.error(f"GPT-4o-mini call failed: {e}", exc_info=True)
+            logger.error(f"{settings.SB_OPENAI_MODEL} call failed: {e}", exc_info=True)
             raise AIClientError(f"The AI service failed to process the request: {e}") from e
 
     @retry(wait=wait_exponential(multiplier=1, min=2, max=10), stop=stop_after_attempt(3))
     def _call_gpt_4o(self, prompt: str) -> str:
-        """Call GPT-4o for complex reasoning tasks."""
+        """Call OpenAI API for complex reasoning tasks using configured model."""
         self._ensure_openai_initialized()
         full_prompt = create_safety_guard_prompt(prompt, "")
         
@@ -209,9 +209,9 @@ class TripleHybridClient:
                 timeout=60.0
             )
             
-            logger.debug("Using GPT-4o for complex reasoning")
+            logger.debug(f"Using {settings.SB_OPENAI_MODEL} for complex reasoning")
             response = client.chat.completions.create(
-                model="gpt-4o",
+                model=settings.SB_OPENAI_MODEL,
                 messages=[{"role": "user", "content": full_prompt}],
                 max_tokens=2000,
                 temperature=0.7,
@@ -219,7 +219,7 @@ class TripleHybridClient:
             return response.choices[0].message.content.strip()
             
         except Exception as e:
-            logger.error(f"GPT-4o call failed: {e}", exc_info=True)
+            logger.error(f"{settings.SB_OPENAI_MODEL} call failed: {e}", exc_info=True)
             raise AIClientError(f"The AI service failed to process the request: {e}") from e
 
     @retry(wait=wait_exponential(multiplier=1, min=2, max=10), stop=stop_after_attempt(3))

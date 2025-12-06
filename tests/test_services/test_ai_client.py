@@ -30,7 +30,7 @@ class TestAIClient:
         """Test successful text generation with Gemini."""
         mock_settings.GEMINI_API_KEY = "valid-api-key"
         mock_settings.OPENAI_API_KEY = ""
-        mock_settings.SB_GEMINI_MODEL = "gemini-1.5-flash"
+        mock_settings.SB_GEMINI_MODEL = "gemini-1.5-flash-latest"
 
         mock_model = MagicMock()
         mock_response = MagicMock()
@@ -43,7 +43,7 @@ class TestAIClient:
 
         assert result == "Generated response text"
         mock_genai.configure.assert_called_once_with(api_key="valid-api-key")
-        mock_genai.GenerativeModel.assert_called_once_with('gemini-1.5-flash')
+        mock_genai.GenerativeModel.assert_called_once_with('gemini-1.5-flash-latest')
 
     def test_ensure_initialized_missing_gemini_key(self):
         """Test error when Gemini API key is missing."""

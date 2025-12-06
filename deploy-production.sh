@@ -130,7 +130,7 @@ if [ -n "$OPENAI_API_KEY" ]; then
 fi
 if [ -n "$GEMINI_API_KEY" ]; then
     echo -e "${GREEN}✓ Gemini API key detected${NC}"
-    echo -e "  Model: ${SB_GEMINI_MODEL:-gemini-1.5-flash}"
+    echo -e "  Model: ${SB_GEMINI_MODEL:-gemini-1.5-flash-latest}"
 fi
 echo -e "  Default provider: ${SB_DEFAULT_PROVIDER:-gemini}"
 
@@ -326,7 +326,7 @@ if [ -n "$OPENAI_API_KEY" ]; then
     echo -e "  ✓ OpenAI API configured (${SB_OPENAI_MODEL:-gpt-4o-mini})"
 fi
 if [ -n "$GEMINI_API_KEY" ]; then
-    echo -e "  ✓ Gemini API configured (${SB_GEMINI_MODEL:-gemini-1.5-flash})"
+    echo -e "  ✓ Gemini API configured (${SB_GEMINI_MODEL:-gemini-1.5-flash-latest})"
 fi
 echo -e "  ✓ All containers running"
 echo -e "  ✓ Worker connected and ready"
