@@ -20,9 +20,10 @@
 
 /* 
 ==================================================================
-  2. Custom Background Image Styles (Enhanced)
-     - Cozy background with subtle overlay for better readability
-     - Mobile-first approach with smooth transitions
+  2. Mobile-First Background with Avner Images
+     - Uses mobile_bacround.jpeg on mobile
+     - Uses desktop_ui_backround.jpeg on desktop
+     - Beautiful, welcoming design
 ==================================================================
 */
 @layer base {
@@ -32,18 +33,29 @@
         --logo-hero-size-mobile: 200px;
     }
     
+    /* Mobile-first background */
     .body-with-background {
-        /* Subtle pattern background with warm colors */
         background: 
-            linear-gradient(135deg, rgba(255, 248, 230, 0.95) 25%, transparent 25%),
-            linear-gradient(225deg, rgba(250, 243, 215, 0.95) 25%, transparent 25%),
-            linear-gradient(45deg, rgba(255, 240, 200, 0.95) 25%, transparent 25%),
-            linear-gradient(315deg, rgba(248, 237, 210, 0.95) 25%, transparent 25%),
-            linear-gradient(to bottom, #FFF8E6, #FAF3D7);
-        background-size: 80px 80px, 80px 80px, 80px 80px, 80px 80px, 100% 100%;
-        background-position: 0 0, 40px 0, 40px -40px, 0 40px, 0 0;
+            linear-gradient(135deg, rgba(255, 248, 230, 0.92) 0%, rgba(250, 243, 215, 0.92) 100%),
+            url('/avner/mobile_bacround.jpeg');
+        background-size: cover;
+        background-position: center;
         background-attachment: fixed;
+        background-repeat: no-repeat;
         position: relative;
+        min-height: 100vh;
+    }
+    
+    /* Desktop background */
+    @media (min-width: 769px) {
+        .body-with-background {
+            background: 
+                linear-gradient(135deg, rgba(255, 248, 230, 0.88) 0%, rgba(250, 243, 215, 0.88) 100%),
+                url('/avner/desktop_ui_backround.jpeg');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }
     }
     
     .body-with-background::before {
@@ -446,6 +458,7 @@
 ==================================================================
   7. Utility Classes
      - Custom utility classes for spacing and effects
+     - Enhanced mobile interactions
 ==================================================================
 */
 @layer utilities {
@@ -454,7 +467,7 @@
     }
     
     .card-hover {
-        transition: all 0.3s ease;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
     
     .card-hover:hover {
@@ -462,13 +475,24 @@
         box-shadow: 0 8px 20px rgba(139, 94, 52, 0.15);
     }
     
+    /* Mobile: Add active state for touch feedback */
+    .card-hover:active {
+        transform: translateY(0px) scale(0.98);
+        transition: all 0.1s ease;
+    }
+    
     .btn-hover-lift {
-        transition: all 0.3s ease;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
     
     .btn-hover-lift:hover {
         transform: translateY(-2px);
         box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+    }
+    
+    .btn-hover-lift:active {
+        transform: translateY(0px) scale(0.97);
+        transition: all 0.1s ease;
     }
     
     .gradient-text {
@@ -494,10 +518,36 @@
         touch-action: manipulation;
     }
     
+    /* Touch feedback for all interactive elements */
+    a, button, .btn-primary, .btn-secondary {
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    a:active, button:active {
+        transform: scale(0.97);
+        opacity: 0.9;
+    }
+    
     /* Improve scrolling on mobile */
     .mobile-scroll {
         -webkit-overflow-scrolling: touch;
         scroll-behavior: smooth;
+    }
+    
+    /* Smooth page transitions */
+    .page-transition {
+        animation: fadeInUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
 }
 
@@ -507,6 +557,7 @@
      - Touch-friendly interactions
      - Better mobile viewport handling
      - Improved mobile navigation
+     - File upload improvements for mobile
 ==================================================================
 */
 @media (max-width: 768px) {
@@ -552,6 +603,46 @@
         padding-left: 3rem;
     }
     
+    /* Improve file input on mobile */
+    input[type="file"] {
+        font-size: 16px !important; /* Prevents iOS zoom */
+        min-height: 48px;
+        padding: 12px !important;
+        cursor: pointer;
+        -webkit-appearance: none;
+        appearance: none;
+    }
+    
+    input[type="file"]::file-selector-button {
+        min-height: 44px;
+        padding: 12px 16px;
+        font-size: 14px;
+        margin-right: 12px;
+        cursor: pointer;
+        border-radius: 9999px;
+        border: none;
+        background-color: #F2C94C;
+        color: #4B2E16;
+        font-weight: 600;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+    }
+    
+    input[type="file"]::-webkit-file-upload-button {
+        min-height: 44px;
+        padding: 12px 16px;
+        font-size: 14px;
+        margin-right: 12px;
+        cursor: pointer;
+        border-radius: 9999px;
+        border: none;
+        background-color: #F2C94C;
+        color: #4B2E16;
+        font-weight: 600;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+    }
+    
     /* Prevent horizontal overflow */
     * {
         max-width: 100%;
@@ -559,5 +650,11 @@
     
     img {
         height: auto;
+    }
+    
+    /* Better navbar on mobile */
+    nav {
+        width: 100vw;
+        margin-left: calc(-50vw + 50%);
     }
 }
