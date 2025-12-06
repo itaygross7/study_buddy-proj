@@ -20,7 +20,10 @@ class CapybaraImageFetcher:
     
     def __init__(self):
         self.api_key = os.getenv('UNSPLASH_ACCESS_KEY', '')
-        self.cache_file = '/tmp/capybara_image_cache.json'
+        # Use platform-independent temp directory
+        import tempfile
+        cache_dir = tempfile.gettempdir()
+        self.cache_file = os.path.join(cache_dir, 'capybara_image_cache.json')
         self.cache_duration_hours = 24  # Cache images for 24 hours
         self.api_base_url = 'https://api.unsplash.com'
     
@@ -63,8 +66,8 @@ class CapybaraImageFetcher:
         Returns:
             List of image URLs or None if fetch fails
         """
-        if not self.api_key or self.api_key == 'your_unsplash_access_key':
-            logger.warning("Unsplash API key not configured, using fallback images")
+        if not self.api_key or len(self.api_key) < 10:
+            logger.warning("Unsplash API key not configured properly")
             return None
         
         try:
