@@ -10,7 +10,6 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: studybuddy_app
-    # The port is now exposed only to the internal network, not the host
     expose:
       - "5000"
     volumes:
@@ -64,8 +63,8 @@ services:
   mongo:
     image: mongo:5.0
     container_name: studybuddy_mongo
-    expose: # Expose only to the internal network
-      - "27017"
+    ports: # Restore original port mapping for host access if needed
+      - "27017:27017"
     volumes:
       - mongo_data:/data/db
     restart: always
@@ -75,11 +74,12 @@ services:
   rabbitmq:
     image: rabbitmq:3.9-management
     container_name: studybuddy_rabbitmq
+    # --- THIS IS THE FIX ---
+    # Restoring the original port mapping for the AMQP protocol
     ports:
-      # The management UI can remain on the host for debugging
+      - "5672:5672"
       - "15672:15672"
-    expose:
-      - "5672"
+    # --- END OF FIX ---
     environment:
       RABBITMQ_DEFAULT_USER: user
       RABBITMQ_DEFAULT_PASS: password
@@ -89,7 +89,6 @@ services:
     networks:
       - studybuddy-net
 
-  # --- RESTORED SERVICE ---
   cloudflared:
     image: cloudflare/cloudflared:latest
     container_name: studybuddy_cloudflared
@@ -99,7 +98,6 @@ services:
       - app
     networks:
       - studybuddy-net
-  # --- END OF RESTORATION ---
 
 volumes:
   mongo_data:
