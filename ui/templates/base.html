@@ -97,10 +97,26 @@
                     {% if current_user.user.role.value == 'admin' %}
                     <a href="{{ url_for('admin.dashboard') }}" class="block rounded-lg px-3 py-3 text-base text-cream hover:bg-caramel transition-all font-medium">⚙️ ניהול</a>
                     {% endif %}
+                    <!-- Language Switcher in Mobile Menu -->
+                    <div class="block rounded-lg px-3 py-3 text-base">
+                        {% if current_locale == 'he' %}
+                            <a href="{{ url_for('set_lang', lang='en') }}" class="text-cream hover:text-warm-yellow font-medium">🌐 Switch to English</a>
+                        {% else %}
+                            <a href="{{ url_for('set_lang', lang='he') }}" class="text-cream hover:text-warm-yellow font-medium">🌐 החלף לעברית</a>
+                        {% endif %}
+                    </div>
                     <a href="{{ url_for('auth.logout') }}" class="block rounded-lg px-3 py-3 text-base text-cream hover:bg-caramel transition-all font-medium">🚪 התנתק</a>
                 </div>
                 {% else %}
                 <div class="pt-3 border-t-2 border-caramel mt-2">
+                    <!-- Language Switcher in Mobile Menu -->
+                    <div class="block rounded-lg px-3 py-3 text-base">
+                        {% if current_locale == 'he' %}
+                            <a href="{{ url_for('set_lang', lang='en') }}" class="text-cream hover:text-warm-yellow font-medium">🌐 Switch to English</a>
+                        {% else %}
+                            <a href="{{ url_for('set_lang', lang='he') }}" class="text-cream hover:text-warm-yellow font-medium">🌐 החלף לעברית</a>
+                        {% endif %}
+                    </div>
                     <a href="{{ url_for('auth.login') }}" class="block rounded-lg px-3 py-3 text-base text-cream hover:bg-caramel transition-all font-medium">🔑 התחבר</a>
                     <a href="{{ url_for('auth.signup') }}" class="block rounded-lg px-3 py-3 text-base text-warm-yellow font-bold hover:bg-caramel transition-all">✨ הרשמה</a>
                 </div>

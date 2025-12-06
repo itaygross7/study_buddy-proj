@@ -205,12 +205,6 @@
         // Show loading
         loadingIndicator.classList.remove('hidden');
         
-        // Add random encouragement
-        const encouragement = getRandomEncouragement();
-        setTimeout(() => {
-            addMessage(encouragement, false, 'encouraging');
-        }, 300);
-        
         try {
             const babyMode = babyModeToggle.checked;
             const courseId = courseSelector ? courseSelector.value : '';
