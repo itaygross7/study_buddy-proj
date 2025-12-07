@@ -142,12 +142,10 @@ error_handler() {
         perform_rollback
     fi
 
-    # Make sure we exit with the original error code
     exit "$exit_code"
 }
 
 cleanup_handler() {
-    # Only print success if we didn't already mark rollback
     if [ "$ROLLBACK_NEEDED" = false ]; then
         log_success "Deployment completed successfully"
         send_notification "✅ Deployment Successful" "Completed successfully"
@@ -285,34 +283,31 @@ build_and_deploy() {
 
     calculate_system_capacity
 
-    # ───────────────────────────────────────────────
     # 1. Stop existing stack
-    # ───────────────────────────────────────────────
     if [ "$FULL_RESTART" = true ]; then
         log_info "Performing FULL restart (down -v + remove orphans)..."
-        docker compose down -v --remove-orphans 2>&1 | tee -a "$DEPLOY_LOG" > /dev/null
+        docker compose down -v --remove-orphans 2>&1 | tee -a "$DEPLOY_LOG"
     else
         log_info "Stopping current containers..."
-        docker compose down --remove-orphans 2>&1 | tee -a "$DEPLOY_LOG" > /dev/null
+        docker compose down --remove-orphans 2>&1 | tee -a "$DEPLOY_LOG"
     fi
 
-    # ───────────────────────────────────────────────
     # 2. Build images
-    # ───────────────────────────────────────────────
     log_info "Building images..."
     local build_flags=""
     if [ "$FORCE_REBUILD" = true ]; then
         build_flags="--no-cache"
     fi
 
-    if ! docker compose build $build_flags 2>&1 | tee -a "$DEPLOY_LOG" > /dev/null; then
+    if ! docker compose build $build_flags 2>&1 | tee -a "$DEPLOY_LOG"; then
         log_error "docker compose build failed"
-        return 1
+        ROLLBACK_NEEDED=true
+        send_notification "❌ Deployment Failed" "docker compose build failed"
+        perform_rollback
+        exit 1
     fi
 
-    # ───────────────────────────────────────────────
     # 3. Start stack with fresh containers
-    # ───────────────────────────────────────────────
     log_info "Starting system with $OPTIMAL_WORKER_COUNT workers (force recreate)..."
 
     if ! docker compose up -d \
@@ -327,7 +322,10 @@ build_and_deploy() {
             OPTIMAL_WORKER_COUNT=1
         else
             log_error "Failed to start containers."
-            return 1
+            ROLLBACK_NEEDED=true
+            send_notification "❌ Deployment Failed" "docker compose up failed"
+            perform_rollback
+            exit 1
         fi
     else
         log_success "New containers started."
@@ -368,16 +366,13 @@ perform_rollback() {
 
     log_info "Rolling back using backup at: $BACKUP_PATH"
 
-    # Stop everything first
-    docker compose down --remove-orphans 2>&1 | tee -a "$DEPLOY_LOG" > /dev/null
+    docker compose down --remove-orphans 2>&1 | tee -a "$DEPLOY_LOG"
 
-    # Restore env
     if [ -f "$BACKUP_PATH/.env" ]; then
         cp "$BACKUP_PATH/.env" ./
         log_info "Restored .env from backup."
     fi
 
-    # Start everything again
     if docker compose up -d --force-recreate 2>&1 | tee -a "$DEPLOY_LOG"; then
         log_success "Rollback successful – stack restarted from backup."
     else
