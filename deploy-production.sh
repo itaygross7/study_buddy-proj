@@ -93,7 +93,7 @@ show_progress() {
     local width=50
     for ((i=0; i<=duration; i++)); do
         local progress=$((i * width / duration))
-        printf "\r${CYAN}%s${NC} [" "${message}"
+        printf "\r%s%s%s [" "${CYAN}" "${message}" "${NC}"
         printf "%${progress}s" | tr ' ' '█'
         printf "%$((width - progress))s" | tr ' ' '░'
         printf "] %3d%%" $((i * 100 / duration))
@@ -141,9 +141,13 @@ error_handler() {
         log_warning "Initiating automatic rollback..."
         perform_rollback
     fi
+
+    # Make sure we exit with the original error code
+    exit "$exit_code"
 }
 
 cleanup_handler() {
+    # Only print success if we didn't already mark rollback
     if [ "$ROLLBACK_NEEDED" = false ]; then
         log_success "Deployment completed successfully"
         send_notification "✅ Deployment Successful" "Completed successfully"
@@ -217,7 +221,11 @@ check_prerequisites() {
 }
 
 create_backup() {
-    if [ "$SKIP_BACKUP" = true ]; then return 0; fi
+    if [ "$SKIP_BACKUP" = true ]; then
+        log_info "Skipping backup (SKIP_BACKUP=true)"
+        return 0
+    fi
+
     log_step "2" "Creating Backup"
     local backup_path="$BACKUP_DIR/backup_${DEPLOY_DATE}"
     mkdir -p "$backup_path"
@@ -228,6 +236,13 @@ create_backup() {
         log_info "Backing up MongoDB..."
         docker exec "$MONGO_CONTAINER" mongodump --archive=/tmp/dump.gz --gzip || true
         docker cp "$MONGO_CONTAINER:/tmp/dump.gz" "$backup_path/mongo.gz" || true
+        if [ -f "$backup_path/mongo.gz" ]; then
+            log_info "Successfully copied MongoDB dump to $backup_path/mongo.gz"
+        else
+            log_warning "MongoDB dump file not found in backup path"
+        fi
+    else
+        log_warning "Mongo container not running, skipping MongoDB backup"
     fi
 
     echo "BACKUP_PATH=$backup_path" > "$STATE_FILE"
@@ -235,7 +250,11 @@ create_backup() {
 }
 
 update_code() {
-    if [ "$SKIP_GIT_PULL" = true ]; then return 0; fi
+    if [ "$SKIP_GIT_PULL" = true ]; then
+        log_info "Skipping git pull (SKIP_GIT_PULL=true)"
+        return 0
+    fi
+
     log_step "3" "Updating Code"
     cd "$SCRIPT_DIR"
 
@@ -266,33 +285,52 @@ build_and_deploy() {
 
     calculate_system_capacity
 
+    # ───────────────────────────────────────────────
+    # 1. Stop existing stack
+    # ───────────────────────────────────────────────
     if [ "$FULL_RESTART" = true ]; then
-        docker compose down -v --remove-orphans
+        log_info "Performing FULL restart (down -v + remove orphans)..."
+        docker compose down -v --remove-orphans 2>&1 | tee -a "$DEPLOY_LOG" > /dev/null
+    else
+        log_info "Stopping current containers..."
+        docker compose down --remove-orphans 2>&1 | tee -a "$DEPLOY_LOG" > /dev/null
     fi
 
+    # ───────────────────────────────────────────────
+    # 2. Build images
+    # ───────────────────────────────────────────────
     log_info "Building images..."
     local build_flags=""
-    if [ "$FORCE_REBUILD" = true ]; then build_flags="--no-cache"; fi
+    if [ "$FORCE_REBUILD" = true ]; then
+        build_flags="--no-cache"
+    fi
 
-    docker compose build $build_flags 2>&1 | tee -a "$DEPLOY_LOG" > /dev/null
+    if ! docker compose build $build_flags 2>&1 | tee -a "$DEPLOY_LOG" > /dev/null; then
+        log_error "docker compose build failed"
+        return 1
+    fi
 
-    log_info "Stopping old containers..."
-    docker compose down --remove-orphans 2>&1 | tee -a "$DEPLOY_LOG" > /dev/null
+    # ───────────────────────────────────────────────
+    # 3. Start stack with fresh containers
+    # ───────────────────────────────────────────────
+    log_info "Starting system with $OPTIMAL_WORKER_COUNT workers (force recreate)..."
 
-    log_info "Starting system with $OPTIMAL_WORKER_COUNT workers..."
-
-    if ! docker compose up -d --scale "$WORKER_SERVICE_NAME"="$OPTIMAL_WORKER_COUNT" 2>&1 | tee -a "$DEPLOY_LOG"; then
-        log_warning "Scaling failed (check service name '$WORKER_SERVICE_NAME')"
-        log_warning "Falling back to standard startup..."
-        if docker compose up -d 2>&1 | tee -a "$DEPLOY_LOG"; then
-            log_success "Started (Fallback mode)"
+    if ! docker compose up -d \
+        --force-recreate \
+        --scale "$WORKER_SERVICE_NAME"="$OPTIMAL_WORKER_COUNT" \
+        2>&1 | tee -a "$DEPLOY_LOG"
+    then
+        log_warning "Scaling failed (check service name '$WORKER_SERVICE_NAME')."
+        log_warning "Falling back to basic startup (no scaling)..."
+        if docker compose up -d --force-recreate 2>&1 | tee -a "$DEPLOY_LOG"; then
+            log_success "Started (Fallback mode, 1 worker)."
             OPTIMAL_WORKER_COUNT=1
         else
-            log_error "Failed to start containers"
+            log_error "Failed to start containers."
             return 1
         fi
     else
-        log_success "New containers started"
+        log_success "New containers started."
     fi
 
     show_progress 20 "Waiting for startup"
@@ -300,6 +338,7 @@ build_and_deploy() {
 
 perform_health_checks() {
     log_step "5" "Health Checks"
+
     if curl -sf http://localhost:5000/health > /dev/null 2>&1; then
         log_success "App is healthy"
     else
@@ -313,16 +352,36 @@ perform_health_checks() {
 
 perform_rollback() {
     log_step "ROLLBACK" "Restoring Previous Version"
-    if [ -f "$STATE_FILE" ]; then
-        # shellcheck disable=SC1090
-        source "$STATE_FILE"
-        if [ -d "$BACKUP_PATH" ]; then
-            log_info "Restoring from $BACKUP_PATH"
-            docker compose down
-            [ -f "$BACKUP_PATH/.env" ] && cp "$BACKUP_PATH/.env" .
-            docker compose up -d
-            log_success "Rollback successful"
-        fi
+
+    if [ ! -f "$STATE_FILE" ]; then
+        log_warning "No state file found, cannot rollback cleanly."
+        return 0
+    fi
+
+    # shellcheck disable=SC1090
+    source "$STATE_FILE"
+
+    if [ -z "${BACKUP_PATH:-}" ] || [ ! -d "$BACKUP_PATH" ]; then
+        log_warning "Backup path not found, cannot rollback."
+        return 0
+    fi
+
+    log_info "Rolling back using backup at: $BACKUP_PATH"
+
+    # Stop everything first
+    docker compose down --remove-orphans 2>&1 | tee -a "$DEPLOY_LOG" > /dev/null
+
+    # Restore env
+    if [ -f "$BACKUP_PATH/.env" ]; then
+        cp "$BACKUP_PATH/.env" ./
+        log_info "Restored .env from backup."
+    fi
+
+    # Start everything again
+    if docker compose up -d --force-recreate 2>&1 | tee -a "$DEPLOY_LOG"; then
+        log_success "Rollback successful – stack restarted from backup."
+    else
+        log_error "Rollback failed – stack did not start properly."
     fi
 }
 
@@ -344,11 +403,29 @@ EOF
 main() {
     while [[ $# -gt 0 ]]; do
         case $1 in
-            --workers) MANUAL_OVERRIDE=$2; shift 2 ;;
-            --full-restart) FULL_RESTART=true; FORCE_REBUILD=true; shift ;;
-            --quick) QUICK_MODE=true; SKIP_BACKUP=true; shift ;;
-            --rollback) perform_rollback; exit 0 ;;
-            *) echo "Unknown option: $1"; exit 1 ;;
+            --workers)
+                MANUAL_OVERRIDE=$2
+                shift 2
+                ;;
+            --full-restart)
+                FULL_RESTART=true
+                FORCE_REBUILD=true
+                shift
+                ;;
+            --quick)
+                QUICK_MODE=true
+                SKIP_BACKUP=true
+                SKIP_GIT_PULL=true
+                shift
+                ;;
+            --rollback)
+                perform_rollback
+                exit 0
+                ;;
+            *)
+                echo "Unknown option: $1"
+                exit 1
+                ;;
         esac
     done
 
