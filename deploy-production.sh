@@ -3,14 +3,19 @@
 # StudyBuddy AI - Ultimate Production Deployment Script
 # =============================================================================
 # Features:
-# - Auto-Scaling Workers (Fixed)
+# - Auto-Scaling Workers
 # - Automated Backup & Rollback
 # - Security Hardening
 # - Health Monitoring
+# - Fully NON-INTERACTIVE (safe for sudo + automations)
 # =============================================================================
 
 set -euo pipefail
 IFS=$'\n\t'
+
+# Disable any interactive git prompts globally
+export GIT_TERMINAL_PROMPT=0
+export GIT_ASKPASS=true
 
 # =============================================================================
 # CONFIGURATION & GLOBALS
@@ -25,7 +30,7 @@ WORKER_SERVICE_NAME="worker"   # Must match service name in docker-compose.yml
 WORKER_RAM_ESTIMATE_MB=350     # Est. RAM per worker
 SYSTEM_RESERVE_MB=2048         # RAM reserved for OS/DB
 MAX_WORKER_CAP=32              # Hard cap
-OPTIMAL_WORKER_COUNT=1         # Default
+OPTIMAL_WORKER_COUNT=1         # Default if auto calc not used
 MANUAL_OVERRIDE=4              # Set via --workers flag
 
 # Deployment Modes
@@ -56,13 +61,13 @@ DEPLOYMENT_ID="deploy_${DEPLOY_DATE}"
 STATE_FILE="$LOG_DIR/.deploy_state"
 ROLLBACK_NEEDED=false
 
-# Containers
+# Containers (must match docker-compose.yml)
 APP_CONTAINER="studybuddy_app"
 WORKER_CONTAINER="studybuddy_worker"
 MONGO_CONTAINER="studybuddy_mongo"
 
 # =============================================================================
-# LOGGING & NOTIFICATION FUNCTIONS (Moved Up)
+# LOGGING & NOTIFICATION FUNCTIONS
 # =============================================================================
 
 mkdir -p "$LOG_DIR" "$BACKUP_DIR"
@@ -70,16 +75,17 @@ mkdir -p "$LOG_DIR" "$BACKUP_DIR"
 log() {
     local level=$1
     shift
-    local message="$@"
-    local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+    local message="$*"
+    local timestamp
+    timestamp=$(date '+%Y-%m-%d %H:%M:%S')
     echo -e "${timestamp} [${level}] ${message}" | tee -a "$DEPLOY_LOG"
 }
 
-log_info() { log "INFO" "${BLUE}ℹ${NC} $@" ; }
-log_success() { log "SUCCESS" "${GREEN}✓${NC} $@" ; }
-log_warning() { log "WARNING" "${YELLOW}⚠${NC} $@" ; }
-log_error() { log "ERROR" "${RED}✗${NC} $@" ; }
-log_step() { echo ""; log "STEP" "${MAGENTA}[$1]${NC} ${WHITE}$@${NC}"; echo ""; }
+log_info()    { log "INFO"    "${BLUE}ℹ${NC} $*"; }
+log_success() { log "SUCCESS" "${GREEN}✓${NC} $*"; }
+log_warning() { log "WARNING" "${YELLOW}⚠${NC} $*"; }
+log_error()   { log "ERROR"   "${RED}✗${NC} $*"; }
+log_step()    { echo ""; log "STEP" "${MAGENTA}[$1]${NC} ${WHITE}${*:2}${NC}"; echo ""; }
 
 show_progress() {
     local duration=$1
@@ -87,7 +93,7 @@ show_progress() {
     local width=50
     for ((i=0; i<=duration; i++)); do
         local progress=$((i * width / duration))
-        printf "\r${CYAN}${message}${NC} ["
+        printf "\r${CYAN}%s${NC} [" "${message}"
         printf "%${progress}s" | tr ' ' '█'
         printf "%$((width - progress))s" | tr ' ' '░'
         printf "] %3d%%" $((i * 100 / duration))
@@ -96,21 +102,17 @@ show_progress() {
     echo ""
 }
 
-# MOVED UP: Notification function so it exists before errors happen
 send_notification() {
     local subject="$1"
     local message="$2"
 
     # Only try to send if variables are set
     if [ -n "${ADMIN_EMAIL:-}" ] && [ -n "${MAIL_USERNAME:-}" ]; then
-        # Check if container is actually running before trying to exec
         if docker ps | grep -q "$APP_CONTAINER"; then
             log_info "Sending email notification..."
-            # Using || true to prevent script crash if email fails
             docker exec "$APP_CONTAINER" python3 -c "
 import sys
 try:
-    # Simpler inline check to avoid import errors if app isn't fully ready
     print('Sending notification: ' + sys.argv[2])
 except:
     pass
@@ -161,19 +163,18 @@ calculate_system_capacity() {
         return
     fi
 
-    # Hardware Audit
-    local cpu_cores=$(nproc)
-    local total_ram_mb=$(free -m | awk '/^Mem:/{print $2}')
+    local cpu_cores
+    local total_ram_mb
+    cpu_cores=$(nproc)
+    total_ram_mb=$(free -m | awk '/^Mem:/{print $2}')
 
-    # Calculate Limits
     local cpu_limit=$(( (cpu_cores * 2) + 1 ))
     local available_ram=$(( total_ram_mb - SYSTEM_RESERVE_MB ))
-
     if [ "$available_ram" -le 0 ]; then available_ram=100; fi
+
     local ram_limit=$(( available_ram / WORKER_RAM_ESTIMATE_MB ))
     if [ "$ram_limit" -lt 1 ]; then ram_limit=1; fi
 
-    # Determine Bottleneck
     local count=$cpu_limit
     local bottleneck="CPU Cores"
 
@@ -204,8 +205,14 @@ calculate_system_capacity() {
 
 check_prerequisites() {
     log_step "1" "Pre-flight Checks"
-    if [[ $EUID -ne 0 ]]; then log_error "Run as root"; exit 1; fi
-    command -v docker >/dev/null || { log_error "Docker missing"; exit 1; }
+    if [[ $EUID -ne 0 ]]; then
+        log_error "Run as root (use: sudo ./deploy-production.sh)"
+        exit 1
+    fi
+    if ! command -v docker >/dev/null 2>&1; then
+        log_error "Docker missing"
+        exit 1
+    fi
     log_success "Checks passed"
 }
 
@@ -215,10 +222,8 @@ create_backup() {
     local backup_path="$BACKUP_DIR/backup_${DEPLOY_DATE}"
     mkdir -p "$backup_path"
 
-    # Save .env
     [ -f ".env" ] && cp ".env" "$backup_path/.env"
 
-    # Backup Mongo
     if docker ps | grep -q "$MONGO_CONTAINER"; then
         log_info "Backing up MongoDB..."
         docker exec "$MONGO_CONTAINER" mongodump --archive=/tmp/dump.gz --gzip || true
@@ -234,18 +239,23 @@ update_code() {
     log_step "3" "Updating Code"
     cd "$SCRIPT_DIR"
 
-    # Fix permissions & Safe directory
     ACTUAL_USER="${SUDO_USER:-$USER}"
     sudo -u "$ACTUAL_USER" git config --global --add safe.directory "$SCRIPT_DIR" || true
 
-    # Detect branch
-    local current_branch=$(sudo -u "$ACTUAL_USER" git rev-parse --abbrev-ref HEAD)
+    local current_branch
+    if ! current_branch=$(sudo -u "$ACTUAL_USER" git rev-parse --abbrev-ref HEAD 2>/dev/null); then
+        log_warning "Could not detect git branch (maybe not a git repo). Skipping git pull."
+        return 0
+    fi
     log_info "Detected branch: $current_branch"
 
-    if sudo -u "$ACTUAL_USER" git pull origin "$current_branch" 2>&1 | tee -a "$DEPLOY_LOG"; then
-        log_success "Code updated"
+    if sudo -u "$ACTUAL_USER" \
+        GIT_TERMINAL_PROMPT=0 GIT_ASKPASS=true \
+        git pull --no-edit origin "$current_branch" 2>&1 | tee -a "$DEPLOY_LOG"
+    then
+        log_success "Code updated from git"
     else
-        log_error "Git pull failed"
+        log_error "Git pull failed (non-interactive). Check credentials or network."
         return 1
     fi
 }
@@ -254,9 +264,7 @@ build_and_deploy() {
     log_step "4" "Building and Deploying"
     cd "$SCRIPT_DIR"
 
-    # --- CALCULATE SCALE ---
     calculate_system_capacity
-    # -----------------------
 
     if [ "$FULL_RESTART" = true ]; then
         docker compose down -v --remove-orphans
@@ -273,16 +281,15 @@ build_and_deploy() {
 
     log_info "Starting system with $OPTIMAL_WORKER_COUNT workers..."
 
-    # --- START WITH SCALE ---
     if ! docker compose up -d --scale "$WORKER_SERVICE_NAME"="$OPTIMAL_WORKER_COUNT" 2>&1 | tee -a "$DEPLOY_LOG"; then
-        log_warning "Scaling failed (Check 'container_name' in docker-compose.yml)"
+        log_warning "Scaling failed (check service name '$WORKER_SERVICE_NAME')"
         log_warning "Falling back to standard startup..."
         if docker compose up -d 2>&1 | tee -a "$DEPLOY_LOG"; then
             log_success "Started (Fallback mode)"
             OPTIMAL_WORKER_COUNT=1
         else
-             log_error "Failed to start"
-             return 1
+            log_error "Failed to start containers"
+            return 1
         fi
     else
         log_success "New containers started"
@@ -296,16 +303,18 @@ perform_health_checks() {
     if curl -sf http://localhost:5000/health > /dev/null 2>&1; then
         log_success "App is healthy"
     else
-        log_warning "App health check failed (might be booting)"
+        log_warning "App health check failed (might still be booting)"
     fi
 
-    local active=$(docker ps --filter "name=$WORKER_SERVICE_NAME" --format "{{.ID}}" | wc -l)
+    local active
+    active=$(docker ps --filter "name=$WORKER_SERVICE_NAME" --format "{{.ID}}" | wc -l)
     log_info "Active Worker Instances: $active"
 }
 
 perform_rollback() {
     log_step "ROLLBACK" "Restoring Previous Version"
     if [ -f "$STATE_FILE" ]; then
+        # shellcheck disable=SC1090
         source "$STATE_FILE"
         if [ -d "$BACKUP_PATH" ]; then
             log_info "Restoring from $BACKUP_PATH"
@@ -322,7 +331,6 @@ perform_rollback() {
 # =============================================================================
 
 print_banner() {
-    clear
     echo -e "${BLUE}"
     cat << 'EOF'
 ╔══════════════════════════════════════════════════════════════╗
@@ -334,7 +342,6 @@ EOF
 }
 
 main() {
-    # Arguments
     while [[ $# -gt 0 ]]; do
         case $1 in
             --workers) MANUAL_OVERRIDE=$2; shift 2 ;;
@@ -352,7 +359,8 @@ main() {
     build_and_deploy
     perform_health_checks
 
-    local duration=$(($(date +%s) - DEPLOY_START_TIME))
+    local duration
+    duration=$(($(date +%s) - DEPLOY_START_TIME))
     echo ""
     echo -e "${GREEN}╔══════════════════════════════════════════════════════════════╗${NC}"
     echo -e "${GREEN}║              ✓ DEPLOYMENT COMPLETED SUCCESSFULLY!            ║${NC}"
