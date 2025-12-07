@@ -25,7 +25,6 @@ rich = "*"
 
 # --- Database ---
 pymongo = "*"
-gridfs = "*"
 
 # --- Messaging / Workers ---
 celery = "*"
