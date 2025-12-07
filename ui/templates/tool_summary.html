@@ -10,29 +10,49 @@
             <img src="{{ url_for('serve_avner', filename='avner_waving.jpeg') }}" alt="אבנר מנופף לשלום" class="h-16 w-16 flex-shrink-0">
             <div>
                 <h2 class="text-xl font-bold text-warm-brown">סיכום חכם</h2>
-                <p class="text-ink-brown/80 mt-1">העלו קובץ או הדביקו טקסט, ואני אעזור לכם להבין אותו טוב יותר.</p>
+                <p class="text-ink-brown/80 mt-1">
+                    סיכום חכם של כל חומר הקורס – לפי מה שחשוב לך עכשיו.
+                </p>
             </div>
         </div>
-        
+
         <div class="mt-6">
-            <!-- This form now correctly posts to the single, smart summary endpoint -->
+            <!-- Posts to /summary/trigger and works on the whole course -->
             <form id="summary-form"
-                  hx-post="{{ url_for('summary_bp.trigger_summary') }}" 
+                  hx-post="{{ url_for('summary_bp.trigger_summary') }}"
                   hx-encoding="multipart/form-data"
                   hx-target="#task-status-container"
                   hx-swap="innerHTML">
-                
-                <div class="mb-4">
-                    <label for="course_id" class="block text-sm font-medium text-gray-700 text-right">שם הקורס (אופציונלי)</label>
-                    <input type="text" name="course_id" id="course_id" placeholder="לדוגמה: היסטוריה שנה א'" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm text-right">
-                </div>
-                
-                <textarea name="text" class="w-full p-3 border rounded-lg text-right" rows="8" placeholder="הדביקו כאן את החומר לסיכום..."></textarea>
-                <div class="my-4 text-center text-gray-500">או</div>
-                <input type="file" name="file" class="block w-full text-sm text-ink-brown file:ml-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:font-semibold file:bg-orange-100 file:text-capy-orange hover:file:bg-orange-200"/>
 
-                <button type="submit" class="mt-6 w-full bg-capy-orange text-white font-bold py-3 px-5 rounded-lg shadow-sm hover:bg-opacity-90">
-                    ✨ הפקת סיכום
+                {# course_id – if you know it server-side, prefer a hidden input with the real ID #}
+                <input type="hidden" name="course_id" id="course_id"
+                       value="{{ course.id if course is defined else '' }}">
+
+                <div class="mb-4">
+                    <label for="query" class="block text-sm font-medium text-gray-700 text-right">
+                        על מה להתמקד בסיכום?
+                    </label>
+                    <input type="text"
+                           name="query"
+                           id="query"
+                           placeholder="למשל: סיכום כללי, דגש על הגדרות, הכנה למבחן..."
+                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm text-right">
+                </div>
+
+                {# The text/file fields can stay, but the current backend ignores them.
+                   You can later wire them into another flow if you want. #}
+                <textarea name="text" class="w-full p-3 border rounded-lg text-right" rows="8"
+                          placeholder="אופציונלי: רשמו לעצמכם הערות או נקודות חשובות..."></textarea>
+
+                <div class="my-4 text-center text-gray-500">או</div>
+
+                <input type="file"
+                       name="file"
+                       class="block w-full text-sm text-ink-brown file:ml-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:font-semibold file:bg-orange-100 file:text-capy-orange hover:file:bg-orange-200"/>
+
+                <button type="submit"
+                        class="mt-6 w-full bg-capy-orange text-white font-bold py-3 px-5 rounded-lg shadow-sm hover:bg-opacity-90">
+                    ✨ הפקת סיכום לקורס
                 </button>
             </form>
         </div>
@@ -48,17 +68,22 @@
 </div>
 
 <script>
-// This script is now much simpler. It just needs to handle the initial response.
-document.body.addEventListener('htmx:afterOnLoad', function(evt) {
-    if (evt.target.id === 'summary-form') {
-        const response = JSON.parse(evt.detail.xhr.responseText);
-        
-        // The server's response IS the initial state of the task status partial.
-        // We just need to tell HTMX to start polling it.
-        if (response.polling_url) {
-            const taskContainer = document.getElementById('task-status-container');
-            taskContainer.innerHTML = `<div hx-get="${response.polling_url}" hx-trigger="load, every 2s" hx-swap="outerHTML"></div>`;
-            htmx.process(taskContainer);
+// Same idea as before: when the trigger responds with JSON, start polling.
+document.body.addEventListener('htmx:afterOnLoad', function (evt) {
+    if (evt.target.id === 'task-status-container') {
+        try {
+            const response = JSON.parse(evt.detail.xhr.responseText);
+            if (response.polling_url) {
+                const taskContainer = document.getElementById('task-status-container');
+                taskContainer.innerHTML = `
+                    <div hx-get="${response.polling_url}"
+                         hx-trigger="load, every 2s"
+                         hx-swap="outerHTML"></div>
+                `;
+                htmx.process(taskContainer);
+            }
+        } catch (e) {
+            console.error('Failed to parse summary trigger response as JSON', e);
         }
     }
 });

@@ -5,23 +5,31 @@
 {% block content %}
 <!-- Breadcrumb & Header -->
 <div class="mb-6">
-    <nav class="text-sm text-cozy-brown mb-2">
-        <a href="{{ url_for('library.index') }}" class="hover:text-golden-yellow transition-colors">📚 הספרייה</a>
+    <nav class="text-sm text-cozy-brown mb-2" aria-label="ניווט פירורי לחם">
+        <a href="{{ url_for('library.index') }}" class="hover:text-golden-yellow transition-colors">
+            📚 הספרייה
+        </a>
         <span class="mx-2">/</span>
-        <a href="{{ url_for('library.course_page', course_id=course.id) }}" class="hover:text-golden-yellow transition-colors">{{ course.icon }} {{ course.name }}</a>
+        <a href="{{ url_for('library.course_page', course_id=course.id) }}" class="hover:text-golden-yellow transition-colors">
+            {{ course.icon }} {{ course.name }}
+        </a>
         <span class="mx-2">/</span>
         <span class="text-dark-brown">📋 משימות</span>
     </nav>
-    
+
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div class="flex items-center gap-3">
-            <span class="text-4xl">📋</span>
+            <span class="text-4xl" aria-hidden="true">📋</span>
             <div>
-                <h1 class="text-2xl md:text-3xl font-bold text-dark-brown">משימות הקורס</h1>
-                <p class="text-cozy-brown text-sm mt-1">{{ course.icon }} {{ course.name }}</p>
+                <h1 class="text-2xl md:text-3xl font-bold text-dark-brown">
+                    משימות הקורס
+                </h1>
+                <p class="text-cozy-brown text-sm mt-1">
+                    {{ course.icon }} {{ course.name }}
+                </p>
             </div>
         </div>
-        <a href="{{ url_for('library.course_page', course_id=course.id) }}" 
+        <a href="{{ url_for('library.course_page', course_id=course.id) }}"
            class="px-4 py-2 bg-golden-yellow text-dark-brown font-medium rounded-xl hover:bg-warm-yellow transition-colors">
             ← חזור לקורס
         </a>
@@ -29,7 +37,7 @@
 </div>
 
 <!-- Task Statistics -->
-<div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
+<div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4" aria-label="סטטיסטיקות משימות">
     <div class="bg-cream rounded-xl p-4 border-2 border-warm-yellow text-center">
         <div class="text-2xl font-bold text-dark-brown">{{ task_stats.total }}</div>
         <div class="text-xs text-cozy-brown mt-1">סה"כ משימות</div>
@@ -52,18 +60,110 @@
     </div>
 </div>
 
-{% if tasks|length == 0 %}
+{# ===== NEW: derived stats about uploaded files + ready tools (minimal logic, no backend changes) ===== #}
+{% if tasks %}
+    {% set ns = namespace(
+        total_files=0,
+        processed_files=0,
+        summary_ready=0,
+        flashcards_ready=0,
+        assess_ready=0,
+        homework_ready=0
+    ) %}
+
+    {% if tasks_by_type %}
+        {% for t_type, type_tasks in tasks_by_type.items() %}
+            {% if t_type == 'file_processing' %}
+                {% set ns.total_files = ns.total_files + (type_tasks|length) %}
+                {% for task in type_tasks %}
+                    {% if task.status == 'COMPLETED' %}
+                        {% set ns.processed_files = ns.processed_files + 1 %}
+                    {% endif %}
+                {% endfor %}
+            {% elif t_type == 'summary' %}
+                {% for task in type_tasks %}
+                    {% if task.status == 'COMPLETED' %}
+                        {% set ns.summary_ready = ns.summary_ready + 1 %}
+                    {% endif %}
+                {% endfor %}
+            {% elif t_type == 'flashcards' %}
+                {% for task in type_tasks %}
+                    {% if task.status == 'COMPLETED' %}
+                        {% set ns.flashcards_ready = ns.flashcards_ready + 1 %}
+                    {% endif %}
+                {% endfor %}
+            {% elif t_type == 'assess' %}
+                {% for task in type_tasks %}
+                    {% if task.status == 'COMPLETED' %}
+                        {% set ns.assess_ready = ns.assess_ready + 1 %}
+                    {% endif %}
+                {% endfor %}
+            {% elif t_type == 'homework' %}
+                {% for task in type_tasks %}
+                    {% if task.status == 'COMPLETED' %}
+                        {% set ns.homework_ready = ns.homework_ready + 1 %}
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+
+    <div class="mb-6 bg-cream rounded-xl p-4 border border-warm-yellow text-sm text-cozy-brown">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+            <div>
+                <span class="font-semibold text-dark-brown">סטטוס קבצים:</span>
+                <span class="ml-2">
+                    קבצים שהועלו: {{ ns.total_files }},
+                    קבצים שעובדו: {{ ns.processed_files }}
+                </span>
+            </div>
+            <div>
+                <span class="font-semibold text-dark-brown">כלים מוכנים לשימוש:</span>
+                <span class="ml-2">
+                    {% set any_ready = false %}
+                    {% if ns.summary_ready > 0 %}
+                        {% set any_ready = true %}
+                        📝 סיכומים ({{ ns.summary_ready }})
+                    {% endif %}
+                    {% if ns.flashcards_ready > 0 %}
+                        {% if any_ready %} · {% endif %}
+                        {% set any_ready = true %}
+                        🃏 כרטיסיות ({{ ns.flashcards_ready }})
+                    {% endif %}
+                    {% if ns.assess_ready > 0 %}
+                        {% if any_ready %} · {% endif %}
+                        {% set any_ready = true %}
+                        ✅ בחנים ({{ ns.assess_ready }})
+                    {% endif %}
+                    {% if ns.homework_ready > 0 %}
+                        {% if any_ready %} · {% endif %}
+                        {% set any_ready = true %}
+                        📚 שיעורי בית ({{ ns.homework_ready }})
+                    {% endif %}
+                    {% if not any_ready %}
+                        עדיין אין תוצאות מוכנות – השתמשו בכלים כדי להתחיל ✨
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+    </div>
+{% endif %}
+{# ===== END NEW PART ===== #}
+
+{% if not tasks %}
 <!-- Empty State -->
 <div class="bg-cream rounded-2xl p-8 shadow-md border-2 border-warm-yellow text-center">
-    <img src="/avner/avner_looking_at_page_acratching_head.jpeg" 
-         alt="אבנר" 
-         class="w-20 h-20 rounded-full mx-auto mb-4 border-4 border-golden-yellow shadow-md">
+    <img
+        src="{{ url_for('static', filename='avner/avner_looking_at_page_acratching_head.jpeg') }}"
+        alt="אבנר מביט בדף ומגרד את הראש – אין משימות עדיין"
+        class="w-20 h-20 rounded-full mx-auto mb-4 border-4 border-golden-yellow shadow-md"
+    >
     <h2 class="text-xl font-bold text-dark-brown mb-2">אין משימות עדיין 📭</h2>
     <p class="text-cozy-brown mb-4">
         כשתשתמש בכלים של אבנר (סיכומים, כרטיסיות, בחנים), <br>
         תראה כאן את כל המשימות ומצבן.
     </p>
-    <a href="{{ url_for('library.course_page', course_id=course.id) }}" 
+    <a href="{{ url_for('library.course_page', course_id=course.id) }}"
        class="inline-block bg-golden-yellow text-dark-brown font-bold py-2 px-6 rounded-xl hover:bg-warm-yellow transition-colors">
         השתמש בכלים
     </a>
@@ -73,7 +173,7 @@
 <!-- Tasks by Type -->
 <div class="space-y-6">
     {% for task_type, type_tasks in tasks_by_type.items() %}
-    <div class="bg-cream rounded-xl p-5 shadow-md border border-warm-yellow">
+    <section class="bg-cream rounded-xl p-5 shadow-md border border-warm-yellow" aria-label="משימות מסוג {{ task_type }}">
         <div class="flex items-center justify-between mb-4">
             <h2 class="text-xl font-bold text-dark-brown flex items-center gap-2">
                 {% if task_type == 'summary' %}
@@ -92,10 +192,10 @@
             </h2>
             <span class="text-sm text-cozy-brown">{{ type_tasks|length }} משימות</span>
         </div>
-        
+
         <div class="space-y-3">
             {% for task in type_tasks %}
-            <div class="bg-warm-beige rounded-lg p-4 flex items-center justify-between gap-4 hover:bg-warm-yellow/30 transition-colors">
+            <article class="bg-warm-beige rounded-lg p-4 flex items-center justify-between gap-4 hover:bg-warm-yellow/30 transition-colors">
                 <div class="flex-1">
                     <div class="flex items-center gap-2 mb-1">
                         {% if task.status == 'COMPLETED' %}
@@ -107,70 +207,35 @@
                         {% elif task.status == 'PENDING' %}
                             <span class="text-blue-600 text-sm font-medium">⏸️ ממתין</span>
                         {% endif %}
-                        
+
                         <span class="text-xs text-cozy-brown">
                             {{ task.created_at.strftime('%d/%m/%Y %H:%M') if task.created_at else 'לא ידוע' }}
                         </span>
                     </div>
-                    
+
+                    {# IMPORTANT:
+                       Make sure task.error_message is already sanitized / user-friendly on the backend.
+                       Do NOT pass raw stack traces or internal details here. #}
                     {% if task.error_message %}
                     <div class="text-xs text-red-600 mt-1">
                         שגיאה: {{ task.error_message }}
                     </div>
                     {% endif %}
-                    
+
                     {% if task.task_type == 'file_processing' and task.status == 'COMPLETED' %}
                     <div class="text-xs text-success mt-1">
                         ✓ הקובץ עובד והוכנס למסמכי הקורס
                     </div>
                     {% endif %}
                 </div>
-                
+
                 <div class="flex items-center gap-2">
                     {% if task.status == 'COMPLETED' and task.result_id %}
                         {% if task.task_type == 'summary' %}
-                            <a href="{{ url_for('library.course_tool', course_id=course.id, tool='summary') }}" 
+                            <a href="{{ url_for('library.course_tool', course_id=course.id, tool='summary') }}"
                                class="text-xs bg-golden-yellow text-dark-brown px-3 py-1 rounded-full hover:bg-warm-yellow transition-colors">
                                 צפה
                             </a>
                         {% elif task.task_type == 'flashcards' %}
-                            <a href="{{ url_for('library.course_tool', course_id=course.id, tool='flashcards') }}" 
+                            <a href="{{ url_for('library.course_tool', course_id=course.id, tool='flashcards') }}"
                                class="text-xs bg-golden-yellow text-dark-brown px-3 py-1 rounded-full hover:bg-warm-yellow transition-colors">
-                                צפה
-                            </a>
-                        {% elif task.task_type == 'assess' %}
-                            <a href="{{ url_for('library.course_tool', course_id=course.id, tool='assess') }}" 
-                               class="text-xs bg-golden-yellow text-dark-brown px-3 py-1 rounded-full hover:bg-warm-yellow transition-colors">
-                                צפה
-                            </a>
-                        {% endif %}
-                    {% endif %}
-                    
-                    {% if task.status == 'PROCESSING' %}
-                        <img src="/avner/loading.jpeg" class="w-8 h-8 rounded-full animate-pulse" alt="בעיבוד">
-                    {% elif task.status == 'COMPLETED' %}
-                        <img src="/avner/avner_celebrating.jpeg" class="w-8 h-8 rounded-full" alt="הושלם">
-                    {% elif task.status == 'FAILED' %}
-                        <img src="/avner/avner_sad.jpeg" class="w-8 h-8 rounded-full" alt="נכשל">
-                    {% endif %}
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-    </div>
-    {% endfor %}
-</div>
-{% endif %}
-
-{% endblock %}
-
-{% block scripts %}
-<script>
-    // Auto-refresh page if there are processing tasks (every 10 seconds to avoid excessive load)
-    {% if task_stats.processing > 0 %}
-    setTimeout(function() {
-        window.location.reload();
-    }, 10000); // Refresh every 10 seconds if tasks are processing
-    {% endif %}
-</script>
-{% endblock %}

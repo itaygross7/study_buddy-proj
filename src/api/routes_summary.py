@@ -8,36 +8,49 @@ from sb_utils.logger_utils import logger
 
 summary_bp = Blueprint('summary_bp', __name__)
 
+
 @summary_bp.route('/trigger', methods=['POST'])
 @login_required
 def trigger_summary():
     """
-    (CORRECTED) This route ONLY triggers the 'summary' AI task.
-    It assumes the document has already been processed.
+    Trigger an AI summary task for an entire course.
+
+    The worker will later:
+    - Aggregate smart context from ALL documents in the course.
+    - Generate a summary based on the user's query / focus.
+
+    Expected form fields:
+    - course_id: required
+    - query: optional (defaults to 'general summary').
     """
     user_id = current_user.id
-    document_id = request.form.get('document_id')
-    query = request.form.get('query', 'general summary') # For follow-up questions
+    course_id = request.form.get('course_id')
+    query = request.form.get('query', 'general summary')
 
-    if not document_id:
-        return jsonify({"error": "document_id is required"}), 400
+    if not course_id:
+        return jsonify({"error": "course_id is required"}), 400
 
     try:
         task_repo = MongoTaskRepository(db)
-        task = task_repo.create(user_id=user_id, document_id=document_id, task_type='summary')
-        
+        # Make sure your repository supports course_id as a field.
+        task = task_repo.create(
+            user_id=user_id,
+            course_id=course_id,
+            task_type='summary'
+        )
+
         publish_task(
             queue_name='summarize',
             task_body={
                 "task_id": task.id,
-                "document_id": document_id,
-                "query": query
-            }
+                "course_id": course_id,
+                "query": query,
+            },
         )
 
         return jsonify({
             "status": "processing_summary",
-            "polling_url": url_for('task_bp.get_task_status_route', task_id=task.id)
+            "polling_url": url_for('task_bp.get_task_status_route', task_id=task.id),
         }), 202
 
     except Exception as e:

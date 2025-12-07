@@ -1,45 +1,87 @@
 from pymongo.database import Database
+
 from .ai_client import ai_client
 from src.infrastructure.database import db as flask_db
 from sb_utils.logger_utils import logger
 from src.utils.smart_parser import get_smart_context
 
+
 def _get_db(db_conn: Database = None) -> Database:
     return db_conn if db_conn is not None else flask_db
 
-def generate_summary(document_id: str, query: str, db_conn: Database = None) -> str:
+
+def _get_course_smart_context(course_id: str, query: str, db_conn: Database) -> str | None:
     """
-    (CORRECTED) Generates a summary using only the smart context for the given document.
+    Build a 'smart context' for an ENTIRE course by aggregating
+    the smart contexts of all its documents.
+
+    We keep the existing document-level sniper retrieval:
+    - For each document in the course, call get_smart_context(...)
+    - Concatenate only relevant chunks.
     """
-    db = _get_db(db_conn)
-    logger.info(f"🔒 [STRICT] Generating summary for document_id: {document_id}")
+    db = db_conn
 
-    # --- THIS IS THE CORRECT "SNIPER RETRIEVAL" LOGIC ---
-    context = get_smart_context(document_id, query=query)
-
-    if context is None:
-        # If no specific chunks are found, we cannot proceed.
-        # The full text is no longer stored in the document record.
-        logger.error(f"Could not generate summary for doc {document_id}: No smart context found and fallback is disabled.")
-        raise ValueError("Could not find relevant context in the document to generate a summary.")
-    # --- END OF CORRECT LOGIC ---
-
-    prompt = ("Summarize the following text into a few key bullet points. "
-              "Then, provide three follow-up questions a student could use "
-              "to test their understanding.")
-
-    summary_text = ai_client.generate_text(
-        prompt=prompt, 
-        context=context,
-        task_type="summary"
+    # Assumes you have a 'documents' collection with course_id field.
+    # If your collection is named differently, just change this one line.
+    docs_cursor = db.documents.find(
+        {"course_id": course_id},
+        {"_id": 1},
     )
 
-    result_id = f"summary_{document_id}"
+    all_chunks: list[str] = []
+    for doc in docs_cursor:
+        doc_id = str(doc["_id"])
+        ctx = get_smart_context(doc_id, query=query)
+        if ctx:
+            all_chunks.append(ctx)
+
+    if not all_chunks:
+        return None
+
+    # Join contexts with spacing so the model can see transitions.
+    return "\n\n---\n\n".join(all_chunks)
+
+
+def generate_summary(course_id: str, query: str, db_conn: Database = None) -> str:
+    """
+    Generate a course-level summary using ONLY smart context from
+    all documents in the course.
+
+    This makes the tool:
+    - Course-wide (not per single document).
+    - Interactive (query can change focus each time).
+    """
+    db = _get_db(db_conn)
+    logger.info(f"🔒 [STRICT] Generating course summary for course_id: {course_id}")
+
+    context = _get_course_smart_context(course_id=course_id, query=query, db_conn=db)
+
+    if context is None:
+        logger.error(
+            f"Could not generate course summary for course {course_id}: "
+            f"No smart context found and fallback is disabled."
+        )
+        raise ValueError("Could not find relevant context in the course to generate a summary.")
+
+    prompt = (
+        "Summarize the following course material into a few key bullet points, "
+        "focusing on the student's query. Then, provide three follow-up questions "
+        "a student could use to test their understanding."
+    )
+
+    summary_text = ai_client.generate_text(
+        prompt=prompt,
+        context=context,
+        task_type="summary",
+    )
+
+    result_id = f"summary_course_{course_id}"
     db.summaries.insert_one({
         "_id": result_id,
-        "document_id": document_id,
-        "summary_text": summary_text
+        "course_id": course_id,
+        "summary_text": summary_text,
+        "query": query,
     })
 
-    logger.info(f"Generated and saved summary for document {document_id}")
+    logger.info(f"Generated and saved course summary for course {course_id}")
     return result_id
