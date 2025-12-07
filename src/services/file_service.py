@@ -6,16 +6,18 @@ from src.infrastructure.database import db
 from sb_utils.logger_utils import logger
 
 class FileService:
-    """A dedicated service for interacting with GridFS."""
+    """A dedicated service for safely interacting with GridFS."""
 
     def __init__(self, database):
-        # This now requires a real database instance, not a proxy.
         if not hasattr(database, 'collection'):
-             raise TypeError(f"database must be a real pymongo.database.Database instance, not {type(database)}")
+            raise TypeError(f"FileService must be initialized with a real pymongo.database.Database instance, not {type(database)}")
         self.fs = gridfs.GridFS(database)
 
     def save_file(self, file_stream: FileStorage, user_id: str, course_id: str) -> ObjectId:
-        """Streams a file directly to GridFS and returns the new file's ObjectId."""
+        """
+        Streams a file directly to GridFS and returns the new file's ObjectId.
+        This is a safe, synchronous, and permanent save operation.
+        """
         try:
             file_id = self.fs.put(
                 file_stream,
@@ -50,13 +52,7 @@ class FileService:
             raise
 
 def get_file_service() -> FileService:
-    """
-    Factory function to get a FileService instance.
-    It uses the Flask 'g' object to ensure a single instance per request.
-    This is the ONLY safe way to use it within the Flask app.
-    """
+    """Factory function to get a FileService instance within a Flask request context."""
     if 'file_service' not in g:
-        # The 'db' proxy resolves to the real database object here
-        # because this function is only ever called within a request context.
         g.file_service = FileService(db)
     return g.file_service

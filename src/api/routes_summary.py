@@ -1,13 +1,9 @@
-import uuid
 from flask import Blueprint, request, jsonify, url_for
 from flask_login import login_required, current_user
-from werkzeug.utils import secure_filename
 
 from src.infrastructure.database import db
-from src.infrastructure.repositories import MongoDocumentRepository, MongoTaskRepository
+from src.infrastructure.repositories import MongoTaskRepository
 from src.infrastructure.rabbitmq import publish_task
-from src.domain.models.db_models import Document, Task, DocumentStatus
-from src.services.file_service import get_file_service # IMPORT THE FACTORY
 from sb_utils.logger_utils import logger
 
 summary_bp = Blueprint('summary_bp', __name__)
@@ -15,49 +11,32 @@ summary_bp = Blueprint('summary_bp', __name__)
 @summary_bp.route('/trigger', methods=['POST'])
 @login_required
 def trigger_summary():
+    """
+    (CORRECTED) This route ONLY triggers the 'summary' AI task.
+    It assumes the document has already been processed.
+    """
     user_id = current_user.id
-    course_id = request.form.get('course_id', 'default')
-    text_input = request.form.get('text', '').strip()
-    file = request.files.get('file')
     document_id = request.form.get('document_id')
+    query = request.form.get('query', 'general summary') # For follow-up questions
 
-    task_repo = MongoTaskRepository(db)
-    doc_repo = MongoDocumentRepository(db)
-    task_body = {}
+    if not document_id:
+        return jsonify({"error": "document_id is required"}), 400
 
     try:
-        if document_id:
-            doc = doc_repo.get_by_id(document_id)
-            if not doc or doc.user_id != user_id: return jsonify({"error": "Document not found"}), 404
-            task_body['document_id'] = document_id
-
-        elif text_input:
-            file_service = get_file_service() # Get service instance safely
-            document = Document(_id=str(uuid.uuid4()), user_id=user_id, course_id=course_id, filename="הדבקת טקסט.txt", content_text="", status=DocumentStatus.READY, gridfs_id=None)
-            gridfs_id = file_service.fs.put(text_input.encode('utf-8'), filename=document.filename, metadata={"owner_id": user_id, "course_id": course_id})
-            document.gridfs_id = str(gridfs_id)
-            doc_repo.create(document)
-            task_body['document_id'] = document.id
-
-        elif file and file.filename:
-            file_service = get_file_service() # Get service instance safely
-            filename = secure_filename(file.filename)
-            gridfs_id = file_service.save_file(file, user_id, course_id)
-
-            document = Document(_id=str(uuid.uuid4()), user_id=user_id, course_id=course_id, filename=filename, content_text="[File uploaded, pending processing]", status=DocumentStatus.UPLOADED, gridfs_id=str(gridfs_id))
-            doc_repo.create(document)
-            task_body['document_id'] = document.id
+        task_repo = MongoTaskRepository(db)
+        task = task_repo.create(user_id=user_id, document_id=document_id, task_type='summary')
         
-        else:
-            return jsonify({"error": "No input provided"}), 400
-
-        task = task_repo.create(user_id=user_id, document_id=task_body['document_id'], task_type='summary')
-        task_body['task_id'] = task.id
-
-        publish_task(queue_name='summarize', task_body=task_body)
+        publish_task(
+            queue_name='summarize',
+            task_body={
+                "task_id": task.id,
+                "document_id": document_id,
+                "query": query
+            }
+        )
 
         return jsonify({
-            "status": "processing",
+            "status": "processing_summary",
             "polling_url": url_for('task_bp.get_task_status_route', task_id=task.id)
         }), 202
 

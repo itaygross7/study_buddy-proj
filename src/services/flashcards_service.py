@@ -4,27 +4,24 @@ from .ai_client import ai_client
 from src.infrastructure.database import db as flask_db
 from src.domain.models.db_models import FlashcardSet, Flashcard
 from sb_utils.logger_utils import logger
-from src.utils.smart_parser import get_smart_context # Import the centralized utility
+from src.utils.smart_parser import get_smart_context
 
 def _get_db(db_conn: Database = None) -> Database:
     return db_conn or flask_db
 
-def generate_flashcards(document_id: str, document_content: str, num_cards: int, db_conn: Database = None) -> str:
+def generate_flashcards(document_id: str, query: str, num_cards: int, db_conn: Database = None) -> str:
     """
-    Uses the AI client to generate flashcards.
-    Attempts to use the Smart Repository for context.
+    Generates flashcards using smart context retrieval.
     """
     db = _get_db(db_conn)
     logger.info(f"Generating {num_cards} flashcards for document_id: {document_id}")
 
-    # --- ADDITIVE INJECTION POINT (Retrieval) ---
-    context = get_smart_context(document_id, query="generate flashcards")
-
+    # --- SNIPER RETRIEVAL ---
+    context = get_smart_context(document_id, query=query)
     if context is None:
-        # FALLBACK: If smart retrieval fails, use the original full-document logic.
-        logger.info(f"Falling back to full document context for flashcards on doc {document_id}.")
-        context = document_content
-    # --- END OF INJECTION ---
+        logger.error(f"Could not generate flashcards for doc {document_id}: No smart context found.")
+        raise ValueError("Could not find relevant context in the document to generate flashcards.")
+    # --- END ---
     
     prompt = f"""
     Based on the provided text, generate exactly {num_cards} flashcards.
@@ -37,7 +34,7 @@ def generate_flashcards(document_id: str, document_content: str, num_cards: int,
     Do not include any other text or explanation in your response.
     """
     
-    json_string = ai_client.generate_text(prompt=prompt, context=context, task_type="flashcards")
+    json_string = ai_client.generate_text(prompt=prompt, context=context, task_type="flashcards", require_json=True)
     
     try:
         cards_data = json.loads(json_string)
@@ -46,9 +43,10 @@ def generate_flashcards(document_id: str, document_content: str, num_cards: int,
         flashcard_set = FlashcardSet(
             _id=f"flashcards_{document_id}",
             document_id=document_id,
-            cards=cards
+            cards=cards,
+            course_id=db.documents.find_one({"_id": document_id}).get("course_id")
         )
-        db.flashcards.insert_one(flashcard_set.dict(by_alias=True))
+        db.flashcard_sets.insert_one(flashcard_set.dict(by_alias=True))
         
         logger.info(f"Successfully created and saved flashcard set for document {document_id}")
         return flashcard_set.id
