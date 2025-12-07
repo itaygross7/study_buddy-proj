@@ -9,11 +9,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    # --- THIS IS THE FIX ---
-    # Restore the port mapping to allow the tunnel to connect.
     ports:
       - "5000:5000"
-    # --- END OF FIX ---
     volumes:
       - ./src:/app/src
       - ./sb_utils:/app/sb_utils
@@ -114,7 +111,7 @@ services:
     image: rabbitmq:3.9-management
     container_name: studybuddy_rabbitmq
     ports:
-      - "127.0.0.1:15672:15672" 
+      - "127.0.0.1:15672:15672"
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-user}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS:-password}

@@ -28,11 +28,11 @@ def _get_db(db_conn: Database = None) -> Database:
 def check_mongodb(db_conn: Database = None) -> dict:
     """Check MongoDB connection and basic operations."""
     db = _get_db(db_conn)
-    
+
     try:
         # Test connection
         db.command('ping')
-        
+
         # Test write operation
         test_doc = {
             "_id": "health_check_test",
@@ -40,10 +40,10 @@ def check_mongodb(db_conn: Database = None) -> dict:
             "type": "health_check"
         }
         db.health_checks.replace_one({"_id": "health_check_test"}, test_doc, upsert=True)
-        
+
         # Test read operation
         result = db.health_checks.find_one({"_id": "health_check_test"})
-        
+
         if result:
             return {
                 "status": "healthy",
@@ -56,7 +56,7 @@ def check_mongodb(db_conn: Database = None) -> dict:
                 "status": "degraded",
                 "error": "Write succeeded but read failed"
             }
-            
+
     except Exception as e:
         logger.error(f"MongoDB health check failed: {e}", exc_info=True)
         return {
@@ -72,11 +72,11 @@ def check_rabbitmq() -> dict:
             pika.URLParameters(settings.RABBITMQ_URI)
         )
         channel = connection.channel()
-        
+
         # Check if queues exist
         queues = ['file_processing', 'summarize', 'flashcards', 'assess', 'homework', 'avner_chat']
         queue_status = {}
-        
+
         for queue_name in queues:
             try:
                 method = channel.queue_declare(queue=queue_name, durable=True, passive=True)
@@ -92,16 +92,16 @@ def check_rabbitmq() -> dict:
                 }
         
         connection.close()
-        
+
         # Check if any queue has consumers (worker is running)
         has_consumers = any(q.get("consumer_count", 0) > 0 for q in queue_status.values())
-        
+
         return {
             "status": "healthy",
             "queues": queue_status,
             "worker_active": has_consumers
         }
-        
+
     except Exception as e:
         logger.error(f"RabbitMQ health check failed: {e}", exc_info=True)
         return {
@@ -114,7 +114,7 @@ def check_rabbitmq() -> dict:
 def check_ai_models() -> dict:
     """Test AI model connectivity and functionality."""
     results = {}
-    
+
     # Test OpenAI
     if settings.OPENAI_API_KEY:
         try:
@@ -123,7 +123,7 @@ def check_ai_models() -> dict:
             test_response = ai_client._call_gpt_mini(
                 prompt="You are a test bot. Respond with exactly 'OK'. Say 'OK' if you can read this."
             )
-            
+
             results["openai"] = {
                 "status": "healthy" if test_response else "degraded",
                 "model": settings.SB_OPENAI_MODEL,
@@ -142,7 +142,7 @@ def check_ai_models() -> dict:
             "status": "not_configured",
             "message": "No API key provided"
         }
-    
+
     # Test Gemini
     if settings.GEMINI_API_KEY:
         try:
@@ -151,7 +151,7 @@ def check_ai_models() -> dict:
             test_response = ai_client._call_gemini_flash(
                 prompt="You are a test bot. Respond with exactly 'OK'. Say 'OK' if you can read this."
             )
-            
+
             results["gemini"] = {
                 "status": "healthy" if test_response else "degraded",
                 "model": settings.SB_GEMINI_MODEL,
@@ -170,17 +170,17 @@ def check_ai_models() -> dict:
             "status": "not_configured",
             "message": "No API key provided"
         }
-    
+
     # Determine overall AI status
     healthy_models = sum(1 for r in results.values() if r.get("status") == "healthy")
-    
+
     if healthy_models == 0:
         overall_status = "unhealthy"
     elif healthy_models < len([k for k in results if results[k].get("status") != "not_configured"]):
         overall_status = "degraded"
     else:
         overall_status = "healthy"
-    
+
     return {
         "status": overall_status,
         "default_provider": settings.SB_DEFAULT_PROVIDER,
@@ -194,21 +194,21 @@ def check_file_upload() -> dict:
     try:
         # Create a test text file
         test_content = "This is a health check test file. שלום! Testing Hebrew text."
-        
+
         with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False, encoding='utf-8') as f:
             f.write(test_content)
             test_file_path = f.name
-        
+
         try:
             # Test file processing
             from src.utils.file_processing import process_file_from_path
-            
+
             extracted_text = process_file_from_path(test_file_path, "health_check_test.txt")
-            
+
             # Clean up
             if os.path.exists(test_file_path):
                 os.remove(test_file_path)
-            
+
             # Verify extraction worked
             if extracted_text and "health check test" in extracted_text.lower():
                 return {
@@ -223,13 +223,13 @@ def check_file_upload() -> dict:
                     "text_extraction_working": False,
                     "error": "Text extraction returned unexpected result"
                 }
-                
+
         except Exception as proc_error:
             # Clean up on error
             if os.path.exists(test_file_path):
                 os.remove(test_file_path)
             raise proc_error
-            
+
     except Exception as e:
         logger.error(f"File upload health check failed: {e}", exc_info=True)
         return {
@@ -248,14 +248,14 @@ def check_git_connectivity() -> dict:
             text=True,
             timeout=5
         )
-        
+
         if result.returncode != 0:
             return {
                 "status": "unhealthy",
                 "error": "Not a git repository",
                 "can_pull": False
             }
-        
+
         # Get current branch
         branch_result = subprocess.run(
             ['git', 'rev-parse', '--abbrev-ref', 'HEAD'],
@@ -264,7 +264,7 @@ def check_git_connectivity() -> dict:
             timeout=5
         )
         current_branch = branch_result.stdout.strip() if branch_result.returncode == 0 else "unknown"
-        
+
         # Get current commit
         commit_result = subprocess.run(
             ['git', 'rev-parse', '--short', 'HEAD'],
@@ -273,7 +273,7 @@ def check_git_connectivity() -> dict:
             timeout=5
         )
         current_commit = commit_result.stdout.strip() if commit_result.returncode == 0 else "unknown"
-        
+
         # Test git fetch (doesn't modify local files, just checks connectivity)
         fetch_result = subprocess.run(
             ['git', 'fetch', '--dry-run'],
@@ -281,9 +281,9 @@ def check_git_connectivity() -> dict:
             text=True,
             timeout=10
         )
-        
+
         can_fetch = fetch_result.returncode == 0
-        
+
         # Check for uncommitted changes
         status_result = subprocess.run(
             ['git', 'status', '--porcelain'],
@@ -292,7 +292,7 @@ def check_git_connectivity() -> dict:
             timeout=5
         )
         has_changes = bool(status_result.stdout.strip()) if status_result.returncode == 0 else False
-        
+
         return {
             "status": "healthy" if can_fetch else "degraded",
             "current_branch": current_branch,
@@ -302,7 +302,7 @@ def check_git_connectivity() -> dict:
             "has_uncommitted_changes": has_changes,
             "auto_update_possible": can_fetch and not has_changes
         }
-        
+
     except subprocess.TimeoutExpired:
         return {
             "status": "unhealthy",
@@ -327,7 +327,7 @@ def check_git_connectivity() -> dict:
 def get_comprehensive_health(db_conn: Database = None) -> dict:
     """
     Run all health checks and return comprehensive status.
-    
+
     Returns:
         Dict with overall status and individual component statuses
     """
@@ -342,16 +342,16 @@ def get_comprehensive_health(db_conn: Database = None) -> dict:
     
     # MongoDB
     health_report["components"]["mongodb"] = check_mongodb(db_conn)
-    
+
     # RabbitMQ and Worker
     health_report["components"]["rabbitmq"] = check_rabbitmq()
-    
+
     # AI Models
     health_report["components"]["ai_models"] = check_ai_models()
-    
+
     # File Upload
     health_report["components"]["file_upload"] = check_file_upload()
-    
+
     # Git Connectivity
     health_report["components"]["git"] = check_git_connectivity()
     
@@ -364,7 +364,7 @@ def get_comprehensive_health(db_conn: Database = None) -> dict:
         health_report["overall_status"] = "degraded"
     else:
         health_report["overall_status"] = "healthy"
-    
+
     # Add summary
     health_report["summary"] = {
         "healthy_components": sum(1 for s in component_statuses if s == "healthy"),
@@ -372,7 +372,7 @@ def get_comprehensive_health(db_conn: Database = None) -> dict:
         "unhealthy_components": sum(1 for s in component_statuses if s == "unhealthy"),
         "total_components": len(component_statuses)
     }
-    
+
     logger.info(f"Health check complete: {health_report['overall_status']}")
-    
+
     return health_report
