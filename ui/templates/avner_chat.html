@@ -226,7 +226,7 @@
             attempts++;
             
             const xhr = new XMLHttpRequest();
-            xhr.open('GET', '/api/task/' + taskId + '/status', true);
+            xhr.open('GET', '/api/tasks/' + taskId, true);
             
             xhr.onload = function() {
                 if (xhr.status === 200) {

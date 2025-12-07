@@ -18,15 +18,17 @@ upload_bp = Blueprint('upload_bp', __name__)
 @login_required
 def upload_files_route():
     """
-    (CORRECTED) This route ONLY handles saving the file and creating a
-    'file_processing' task. It does not trigger any AI.
+    This route handles:
+    - Saving the uploaded file
+    - Creating a 'file_processing' task
+    - Returning a polling URL + task_id for the frontend
     """
     user_id = current_user.id
     course_id = request.form.get('course_id', 'default')
     file = request.files.get('file')
 
     if not file or not file.filename:
-        return jsonify({"error": "No file selected"}), 400
+        return jsonify({"error": "לא נבחר קובץ"}), 400
 
     try:
         file_service = get_file_service()
@@ -46,21 +48,29 @@ def upload_files_route():
         doc_repo.create(document)
 
         task_repo = MongoTaskRepository(db)
-        task = task_repo.create(user_id=user_id, document_id=document.id, task_type='file_processing')
+        task = task_repo.create(
+            user_id=user_id,
+            document_id=document.id,
+            task_type='file_processing'
+        )
 
         publish_task(
             queue_name='file_processing',
-            task_body={"task_id": task.id, "document_id": document.id}
+            task_body={
+                "task_id": task.id,
+                "document_id": document.id
+            }
         )
-        
+
         logger.info(f"File '{filename}' queued for processing. Task ID: {task.id}")
-        
-        # Return the polling URL for the FILE PROCESSING task.
+
+        # ✅ Return both polling_url AND task_id
         return jsonify({
             "status": "processing_file",
+            "task_id": str(task.id),
             "polling_url": url_for('task_bp.get_task_status_route', task_id=task.id)
         }), 202
 
     except Exception as e:
         logger.error(f"File upload failed for user {user_id}: {e}", exc_info=True)
-        return jsonify({"error": "An internal server error occurred."}), 500
+        return jsonify({"error": "אירעה שגיאה פנימית. נסה שוב מאוחר יותר."}), 500
