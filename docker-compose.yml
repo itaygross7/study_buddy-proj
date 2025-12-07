@@ -1,10 +1,19 @@
 version: '3.8'
 
+networks:
+  studybuddy_network:
+    driver: bridge
+
 services:
   app:
     build:
       context: .
       dockerfile: Dockerfile
+    # --- THIS IS THE FIX ---
+    # Restore the port mapping to allow the tunnel to connect.
+    ports:
+      - "5000:5000"
+    # --- END OF FIX ---
     volumes:
       - ./src:/app/src
       - ./sb_utils:/app/sb_utils
@@ -45,7 +54,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    # Scale this service using: docker-compose up --scale worker=X
     command: ["python", "worker.py"]
     volumes:
       - ./src:/app/src
@@ -77,8 +85,7 @@ services:
       - ./src:/app/src
       - ./sb_utils:/app/sb_utils
       - ./health_monitor.py:/app/health_monitor.py
-      # Added :ro for security (Read-Only access to socket)
-      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/run/docker.sock:/var/run/docker.sock
     env_file: .env
     depends_on:
       - app
@@ -107,7 +114,7 @@ services:
     image: rabbitmq:3.9-management
     container_name: studybuddy_rabbitmq
     ports:
-      - "127.0.0.1:15672:15672"
+      - "127.0.0.1:15672:15672" 
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-user}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS:-password}
