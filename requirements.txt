@@ -1,34 +1,56 @@
+# --- Flask + App Layer ---
 flask
-gunicorn
 flask-cors
 flask-login
 Flask-Babel
+werkzeug
+
+# --- Server (Production) ---
+gunicorn
+
+# --- Background Workers / Messaging ---
 celery
-pymongo
 pika
 tenacity
-google-generativeai
+schedule
+
+# --- Database + GridFS ---
+pymongo
+gridfs
+
+# --- AI Clients ---
 openai
-python-dotenv
+google-generativeai
+httpx
+authlib
+
+# --- Configuration / Validation ---
 pydantic
 pydantic-settings
+python-dotenv
+
+# --- Networking / Utils ---
 requests
-python-magic-bin; sys_platform == 'win32'
-python-magic; sys_platform != 'win32'
-beautifulsoup4
-markdown
-weasyprint
-werkzeug
 rich
 python-json-logger
+psutil
+
+# --- File Processing + Parsing ---
+python-magic-bin; sys_platform == "win32"
+python-magic; sys_platform != "win32"
+beautifulsoup4
+markdown
 pypdf2
 python-docx
 python-pptx
+
+# Tesseract OCR (library only; binary installed separately)
 pytesseract
 Pillow
+
+# --- Authentication ---
 bcrypt
 email-validator
-authlib
-httpx
-psutil
-schedule
+
+# --- PDF / DOCX rendering (HTML → PDF) ---
+weasyprint
