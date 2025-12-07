@@ -126,9 +126,6 @@ services:
     networks:
       - studybuddy_network
 
-networks:
-  studybuddy_network:
-    driver: bridge
 
 volumes:
   mongo_data:
