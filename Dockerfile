@@ -22,16 +22,19 @@ RUN curl -sL https://deb.nodesource.com/setup_18.x | bash - && \
 
 WORKDIR /app
 
-# Install Python dependencies
-COPY requirements.txt ./
+# Install Python dependencies (root requirements.txt is still the main one)
+COPY requirements.txt ./requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Install and build frontend assets
-COPY package.json ./
+# Install and build frontend assets (from /ui)
+COPY package.json ./package.json
 RUN npm install
-COPY tailwind.config.js .
+
+COPY tailwind.config.js ./tailwind.config.js
 COPY ui/templates ./ui/templates
 COPY ui/static/css/input.css ./ui/static/css/input.css
+
+# This should generate ui/static/css/styles.css
 RUN npm run tailwind:build
 
 # --- Final Stage ---
@@ -55,8 +58,10 @@ RUN apt-get update && apt-get install -y \
 COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
 
-# Copy built static assets and application code
+# Copy built static assets
 COPY --from=builder /app/ui/static/css/styles.css ./ui/static/css/styles.css
+
+# Copy application code (existing backend)
 COPY src ./src
 COPY ui ./ui
 COPY sb_utils ./sb_utils
@@ -64,6 +69,13 @@ COPY services ./services
 COPY infra ./infra
 COPY app.py .
 COPY worker.py .
+COPY health_monitor.py .
+
+# 🔹 NEW: copy new_backend helpers
+COPY new_backend ./new_backend
+
+# Ensure /app is on Python path (so 'import new_backend', 'import src' etc. work)
+ENV PYTHONPATH=/app
 
 # Set environment variables
 ENV FLASK_APP=app:create_app()
