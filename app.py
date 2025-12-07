@@ -16,7 +16,7 @@ from src.api.routes_summary import summary_bp
 from src.api.routes_flashcards import flashcards_bp
 from src.api.routes_assess import assess_bp
 from src.api.routes_homework import homework_bp
-# from src.api.routes_upload import upload_bp # This is the line to be removed
+from src.api.routes_upload import upload_bp # RESTORED
 from src.api.routes_task import task_bp
 from src.api.routes_results import results_bp
 from src.api.routes_pdf import pdf_bp
@@ -86,7 +86,7 @@ def create_app():
     app.register_blueprint(flashcards_bp, url_prefix='/api/flashcards')
     app.register_blueprint(assess_bp, url_prefix='/api/assess')
     app.register_blueprint(homework_bp, url_prefix='/api/homework')
-    # app.register_blueprint(upload_bp, url_prefix='/api/upload') # This is the line to be removed
+    app.register_blueprint(upload_bp, url_prefix='/api/upload') # RESTORED
     app.register_blueprint(task_bp, url_prefix='/api/tasks')
     app.register_blueprint(results_bp, url_prefix='/results')
     app.register_blueprint(pdf_bp, url_prefix='/export/pdf')

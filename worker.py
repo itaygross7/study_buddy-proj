@@ -11,7 +11,7 @@ from pymongo import MongoClient
 from src.infrastructure.config import settings
 from src.infrastructure.repositories import MongoTaskRepository, MongoDocumentRepository
 from src.services import summary_service, flashcards_service, assess_service, homework_service, glossary_service, avner_service
-from src.domain.models.db_models import TaskStatus, DocumentStatus
+from src.domain.models.db_models import TaskStatus
 from src.domain.errors import DocumentNotFoundError
 from sb_utils.logger_utils import logger
 from src.utils.file_processing import process_file_from_path
@@ -39,54 +39,63 @@ def process_task(body: bytes):
     logger.info(f"Starting processing for task {task_id}", extra={"queue": queue_name, "task_id": task_id})
     task_repo.update_status(task_id, TaskStatus.PROCESSING)
 
-    text_content = ""
-    document_id = data.get('document_id')
-
-    if document_id:
-        doc = doc_repo.get_by_id(document_id)
-        if not doc: raise DocumentNotFoundError(f"Document {document_id} not found.")
-        text_content = doc.content_text
-
-        if 'temp_path' in data:
-            temp_path = data['temp_path']
-            filename = data['filename']
-            logger.info(f"Worker is processing file '{filename}' for task {task_id}")
-            try:
-                text_content = process_file_from_path(temp_path, filename)
+    result_id = None
+    if queue_name == 'file_processing':
+        document_id = data['document_id']
+        temp_path = data['temp_path']
+        filename = data['filename']
+        
+        try:
+            text_content = process_file_from_path(temp_path, filename)
+            doc = doc_repo.get_by_id(document_id)
+            if doc:
                 doc.content_text = text_content
-                doc.status = DocumentStatus.READY
                 doc_repo.update(doc)
-                logger.info(f"Successfully extracted text from file '{filename}'", extra={"document_id": document_id})
+                logger.info(f"Successfully processed file '{filename}'", extra={"document_id": document_id})
+                
                 try:
                     index_document_chunks(db=db_conn, document_id=doc.id, filename=doc.filename, text=text_content, course_id=doc.course_id, user_id=doc.user_id)
                 except Exception as chunk_error:
                     logger.error(f"Failed to index chunks for '{filename}': {chunk_error}", exc_info=True)
-            finally:
-                if os.path.exists(temp_path):
-                    shutil.rmtree(os.path.dirname(temp_path), ignore_errors=True)
-    
-    result_id = None
-    if queue_name == 'summarize':
-        if not document_id: raise ValueError("Summarize task requires a document_id.")
-        result_id = summary_service.generate_summary(document_id, text_content, db_conn)
+            
+            result_id = document_id
+            
+        except Exception as e:
+            logger.error(f"File processing failed for '{filename}': {e}", exc_info=True)
+            doc = doc_repo.get_by_id(document_id)
+            if doc:
+                doc.content_text = f"[שגיאה בעיבוד קובץ: {str(e)}]"
+                doc_repo.update(doc)
+            raise
+        finally:
+            if os.path.exists(temp_path):
+                shutil.rmtree(os.path.dirname(temp_path), ignore_errors=True)
+
+    elif queue_name == 'summarize':
+        doc = doc_repo.get_by_id(data['document_id'])
+        if not doc: raise DocumentNotFoundError(f"Document {data['document_id']} not found.")
+        result_id = summary_service.generate_summary(doc.id, doc.content_text, db_conn)
+        
         try:
-            glossary_service.extract_terms_from_content(document_id, text_content, data.get('course_id'), data.get('user_id'), data.get('filename'), db_conn)
+            glossary_service.extract_terms_from_content(doc.id, doc.content_text, data.get('course_id'), data.get('user_id'), data.get('filename'), db_conn)
         except Exception as e:
             logger.warning(f"Glossary extraction failed (non-critical): {e}")
 
     elif queue_name == 'flashcards':
-        if not document_id: raise ValueError("Flashcards task requires a document_id.")
-        result_id = flashcards_service.generate_flashcards(document_id, text_content, data['num_cards'], db_conn)
+        doc = doc_repo.get_by_id(data['document_id'])
+        if not doc: raise DocumentNotFoundError(f"Document {data['document_id']} not found.")
+        result_id = flashcards_service.generate_flashcards(doc.id, doc.content_text, data['num_cards'], db_conn)
 
     elif queue_name == 'assess':
-        if not document_id: raise ValueError("Assess task requires a document_id.")
-        result_id = assess_service.generate_assessment(document_id, text_content, data['num_questions'], data['question_type'], db_conn)
+        doc = doc_repo.get_by_id(data['document_id'])
+        if not doc: raise DocumentNotFoundError(f"Document {data['document_id']} not found.")
+        result_id = assess_service.generate_assessment(doc.id, doc.content_text, data['num_questions'], data['question_type'], db_conn)
 
     elif queue_name == 'homework':
         result_id = homework_service.solve_homework_problem(data['problem_statement'])
     
     elif queue_name == 'avner_chat':
-        answer = avner_service.answer_question(question=data['question'], context=text_content, language=data.get('language', 'he'), baby_mode=data.get('baby_mode', False), user_id=data.get('user_id', ''), db_conn=db_conn)
+        answer = avner_service.answer_question(question=data['question'], context=data.get('context', ''), language=data.get('language', 'he'), baby_mode=data.get('baby_mode', False), user_id=data.get('user_id', ''), db_conn=db_conn)
         result_doc = {"_id": str(uuid.uuid4()), "answer": answer}
         db_conn.avner_results.insert_one(result_doc)
         result_id = result_doc["_id"]
@@ -120,7 +129,7 @@ def main():
             channel = connection.channel()
             logger.info("Worker connected to RabbitMQ.")
 
-            queues = ['summarize', 'flashcards', 'assess', 'homework', 'avner_chat']
+            queues = ['file_processing', 'summarize', 'flashcards', 'assess', 'homework', 'avner_chat']
             for q in queues:
                 channel.queue_declare(queue=q, durable=True)
             channel.basic_qos(prefetch_count=1)
