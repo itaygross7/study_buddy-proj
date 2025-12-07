@@ -1,51 +1,77 @@
 [[source]]
+name = "pypi"
 url = "https://pypi.org/simple"
 verify_ssl = true
-name = "pypi"
+
+[requires]
+python_version = "3.11"
 
 [packages]
+
+# --- Flask + Server ---
 flask = "*"
-gunicorn = "*" # Added for production server
 flask-cors = "*"
 flask-login = "*"
-flask-babel = "*"
-celery = "*"
-pymongo = "*"
-pika = "*"
-tenacity = "*"
-google-generativeai = "*"
-openai = "*"
-python-dotenv = "*"
+Flask-Babel = "*"
+werkzeug = "*"
+gunicorn = "*"
+
+# --- Backend / Config ---
 pydantic = "*"
 pydantic-settings = "*"
-werkzeug = "*"
-# Logging
+python-dotenv = "*"
 python-json-logger = "*"
 rich = "*"
-# File Processing
-python-magic = "*"
+
+# --- Database ---
+pymongo = "*"
+gridfs = "*"
+
+# --- Messaging / Workers ---
+celery = "*"
+pika = "*"
+tenacity = "*"
+schedule = "*"
+
+# --- AI Clients ---
+openai = "*"
+google-generativeai = "*"
+httpx = "*"
+authlib = "*"
+
+# --- File Utils ---
+requests = "*"
+python-magic = {version = "*", markers = "sys_platform != 'win32'"}
+python-magic-bin = {version = "*", markers = "sys_platform == 'win32'"}
 beautifulsoup4 = "*"
+markdown = "*"
+
+# --- Document Parsing ---
 pypdf2 = "*"
 python-docx = "*"
 python-pptx = "*"
+
+# --- OCR + Image Processing ---
 pytesseract = "*"
 Pillow = "*"
-# PDF Export
-weasyprint = "*"
-# Authentication
+
+# --- Security ---
 bcrypt = "*"
 email-validator = "*"
-authlib = "*"
-httpx = "*"
+
+# --- PDF Rendering ---
+weasyprint = "*"
 
 [dev-packages]
 pytest = "*"
 pytest-cov = "*"
-pytest-mock = "*"
-mongomock = "*"
-faker = "*"
 black = "*"
+isort = "*"
 mypy = "*"
 
-[requires]
-python_version = "3.11"
+[scripts]
+start = "gunicorn -w 4 -b 0.0.0.0:5000 app:app"
+worker = "celery -A src.infrastructure.celery_app worker --loglevel=info"
+
+[packages.extras]
+# You can add extras here later if needed
