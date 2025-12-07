@@ -40,7 +40,7 @@
 {% if not has_content %}
 <!-- Empty State - Upload First -->
 <div class="bg-cream rounded-2xl p-8 shadow-md border-2 border-golden-yellow text-center">
-    <img src="/avner/avner_looking_at_page_acratching_head.jpeg"
+    <img src="{{ url_for('serve_avner', filename='avner_looking_at_page_acratching_head.jpeg') }}"
          alt="אבנר מחכה"
          class="w-24 h-24 rounded-full mx-auto mb-4 border-4 border-golden-yellow shadow-md">
     <h2 class="text-2xl font-bold text-dark-brown mb-3">הקורס ריק! 📭</h2>
@@ -76,7 +76,7 @@
                 <span class="text-cozy-brown text-sm">או</span>
                 <div class="flex-1 border-t border-warm-gray"></div>
             </div>
-            
+
             <!-- File Upload -->
             <div class="mb-4">
                 <label class="block text-sm font-medium text-dark-brown mb-2">העלה קבצים (אחד או יותר):</label>
@@ -92,15 +92,15 @@
                     <p class="text-xs text-cozy-brown mt-1">PDF, Word (.docx), PowerPoint (.pptx), HTML, תמונות או טקסט (עד 50MB לקובץ) - ניתן לבחור קבצים מרובים</p>
                 </div>
             </div>
-            
+
             <!-- Upload Status with Avner Animation -->
             <div id="upload-status" class="hidden mb-4 text-center">
-                <img id="upload-avner-img" src="/avner/loading.jpeg"
+                <img id="upload-avner-img" src="{{ url_for('serve_avner', filename='loading.jpeg') }}"
                      alt="אבנר מעלה"
                      class="w-20 h-20 rounded-full mx-auto mb-2 border-2 border-golden-yellow shadow-md animate-pulse">
                 <p id="upload-status-text" class="text-sm font-medium text-cozy-brown"></p>
             </div>
-            
+
             <button type="submit" id="upload-submit-btn"
                 class="w-full bg-golden-yellow text-dark-brown font-bold py-3 px-6 rounded-xl hover:bg-warm-yellow transition-colors shadow-md">
                 📤 העלה לקורס
@@ -113,7 +113,7 @@
 <!-- Course Has Content - Show Tools -->
 <div class="mb-6 bg-success/10 border-2 border-success rounded-xl p-4">
     <div class="flex items-center gap-3">
-        <img src="/avner/avner_celebrating.jpeg" alt="אבנר שמח" class="w-12 h-12 rounded-full border-2 border-success">
+        <img src="{{ url_for('serve_avner', filename='avner_celebrating.jpeg') }}" alt="אבנר שמח" class="w-12 h-12 rounded-full border-2 border-success">
         <div>
             <h3 class="font-bold text-dark-brown text-lg">✅ הכל מוכן!</h3>
             <p class="text-cozy-brown text-sm">{{ documents|length }} מסמכים בקורס - כל הכלים זמינים לשימוש</p>
@@ -187,15 +187,19 @@
         </div>
 
         <!-- Ask Avner about this course -->
-        <div class="bg-cozy-brown rounded-xl p-5 flex items-center gap-4">
-            <img src="/avner/avner_signing_ok.jpeg" alt="אבנר" class="w-14 h-14 rounded-full border-2 border-golden-yellow">
-            <div class="flex-1">
-                <h3 class="font-bold text-cream">שאל את אבנר על הקורס הזה</h3>
-                <p class="text-warm-yellow text-sm">אבנר מכיר את כל החומר שהעלית ויכול לענות על שאלות!</p>
+        <div class="bg-capy-brown text-golden-yellow rounded-2xl p-6 flex items-center justify-between mt-8">
+            <div>
+                <h3 class="text-lg font-bold text-golden-yellow">
+                    שאל את אבנר על הקורס הזה
+                </h3>
+                <p class="text-warm-yellow text-sm">
+                    אבנר מכיר את כל החומר שהעלית ויכול לענות על שאלות!
+                </p>
             </div>
-            <button onclick="askAboutCourse()" class="bg-golden-yellow text-dark-brown font-bold px-4 py-2 rounded-xl hover:bg-warm-yellow transition-colors">
+            <a href="{{ url_for('library.course_tool', course_id=course.id, tool='tutor') }}"
+               class="bg-golden-yellow text-dark-brown font-bold px-4 py-2 rounded-xl hover:bg-warm-yellow transition-colors">
                 שאל
-            </button>
+            </a>
         </div>
     </div>
 
@@ -231,7 +235,9 @@
                 <div class="flex items-center justify-between p-2 bg-warm-beige rounded-lg text-sm">
                     <span class="truncate flex-1" title="{{ doc.filename }}">{{ doc.original_filename or doc.filename }}</span>
                     <div class="flex items-center gap-2">
-                        <span class="text-xs text-cozy-brown">{{ (doc.file_size / 1024)|round|int }}KB</span>
+                        <span class="text-xs text-cozy-brown">
+                            {{ ((doc.file_size or 0) / 1024)|round|int }}KB
+                        </span>
                         <button onclick="deleteDocument('{{ doc._id }}')"
                                 class="text-red-600 hover:text-red-800 text-xs px-2 py-1 rounded hover:bg-red-100"
                                 title="מחק מסמך">
@@ -327,7 +333,6 @@
 
             const formData = new FormData(this);
             const submitBtn = document.getElementById('upload-submit-btn');
-            const originalText = submitBtn.innerHTML;
             const statusDiv = document.getElementById('upload-status');
             const statusText = document.getElementById('upload-status-text');
             const avnerImg = document.getElementById('upload-avner-img');
@@ -355,7 +360,7 @@
 
             // Show Avner loading animation
             statusDiv.classList.remove('hidden');
-            avnerImg.src = '/avner/loading.jpeg';
+            avnerImg.src = "{{ url_for('serve_avner', filename='loading.jpeg') }}";
             avnerImg.classList.add('animate-pulse');
 
             if (files.length > 1) {
@@ -380,9 +385,9 @@
             xhr.onload = function() {
                 if (xhr.status >= 200 && xhr.status < 300) {
                     try {
-                        const data = JSON.parse(xhr.responseText);
+                        JSON.parse(xhr.responseText);
 
-                        avnerImg.src = '/avner/avner_celebrating.jpeg';
+                        avnerImg.src = "{{ url_for('serve_avner', filename='avner_celebrating.jpeg') }}";
                         avnerImg.classList.remove('animate-pulse');
 
                         if (files.length > 1) {
@@ -455,9 +460,9 @@
             // Disable button and show loading with Avner
             submitBtn.disabled = true;
             if (files.length > 1) {
-                submitBtn.innerHTML = '<img src="/avner/loading.jpeg" class="w-6 h-6 inline-block animate-pulse"> מעלה ' + files.length + ' קבצים...';
+                submitBtn.innerHTML = '<img src="{{ url_for('serve_avner', filename='loading.jpeg') }}" class="w-6 h-6 inline-block animate-pulse"> מעלה ' + files.length + ' קבצים...';
             } else {
-                submitBtn.innerHTML = '<img src="/avner/loading.jpeg" class="w-6 h-6 inline-block animate-pulse"> מעלה...';
+                submitBtn.innerHTML = '<img src="{{ url_for('serve_avner', filename='loading.jpeg') }}" class="w-6 h-6 inline-block animate-pulse"> מעלה...';
             }
 
             // Use the appropriate upload endpoint
@@ -467,7 +472,7 @@
             xhr.onload = function() {
                 if (xhr.status >= 200 && xhr.status < 300) {
                     try {
-                        const data = JSON.parse(xhr.responseText);
+                        JSON.parse(xhr.responseText);
                         submitBtn.innerHTML = '✅ הועלה!';
                         setTimeout(function() { window.location.reload(); }, 500);
                     } catch (parseError) {
@@ -500,171 +505,6 @@
         });
     }
 
-    // Poll for document processing status with Avner animation - iOS Compatible
-    function pollDocumentStatus(documentId, avnerImg, statusText) {
-        var maxAttempts = 60; // 60 seconds max
-        var attempts = 0;
-
-        function checkStatus() {
-            var xhr = new XMLHttpRequest();
-            xhr.open('GET', '/api/upload/status/' + documentId, true);
-
-            xhr.onload = function() {
-                if (xhr.status >= 200 && xhr.status < 300) {
-                    try {
-                        var data = JSON.parse(xhr.responseText);
-
-                        if (data.ready) {
-                            avnerImg.src = '/avner/avner_celebrating.jpeg';
-                            avnerImg.classList.remove('animate-pulse');
-                            statusText.textContent = '✅ הקובץ מוכן! טוען מחדש...';
-                            setTimeout(function() { window.location.reload(); }, 800);
-                            return;
-                        }
-
-                        // Still processing
-                        attempts++;
-                        if (attempts >= maxAttempts) {
-                            avnerImg.src = '/avner/avner_thinking.jpeg';
-                            avnerImg.classList.remove('animate-pulse');
-                            statusText.textContent = '⏱️ העיבוד לוקח זמן... טוען מחדש.';
-                            setTimeout(function() { window.location.reload(); }, 2000);
-                            return;
-                        }
-
-                        // Update status text with dots animation - iOS 8 compatible
-                        var dots = '';
-                        for (var d = 0; d <= (attempts % 3); d++) {
-                            dots += '.';
-                        }
-                        statusText.textContent = 'אבנר מעבד את הקובץ' + dots;
-
-                        // Continue polling
-                        setTimeout(checkStatus, 1000);
-
-                    } catch (parseError) {
-                        console.error('Status check parse error:', parseError);
-                        attempts++;
-                        if (attempts < maxAttempts) {
-                            setTimeout(checkStatus, 1000);
-                        } else {
-                            avnerImg.src = '/avner/avner_shy.jpeg';
-                            avnerImg.classList.remove('animate-pulse');
-                            statusText.textContent = '⏱️ מעבד ברקע... טוען מחדש.';
-                            setTimeout(function() { window.location.reload(); }, 2000);
-                        }
-                    }
-                } else {
-                    console.error('Status check HTTP error:', xhr.status);
-                    attempts++;
-                    if (attempts < maxAttempts) {
-                        setTimeout(checkStatus, 1000);
-                    } else {
-                        avnerImg.src = '/avner/avner_shy.jpeg';
-                        avnerImg.classList.remove('animate-pulse');
-                        statusText.textContent = '⏱️ מעבד ברקע... טוען מחדש.';
-                        setTimeout(function() { window.location.reload(); }, 2000);
-                    }
-                }
-            };
-
-            xhr.onerror = function() {
-                console.error('Status check network error');
-                attempts++;
-                if (attempts < maxAttempts) {
-                    setTimeout(checkStatus, 1000);
-                } else {
-                    avnerImg.src = '/avner/avner_shy.jpeg';
-                    avnerImg.classList.remove('animate-pulse');
-                    statusText.textContent = '⏱️ מעבד ברקע... טוען מחדש.';
-                    setTimeout(function() { window.location.reload(); }, 2000);
-                }
-            };
-
-            xhr.send();
-        }
-
-        checkStatus();
-    }
-
-    // Simple polling for secondary upload forms - iOS Compatible
-    function pollDocumentStatusSimple(documentId, submitBtn, originalText) {
-        var maxAttempts = 60;
-        var attempts = 0;
-
-        function checkStatus() {
-            var xhr = new XMLHttpRequest();
-            xhr.open('GET', '/api/upload/status/' + documentId, true);
-
-            xhr.onload = function() {
-                if (xhr.status >= 200 && xhr.status < 300) {
-                    try {
-                        var data = JSON.parse(xhr.responseText);
-
-                        if (data.ready) {
-                            submitBtn.innerHTML = '<img src="/avner/avner_celebrating.jpeg" class="w-6 h-6 inline-block"> הועלה!';
-                            setTimeout(function() { window.location.reload(); }, 500);
-                            return;
-                        }
-
-                        attempts++;
-                        if (attempts >= maxAttempts) {
-                            submitBtn.innerHTML = '⏱️ מעבד ברקע...';
-                            setTimeout(function() { window.location.reload(); }, 2000);
-                            return;
-                        }
-
-                        setTimeout(checkStatus, 1000);
-
-                    } catch (parseError) {
-                        console.error('Status check parse error:', parseError);
-                        attempts++;
-                        if (attempts < maxAttempts) {
-                            setTimeout(checkStatus, 1000);
-                        } else {
-                            submitBtn.innerHTML = originalText;
-                            submitBtn.disabled = false;
-                            alert('שגיאה בבדיקת סטטוס. הקובץ עדיין מעובד ברקע.');
-                        }
-                    }
-                } else {
-                    console.error('Status check HTTP error:', xhr.status);
-                    attempts++;
-                    if (attempts < maxAttempts) {
-                        setTimeout(checkStatus, 1000);
-                    } else {
-                        submitBtn.innerHTML = originalText;
-                        submitBtn.disabled = false;
-                        alert('שגיאה בבדיקת סטטוס. הקובץ עדיין מעובד ברקע.');
-                    }
-                }
-            };
-
-            xhr.onerror = function() {
-                console.error('Status check network error');
-                attempts++;
-                if (attempts < maxAttempts) {
-                    setTimeout(checkStatus, 1000);
-                } else {
-                    submitBtn.innerHTML = originalText;
-                    submitBtn.disabled = false;
-                    alert('שגיאה בבדיקת סטטוס. הקובץ עדיין מעובד ברקע.');
-                }
-            };
-
-            xhr.send();
-        }
-
-        checkStatus();
-    }
-
-    function askAboutCourse() {
-        // Open Avner chat with course context
-        if (typeof toggleAvnerChat === 'function') {
-            toggleAvnerChat();
-        }
-    }
-
     // Delete document function - iOS Compatible
     function deleteDocument(docId) {
         if (!confirm('האם אתה בטוח שברצונך למחוק את המסמך? פעולה זו אינה הפיכה.')) {
@@ -694,6 +534,11 @@
         };
 
         xhr.send();
+    }
+
+    // Ask Avner about this course (fallback if you ever use onclick)
+    function askAboutCourse() {
+        window.location.href = "{{ url_for('library.course_tool', course_id=course.id, tool='tutor') }}";
     }
 </script>
 {% endblock %}

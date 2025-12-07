@@ -1,91 +1,271 @@
+<!-- templates/summary/smart_summary.html -->
 {% extends "base.html" %}
 
 {% block title %}סיכום חכם - StudyBuddyAI{% endblock %}
 
 {% block content %}
 <div class="space-y-8 text-right">
-    <!-- Input Card -->
-    <div class="bg-white/80 p-6 rounded-2xl shadow-md">
-        <div class="flex items-start space-x-4 space-x-reverse">
-            <img src="{{ url_for('serve_avner', filename='avner_waving.jpeg') }}" alt="אבנר מנופף לשלום" class="h-16 w-16 flex-shrink-0">
-            <div>
-                <h2 class="text-xl font-bold text-warm-brown">סיכום חכם</h2>
-                <p class="text-ink-brown/80 mt-1">
-                    סיכום חכם של כל חומר הקורס – לפי מה שחשוב לך עכשיו.
+
+    <!-- Header -->
+    <div class="flex items-start space-x-4 space-x-reverse bg-white/80 p-6 rounded-2xl shadow-md">
+        <img src="{{ url_for('serve_avner', filename='avner_waving.jpeg') }}"
+             alt="אבנר מנופף לשלום"
+             class="h-16 w-16 flex-shrink-0 rounded-full shadow">
+        <div>
+            <h2 class="text-2xl font-bold text-warm-brown">
+                סיכום חכם לקורס: {{ course.name }}
+            </h2>
+            <p class="text-ink-brown/80 mt-1 text-sm">
+                בחר מה נסכם, איך יראה הסיכום, וקבל סיכום חכם עם צ'אט קטן לשיפורים.
+            </p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+
+        <!-- LEFT: Settings card -->
+        <div class="lg:col-span-2 bg-white/80 p-6 rounded-2xl shadow-md">
+            <form id="smart-summary-form"
+                  hx-post="{{ url_for('summary_bp.trigger_summary') }}"
+                  hx-target="#summary-result"
+                  hx-swap="innerHTML"
+                  hx-indicator="#summary-loading">
+
+                <input type="hidden" name="course_id" value="{{ course.id }}">
+
+                <!-- WHAT TO SUMMARIZE -->
+                <section class="mb-6">
+                    <h3 class="text-lg font-semibold text-dark-brown mb-2">
+                        מה נסכם?
+                    </h3>
+                    <p class="text-xs text-cozy-brown mb-3">
+                        בחר אילו חלקים מהקורס יכנסו לסיכום. תמיד אפשר לשנות אחרי.
+                    </p>
+
+                    <div class="space-y-2 text-sm">
+                        <label class="flex items-center gap-2">
+                            <input type="checkbox" name="scope[]" value="all" class="rounded border-warm-gray">
+                            <span>כל החומר בקורס</span>
+                        </label>
+                        <label class="flex items-center gap-2">
+                            <input type="checkbox" name="scope[]" value="lectures" class="rounded border-warm-gray">
+                            <span>סיכום הרצאות ושקפים</span>
+                        </label>
+                        <label class="flex items-center gap-2">
+                            <input type="checkbox" name="scope[]" value="notes" class="rounded border-warm-gray">
+                            <span>סיכומי תרגול / סיכומי סטודנטים</span>
+                        </label>
+                        <label class="flex items-center gap-2">
+                            <input type="checkbox" name="scope[]" value="homework" class="rounded border-warm-gray">
+                            <span>שיעורי בית ומבחנים לדוגמה</span>
+                        </label>
+                    </div>
+
+                    <div class="mt-3">
+                        <label for="query" class="block text-xs font-medium text-dark-brown mb-1">
+                            על מה להתמקד בסיכום?
+                        </label>
+                        <input id="query"
+                               name="query"
+                               type="text"
+                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm text-right"
+                               placeholder="למשל: הכנה למבחן על זיכרון; דגש על הגדרות ונוסחאות...">
+                    </div>
+                </section>
+
+                <!-- STYLE OPTIONS -->
+                <section class="mb-6">
+                    <h3 class="text-lg font-semibold text-dark-brown mb-2">
+                        איך יראה הסיכום?
+                    </h3>
+
+                    <!-- Tone -->
+                    <div class="mb-4">
+                        <p class="text-xs font-medium text-dark-brown mb-1">טון כתיבה:</p>
+                        <div class="flex flex-wrap gap-3 text-xs">
+                            <label class="inline-flex items-center gap-2">
+                                <input type="radio" name="tone" value="formal" class="accent-golden-yellow" checked>
+                                <span>רשמי וברור</span>
+                            </label>
+                            <label class="inline-flex items-center gap-2">
+                                <input type="radio" name="tone" value="simple" class="accent-golden-yellow">
+                                <span>פשוט וזורם</span>
+                            </label>
+                            <label class="inline-flex items-center gap-2">
+                                <input type="radio" name="tone" value="avner_fun" class="accent-golden-yellow">
+                                <span>מצחיק ועדין בסגנון אבנר</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Visual style -->
+                    <div class="mb-4">
+                        <p class="text-xs font-medium text-dark-brown mb-1">סגנון חזותי:</p>
+                        <div class="space-y-1 text-xs">
+                            <label class="flex items-center gap-2">
+                                <input type="checkbox" name="visual_options[]" value="headings" class="rounded border-warm-gray" checked>
+                                <span>שימוש בכותרות ותתי-כותרות</span>
+                            </label>
+                            <label class="flex items-center gap-2">
+                                <input type="checkbox" name="visual_options[]" value="bullets" class="rounded border-warm-gray" checked>
+                                <span>רשימות תבליטים לנקודות חשובות</span>
+                            </label>
+                            <label class="flex items-center gap-2">
+                                <input type="checkbox" name="visual_options[]" value="emojis" class="rounded border-warm-gray">
+                                <span>להוסיף אמוג'ים מתאימים 😀</span>
+                            </label>
+                            <label class="flex items-center gap-2">
+                                <input type="checkbox" name="visual_options[]" value="highlight" class="rounded border-warm-gray">
+                                <span>להדגיש מושגים חשובים</span>
+                            </label>
+                            <label class="flex items-center gap-2">
+                                <input type="checkbox" name="visual_options[]" value="intro" class="rounded border-warm-gray">
+                                <span>להוסיף תקציר קצר מאוד בתחילת העמוד</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Length -->
+                    <div>
+                        <p class="text-xs font-medium text-dark-brown mb-1">אורך:</p>
+                        <div class="flex flex-wrap gap-3 text-xs">
+                            <label class="inline-flex items-center gap-2">
+                                <input type="radio" name="length" value="short" class="accent-golden-yellow">
+                                <span>קצר מאוד (דף אחד)</span>
+                            </label>
+                            <label class="inline-flex items-center gap-2">
+                                <input type="radio" name="length" value="medium" class="accent-golden-yellow" checked>
+                                <span>בינוני</span>
+                            </label>
+                            <label class="inline-flex items-center gap-2">
+                                <input type="radio" name="length" value="long" class="accent-golden-yellow">
+                                <span>ארוך ומפורט</span>
+                            </label>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Extra notes -->
+                <section class="mb-4">
+                    <label for="extra_notes" class="block text-xs font-medium text-dark-brown mb-1">
+                        מה חשוב לך במיוחד בסיכום הזה? (אופציונלי)
+                    </label>
+                    <textarea id="extra_notes"
+                              name="extra_notes"
+                              rows="3"
+                              class="w-full p-3 border rounded-lg text-right text-sm"
+                              placeholder="לדוגמה: אני לפני מבחן על יחידות זיכרון; הכנס דוגמאות עם מספרים פשוטים..."></textarea>
+                </section>
+
+                <!-- Submit -->
+                <div class="flex items-center justify-between gap-3 mt-6">
+                    <p class="text-xs text-cozy-brown">
+                        ✨ אפשר לשנות סגנון ולבקש שיפורים אחרי שהסיכום מוכן.
+                    </p>
+                    <button type="submit"
+                            class="bg-capy-orange text-white font-bold py-2 px-5 rounded-xl shadow-sm hover:bg-opacity-90">
+                        הפקת סיכום חכם לקורס
+                    </button>
+                </div>
+
+                <!-- Loading indicator -->
+                <div id="summary-loading" class="htmx-indicator mt-3 text-xs text-cozy-brown flex items-center gap-2">
+                    <span class="animate-pulse">אבנר מחבר את כל החלקים לסיכום אחד ברור...</span>
+                </div>
+            </form>
+        </div>
+
+        <!-- RIGHT: Mini-chat + export -->
+        <div class="bg-white/80 p-5 rounded-2xl shadow-md flex flex-col h-full">
+            <div class="flex items-center gap-3 mb-3">
+                <img src="{{ url_for('serve_avner', filename='avner_reading.jpeg') }}"
+                     alt="אבנר קורא"
+                     class="h-10 w-10 rounded-full">
+                <div>
+                    <h3 class="text-sm font-semibold text-dark-brown">צ'אט עם אבנר על הסיכום</h3>
+                    <p class="text-xs text-cozy-brown">
+                        אחרי יצירת הסיכום תוכלו לכווץ, להרחיב, לבקש דוגמאות ועוד.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Chat window placeholder -->
+            <div id="summary-chat"
+                 class="flex-1 border border-warm-gray rounded-xl p-3 bg-cream text-xs overflow-y-auto space-y-2">
+                <div class="text-center text-cozy-brown/80 mt-4">
+                    הסיכום עדיין לא נוצר. אחרי שניצור אותו, אבנר יתחיל לשוחח איתך כאן 😊
+                </div>
+            </div>
+
+            <!-- Quick actions -->
+            <div class="mt-3 space-y-2">
+                <div class="flex flex-wrap gap-2 text-[11px]">
+                    <button type="button" class="px-2 py-1 rounded-full bg-warm-yellow/60 text-dark-brown">
+                        הסבר לי כמו לילד בכיתה ז'
+                    </button>
+                    <button type="button" class="px-2 py-1 rounded-full bg-warm-yellow/40 text-dark-brown">
+                        הבא דוגמה נוספת
+                    </button>
+                    <button type="button" class="px-2 py-1 rounded-full bg-warm-yellow/40 text-dark-brown">
+                        הפוך לכרטיסיות
+                    </button>
+                    <button type="button" class="px-2 py-1 rounded-full bg-warm-yellow/40 text-dark-brown">
+                        קצר יותר
+                    </button>
+                    <button type="button" class="px-2 py-1 rounded-full bg-warm-yellow/40 text-dark-brown">
+                        ארוך ומפורט יותר
+                    </button>
+                </div>
+
+                <!-- Chat input -->
+                <div class="flex items-center gap-2 mt-2">
+                    <input type="text"
+                           id="summary-chat-input"
+                           class="flex-1 rounded-md border-gray-300 text-xs px-2 py-1 text-right"
+                           placeholder="שאל את אבנר משהו על הסיכום...">
+                    <button type="button"
+                            class="px-3 py-1 bg-golden-yellow text-dark-brown text-xs font-semibold rounded-lg">
+                        שלח
+                    </button>
+                </div>
+            </div>
+
+            <!-- Export buttons -->
+            <div class="mt-4 border-t border-warm-gray pt-3">
+                <p class="text-xs font-medium text-dark-brown mb-2">
+                    ייצוא הסיכום:
+                </p>
+                <div class="flex flex-wrap gap-2 text-xs">
+                    <button type="button"
+                            class="px-3 py-1 rounded-lg border border-warm-yellow bg-cream hover:bg-warm-yellow/30">
+                        ⬇ PDF
+                    </button>
+                    <button type="button"
+                            class="px-3 py-1 rounded-lg border border-warm-yellow bg-cream hover:bg-warm-yellow/30">
+                        ⬇ DOCX
+                    </button>
+                    <button type="button"
+                            class="px-3 py-1 rounded-lg border border-warm-yellow bg-cream hover:bg-warm-yellow/30">
+                        ⬇ TXT
+                    </button>
+                </div>
+                <p class="text-[11px] text-cozy-brown mt-1">
+                    כל אפשרויות הייצוא משתמשות בסגנון והטון שבחרת למעלה.
                 </p>
             </div>
         </div>
-
-        <div class="mt-6">
-            <!-- Posts to /summary/trigger and works on the whole course -->
-            <form id="summary-form"
-                  hx-post="{{ url_for('summary_bp.trigger_summary') }}"
-                  hx-encoding="multipart/form-data"
-                  hx-target="#task-status-container"
-                  hx-swap="innerHTML">
-
-                {# course_id – if you know it server-side, prefer a hidden input with the real ID #}
-                <input type="hidden" name="course_id" id="course_id"
-                       value="{{ course.id if course is defined else '' }}">
-
-                <div class="mb-4">
-                    <label for="query" class="block text-sm font-medium text-gray-700 text-right">
-                        על מה להתמקד בסיכום?
-                    </label>
-                    <input type="text"
-                           name="query"
-                           id="query"
-                           placeholder="למשל: סיכום כללי, דגש על הגדרות, הכנה למבחן..."
-                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm text-right">
-                </div>
-
-                {# The text/file fields can stay, but the current backend ignores them.
-                   You can later wire them into another flow if you want. #}
-                <textarea name="text" class="w-full p-3 border rounded-lg text-right" rows="8"
-                          placeholder="אופציונלי: רשמו לעצמכם הערות או נקודות חשובות..."></textarea>
-
-                <div class="my-4 text-center text-gray-500">או</div>
-
-                <input type="file"
-                       name="file"
-                       class="block w-full text-sm text-ink-brown file:ml-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:font-semibold file:bg-orange-100 file:text-capy-orange hover:file:bg-orange-200"/>
-
-                <button type="submit"
-                        class="mt-6 w-full bg-capy-orange text-white font-bold py-3 px-5 rounded-lg shadow-sm hover:bg-opacity-90">
-                    ✨ הפקת סיכום לקורס
-                </button>
-            </form>
-        </div>
     </div>
 
-    <!-- Result Card -->
-    <div id="task-status-container" class="bg-white/80 p-6 rounded-2xl shadow-md min-h-[10rem]">
+    <!-- MAIN RESULT AREA -->
+    <div id="summary-result"
+         class="bg-white/80 p-6 rounded-2xl shadow-md min-h-[10rem] text-right text-sm leading-relaxed">
         <div class="flex flex-col items-center justify-center text-center text-ink-brown/60 h-full">
-            <img src="{{ url_for('serve_avner', filename='avner_reading.jpeg') }}" alt="אבנר קורא ספר" class="h-24 mb-4">
-            <p>התוצאות יופיעו כאן.</p>
+            <img src="{{ url_for('serve_avner', filename='avner_notebook.jpeg') }}"
+                 alt="אבנר מתכונן"
+                 class="h-24 mb-4 rounded-full shadow">
+            <p>כאן יופיע הסיכום החכם של הקורס ברגע שהוא יהיה מוכן ✨</p>
         </div>
     </div>
-</div>
 
-<script>
-// Same idea as before: when the trigger responds with JSON, start polling.
-document.body.addEventListener('htmx:afterOnLoad', function (evt) {
-    if (evt.target.id === 'task-status-container') {
-        try {
-            const response = JSON.parse(evt.detail.xhr.responseText);
-            if (response.polling_url) {
-                const taskContainer = document.getElementById('task-status-container');
-                taskContainer.innerHTML = `
-                    <div hx-get="${response.polling_url}"
-                         hx-trigger="load, every 2s"
-                         hx-swap="outerHTML"></div>
-                `;
-                htmx.process(taskContainer);
-            }
-        } catch (e) {
-            console.error('Failed to parse summary trigger response as JSON', e);
-        }
-    }
-});
-</script>
+</div>
 {% endblock %}

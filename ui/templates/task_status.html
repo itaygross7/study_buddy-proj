@@ -1,41 +1,53 @@
-<div id="task-status-{{ task.id }}" 
-     hx-get="{{ url_for('task_bp.get_task_status_route', task_id=task.id) }}" 
-     hx-trigger="load delay:2s" 
+<!-- templates/task_status.html -->
+<div id="task-status-{{ task.id or task._id }}"
+     hx-get="{{ url_for('task_bp.get_task_status_route', task_id=task.id or task._id) }}"
+     hx-trigger="load delay:2s"
      hx-swap="outerHTML">
 
-    {% if task.status == 'PENDING' or task.status == 'PROCESSING' %}
+    {% if task.status in ['PENDING', 'PROCESSING'] %}
         <div class="p-4 rounded-2xl bg-blue-50/50 border border-blue-200">
             <div class="flex flex-col items-center text-center">
-                <img src="{{ url_for('serve_avner', filename='avner_thinking.jpeg') }}" alt="אבנר חושב" class="h-20 mb-3">
-                <p class="text-sm font-semibold text-blue-800">אני מעבד את הקובץ...</p>
-                <p class="text-xs text-blue-700 mt-1">סטטוס: {{ task.status }}</p>
+                <img src="{{ url_for('serve_avner', filename='avner_thinking.jpeg') }}"
+                     alt="אבנר חושב"
+                     class="h-20 mb-3">
+                <p class="text-sm font-semibold text-blue-800">
+                    אני מעבד את הקובץ / המשימה...
+                </p>
+                <p class="text-xs text-blue-700 mt-1">
+                    סטטוס: {{ task.status }}
+                </p>
             </div>
         </div>
 
     {% elif task.status == 'COMPLETED' %}
-        {# --- THIS IS THE CRITICAL FIX --- #}
-        {# If the completed task was file processing, immediately trigger the next AI task. #}
-        {% if task.task_type == 'file_processing' %}
+        {% if task.task_type == 'file_processing' and task.result_id %}
             <div class="p-4 rounded-2xl bg-yellow-50/50 border border-yellow-200"
-                 hx-post="{{ url_for(task.next_tool_endpoint, document_id=task.result_id) }}"
-                 hx-target="#task-status-container"
+                 hx-post="{{ url_for(task.next_tool_endpoint, document_id=task.result_id) if task.next_tool_endpoint else '' }}"
+                 hx-target="#task-status-{{ task.id or task._id }}"
                  hx-swap="innerHTML"
-                 hx-trigger="load">
+                 {% if task.next_tool_endpoint %}hx-trigger="load"{% endif %}>
                 <div class="flex flex-col items-center text-center">
-                    <img src="{{ url_for('serve_avner', filename='avner_notebook.jpeg') }}" alt="אבנר מתכונן" class="h-20 mb-3">
-                    <p class="text-sm font-semibold text-yellow-800">הקובץ עובד בהצלחה! מתחיל להכין את הסיכום...</p>
+                    <img src="{{ url_for('serve_avner', filename='avner_notebook.jpeg') }}"
+                         alt="אבנר מתכונן"
+                         class="h-20 mb-3">
+                    <p class="text-sm font-semibold text-yellow-800">
+                        הקובץ עובד בהצלחה! מתחיל להכין את התוצאה...
+                    </p>
                 </div>
             </div>
-        {# Otherwise, show the final result from the AI task. #}
         {% else %}
             <div class="p-4 rounded-2xl bg-green-50/50 border border-green-200"
-                 hx-get="{{ url_for('results_bp.get_result', result_id=task.result_id) }}"
+                 hx-get="{{ url_for('results_bp.get_result', result_id=task.result_id) if task.result_id else '' }}"
                  hx-trigger="load"
-                 hx-target="this"
+                 hx-target="#task-status-{{ task.id or task._id }}"
                  hx-swap="innerHTML">
                 <div class="flex flex-col items-center text-center">
-                    <img src="{{ url_for('serve_avner', filename='avner_success.jpeg') }}" alt="אבנר שמח" class="h-20 mb-3">
-                    <p class="text-sm font-semibold text-green-800">סיימתי! טוען את התוצאות...</p>
+                    <img src="{{ url_for('serve_avner', filename='avner_success.jpeg') }}"
+                         alt="אבנר שמח"
+                         class="h-20 mb-3">
+                    <p class="text-sm font-semibold text-green-800">
+                        סיימתי! טוען את התוצאות...
+                    </p>
                 </div>
             </div>
         {% endif %}
@@ -43,9 +55,24 @@
     {% elif task.status == 'FAILED' %}
         <div class="p-4 rounded-2xl bg-red-50/50 border border-red-200">
             <div class="flex flex-col items-center text-center">
-                <img src="{{ url_for('serve_avner', filename='avner_confused.jpeg') }}" alt="אבנר מבולבל" class="h-20 mb-3">
-                <h3 class="text-sm font-semibold text-red-800">אוי, משהו השתבש.</h3>
-                <p class="mt-2 text-sm text-red-700">{{ task.error_message or 'קרתה שגיאה לא צפויה.' }}</p>
+                <img src="{{ url_for('serve_avner', filename='avner_confused.jpeg') }}"
+                     alt="אבנר מבולבל"
+                     class="h-20 mb-3">
+                <h3 class="text-sm font-semibold text-red-800">
+                    אוי, משהו השתבש.
+                </h3>
+                <p class="mt-2 text-xs text-red-700">
+                    {{ task.error_message or 'קרתה שגיאה לא צפויה. נסה שוב מאוחר יותר.' }}
+                </p>
+            </div>
+        </div>
+
+    {% else %}
+        <div class="p-4 rounded-2xl bg-gray-50 border border-gray-200">
+            <div class="flex flex-col items-center text-center">
+                <p class="text-sm text-gray-700">
+                    סטטוס לא ידוע: {{ task.status }}
+                </p>
             </div>
         </div>
     {% endif %}
