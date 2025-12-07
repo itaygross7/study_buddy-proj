@@ -39,20 +39,20 @@ def process_task(body: bytes):
     logger.info(f"Starting processing for task {task_id}", extra={"queue": queue_name, "task_id": task_id})
     task_repo.update_status(task_id, TaskStatus.PROCESSING)
 
-    # --- THIS IS THE DEFINITIVE FIX ---
-    # If a temp_path is in the message, it means a file was uploaded.
-    # We MUST process it first to get the text content for the AI.
     text_content = ""
     document_id = data.get('document_id')
 
-    if 'temp_path' in data and document_id:
-        temp_path = data['temp_path']
-        filename = data['filename']
-        logger.info(f"Worker is processing file '{filename}' for task {task_id}")
-        try:
-            text_content = process_file_from_path(temp_path, filename)
-            doc = doc_repo.get_by_id(document_id)
-            if doc:
+    if document_id:
+        doc = doc_repo.get_by_id(document_id)
+        if not doc: raise DocumentNotFoundError(f"Document {document_id} not found.")
+        text_content = doc.content_text
+
+        if 'temp_path' in data:
+            temp_path = data['temp_path']
+            filename = data['filename']
+            logger.info(f"Worker is processing file '{filename}' for task {task_id}")
+            try:
+                text_content = process_file_from_path(temp_path, filename)
                 doc.content_text = text_content
                 doc.status = DocumentStatus.READY
                 doc_repo.update(doc)
@@ -61,17 +61,11 @@ def process_task(body: bytes):
                     index_document_chunks(db=db_conn, document_id=doc.id, filename=doc.filename, text=text_content, course_id=doc.course_id, user_id=doc.user_id)
                 except Exception as chunk_error:
                     logger.error(f"Failed to index chunks for '{filename}': {chunk_error}", exc_info=True)
-        finally:
-            if os.path.exists(temp_path):
-                shutil.rmtree(os.path.dirname(temp_path), ignore_errors=True)
-    elif document_id:
-        doc = doc_repo.get_by_id(document_id)
-        if not doc: raise DocumentNotFoundError(f"Document {document_id} not found.")
-        text_content = doc.content_text
-    # --- END OF FIX ---
-
+            finally:
+                if os.path.exists(temp_path):
+                    shutil.rmtree(os.path.dirname(temp_path), ignore_errors=True)
+    
     result_id = None
-    # --- RESTORED: All task handlers are present ---
     if queue_name == 'summarize':
         if not document_id: raise ValueError("Summarize task requires a document_id.")
         result_id = summary_service.generate_summary(document_id, text_content, db_conn)
@@ -98,7 +92,6 @@ def process_task(body: bytes):
         result_id = result_doc["_id"]
     else:
         raise ValueError(f"Unknown queue: {queue_name}")
-    # --- END OF RESTORATION ---
 
     if result_id:
         task_repo.update_status(task_id, TaskStatus.COMPLETED, result_id=result_id)
@@ -127,7 +120,6 @@ def main():
             channel = connection.channel()
             logger.info("Worker connected to RabbitMQ.")
 
-            # This list is now complete and correct.
             queues = ['summarize', 'flashcards', 'assess', 'homework', 'avner_chat']
             for q in queues:
                 channel.queue_declare(queue=q, durable=True)

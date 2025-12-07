@@ -26,7 +26,7 @@ WORKER_RAM_ESTIMATE_MB=350     # Est. RAM per worker
 SYSTEM_RESERVE_MB=2048         # RAM reserved for OS/DB
 MAX_WORKER_CAP=32              # Hard cap
 OPTIMAL_WORKER_COUNT=1         # Default
-MANUAL_OVERRIDE=0              # Set via --workers flag
+MANUAL_OVERRIDE=4              # Set via --workers flag
 
 # Deployment Modes
 FULL_RESTART=false
