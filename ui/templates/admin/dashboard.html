@@ -70,7 +70,7 @@
         </div>
     </div>
     
-    <!-- System Status -->
+    <!-- System Status + Recent Users -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         <!-- Configuration Status -->
         <div class="bg-cream rounded-2xl p-6 shadow-md border border-warm-yellow">
@@ -78,7 +78,7 @@
             <div class="space-y-3">
                 <div class="flex justify-between items-center py-2 border-b border-warm-gray">
                     <span class="text-cozy-brown">מצב תחזוקה</span>
-                    <span class="px-3 py-1 rounded-full text-sm font-medium 
+                    <span class="px-3 py-1 rounded-full text-sm font-medium
                         {% if config.maintenance_mode %}bg-error text-white{% else %}bg-success text-white{% endif %}">
                         {% if config.maintenance_mode %}פעיל{% else %}לא פעיל{% endif %}
                     </span>
@@ -97,7 +97,7 @@
                 </div>
             </div>
         </div>
-        
+
         <!-- Recent Users -->
         <div class="bg-cream rounded-2xl p-6 shadow-md border border-warm-yellow">
             <h3 class="text-xl font-bold text-dark-brown mb-4">משתמשים אחרונים</h3>
@@ -110,7 +110,7 @@
                         <p class="text-xs text-cozy-brown">{{ user.get('email') }}</p>
                     </div>
                     <div class="text-left">
-                        <span class="px-2 py-1 rounded text-xs 
+                        <span class="px-2 py-1 rounded text-xs
                             {% if user.get('is_verified') %}bg-success text-white{% else %}bg-warning text-dark-brown{% endif %}">
                             {% if user.get('is_verified') %}מאומת{% else %}ממתין{% endif %}
                         </span>
@@ -123,6 +123,67 @@
             {% endif %}
         </div>
     </div>
+
+    <!-- Avner Learning / Usage -->
+    {% if avner_stats is defined and avner_stats %}
+    <div class="bg-cream rounded-2xl p-6 shadow-md border border-warm-yellow mb-8">
+        <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-3">
+                <img src="{{ url_for('serve_avner', filename='avner_studing.jpeg') }}"
+                     alt="אבנר לומד"
+                     class="w-16 h-16 rounded-full object-cover border-2 border-golden-yellow">
+                <div>
+                    <h3 class="text-xl font-bold text-dark-brown">אבנר לומד מהמשתמשים</h3>
+                    <p class="text-cozy-brown text-sm">
+                        תמונת מצב על כמה אבנר בשימוש וכמה הוא "לומד" מהחומר שהועלה.
+                    </p>
+                </div>
+            </div>
+            <span class="px-3 py-1 rounded-full text-sm font-medium
+                  {% if avner_stats.get('status') == 'ok' %}bg-success text-white{% else %}bg-warning text-dark-brown{% endif %}">
+                {% if avner_stats.get('status') == 'ok' %}מחובר ועובד{% else %}בדוק הגדרות{% endif %}
+            </span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="bg-white/70 rounded-xl p-4 border border-warm-yellow">
+                <p class="text-xs text-cozy-brown mb-1">שאלות שנשאלו היום</p>
+                <p class="text-2xl font-bold text-dark-brown">
+                    {{ avner_stats.get('questions_today', 0) }}
+                </p>
+            </div>
+            <div class="bg-white/70 rounded-xl p-4 border border-warm-yellow">
+                <p class="text-xs text-cozy-brown mb-1">שאלות בשבוע האחרון</p>
+                <p class="text-2xl font-bold text-dark-brown">
+                    {{ avner_stats.get('questions_last_7_days', 0) }}
+                </p>
+            </div>
+            <div class="bg-white/70 rounded-xl p-4 border border-warm-yellow">
+                <p class="text-xs text-cozy-brown mb-1">קורס הכי פעיל</p>
+                <p class="text-sm font-bold text-dark-brown truncate">
+                    {{ avner_stats.get('top_course_name', '—') }}
+                </p>
+            </div>
+            <div class="bg-white/70 rounded-xl p-4 border border-warm-yellow">
+                <p class="text-xs text-cozy-brown mb-1">מודל פעיל</p>
+                <p class="text-sm font-bold text-dark-brown">
+                    {{ avner_stats.get('provider', 'LLM') }} · {{ avner_stats.get('model', 'default') }}
+                </p>
+            </div>
+        </div>
+
+        <p class="text-xs text-cozy-brown mt-3">
+            זמן תגובה ממוצע:
+            <span class="font-bold text-dark-brown">
+                {{ avner_stats.get('avg_latency_ms', 0) }}ms
+            </span>
+            · שימוש יומי:
+            <span class="font-bold text-dark-brown">
+                {{ avner_stats.get('prompts_used_today', 0) }}/{{ config.max_prompts_per_day }}
+            </span>
+        </p>
+    </div>
+    {% endif %}
     
     <!-- Quick Actions -->
     <div class="bg-cream rounded-2xl p-6 shadow-md border border-warm-yellow">

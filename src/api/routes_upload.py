@@ -9,7 +9,7 @@ from src.infrastructure.repositories import MongoDocumentRepository, MongoTaskRe
 from src.infrastructure.rabbitmq import publish_task
 from src.services.file_service import get_file_service
 from sb_utils.logger_utils import logger
-from src.domain.models.db_models import Document, Task, DocumentStatus, TaskStatus
+from src.domain.models.db_models import Document, DocumentStatus, TaskStatus
 
 upload_bp = Blueprint("upload_bp", __name__)
 
@@ -17,7 +17,9 @@ upload_bp = Blueprint("upload_bp", __name__)
 @upload_bp.route("/files", methods=["POST"])
 @login_required
 def upload_files_route():
-    """Upload one or more files, save to GridFS, create Document + Task."""
+    """
+    Upload one or more files, save to GridFS, create Document + Task.
+    """
     user_id = current_user.id
     course_id = request.form.get("course_id")
 
@@ -27,9 +29,9 @@ def upload_files_route():
     # Multi-file or single-file compatibility
     files = request.files.getlist("files")
     if not files:
-        f = request.files.get("file")
-        if f:
-            files = [f]
+        single_file = request.files.get("file")
+        if single_file:
+            files = [single_file]
 
     if not files:
         return jsonify({"error": "לא התקבלו קבצים"}), 400
@@ -38,8 +40,8 @@ def upload_files_route():
     doc_repo = MongoDocumentRepository(db)
     task_repo = MongoTaskRepository(db)
 
-    created_docs = []
-    tasks_created = []
+    created_docs: list[str] = []
+    tasks_created: list[str] = []
 
     try:
         for f in files:
@@ -59,7 +61,11 @@ def upload_files_route():
 
             # --- SAVE TO GRIDFS ---
             gridfs_id = file_service.save_file(f, user_id, course_id)
-            # (אם בשלב מאוחר תרצה, תוסיף gridfs_id למודל Document ותשמור אותו גם שם)
+            logger.info(
+                "Saved file '%s' to GridFS with ID: %s",
+                filename,
+                gridfs_id,
+            )
 
             # --- CREATE DOCUMENT MODEL ---
             document = Document(
@@ -71,39 +77,46 @@ def upload_files_route():
                 content_text="[Processing file…]",
                 content_type="file",
                 file_size=file_size,
-                status=DocumentStatus.UPLOADED,  # משתמשים ב-DocumentStatus
+                status=DocumentStatus.UPLOADED,
             )
 
             # --- SAVE DOCUMENT ---
             doc_repo.create(document)
+            created_docs.append(document.id)
 
-            # --- CREATE TASK ---
-            task = Task(
-                id=str(uuid.uuid4()),
-                user_id=user_id,
-                course_id=course_id,
-                task_type="file_processing",
-                status=TaskStatus.PENDING,
-                result_id=None,
-            )
-            task_repo.create(task)
+            # --- CREATE TASK DATA (dict, not Task model) ---
+            task_id = str(uuid.uuid4())
+            task_data = {
+                "id": task_id,
+                "user_id": user_id,
+                "course_id": course_id,
+                "task_type": "file_processing",
+                "status": TaskStatus.PENDING,
+                "result_id": None,
+            }
+            task_repo.create(task_data)
+            tasks_created.append(task_id)
 
             # --- SEND TO QUEUE ---
             publish_task(
                 queue_name="file_processing",
-                task_body={"task_id": task.id, "document_id": document.id}
+                task_body={"task_id": task_id, "document_id": document.id},
             )
 
-            created_docs.append(document.id)
-            tasks_created.append(task.id)
-
-        return jsonify({
-            "status": "processing",
-            "files_uploaded": len(created_docs),
-            "documents": created_docs,
-            "task_ids": tasks_created
-        }), 202
+        return jsonify(
+            {
+                "status": "processing",
+                "files_uploaded": len(created_docs),
+                "documents": created_docs,
+                "task_ids": tasks_created,
+            }
+        ), 202
 
     except Exception as e:
-        logger.error(f"Upload failed for user {user_id}: {e}", exc_info=True)
+        logger.error(
+            "Upload failed for user %s: %s",
+            user_id,
+            e,
+            exc_info=True,
+        )
         return jsonify({"error": "שגיאה פנימית בשרת"}), 500
