@@ -10,6 +10,10 @@ from src.services import auth_service
 from src.domain.models.db_models import SystemConfig
 from src.api.routes_auth import admin_required
 from sb_utils.logger_utils import logger
+from src.services.avner_learning import (
+    admin_teaching,
+    usage_analytics,
+)
 
 admin_bp = Blueprint('admin', __name__)
 
@@ -312,3 +316,128 @@ def system_status():
                            health=health,
                            stats=stats,
                            config=config)
+@admin_bp.route('/avner-learning', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def avner_learning():
+    """
+    Admin UI for teaching & improving Avner's explanations.
+
+    - Teaching examples = concrete pairs of (student question → ideal Avner answer + explanation).
+    - Improvement rules = high-level rules like "for beginners, simplify language and add examples".
+    """
+    # Handle form submissions
+    if request.method == 'POST':
+        form_type = request.form.get('form_type')
+
+        try:
+            # -----------------------------
+            # 1) New Teaching Example Form
+            # -----------------------------
+            if form_type == 'teaching_example':
+                category = (request.form.get('category') or '').strip()
+                example_input = (request.form.get('example_input') or '').strip()
+                ideal_response = (request.form.get('ideal_response') or '').strip()
+                explanation = (request.form.get('explanation') or '').strip()
+                tags_raw = (request.form.get('tags') or '').strip()
+                tags = [t.strip() for t in tags_raw.split(',') if t.strip()]
+
+                if not category or not example_input or not ideal_response or not explanation:
+                    flash('Please fill all required fields for the teaching example.', 'error')
+                else:
+                    admin_teaching.add_teaching_example(
+                        admin_id=current_user.id,
+                        category=category,
+                        example_input=example_input,
+                        ideal_response=ideal_response,
+                        explanation=explanation,
+                        tags=tags,
+                    )
+                    flash('Teaching example added successfully 🦫', 'success')
+
+            # -----------------------------
+            # 2) New Improvement Rule Form
+            # -----------------------------
+            elif form_type == 'improvement_rule':
+                rule_type = (request.form.get('rule_type') or '').strip()
+                description = (request.form.get('description') or '').strip()
+                proficiency_level = (request.form.get('proficiency_level') or '').strip()
+                study_level = (request.form.get('study_level') or '').strip()
+                task_type = (request.form.get('task_type') or '').strip()
+
+                add_examples = request.form.get('add_examples') == 'on'
+                simplify_language = request.form.get('simplify_language') == 'on'
+                shorter_answers = request.form.get('shorter_answers') == 'on'
+                more_structure = request.form.get('more_structure') == 'on'
+
+                if not rule_type or not description:
+                    flash('Please fill at least rule type and description.', 'error')
+                else:
+                    condition: dict = {}
+                    if proficiency_level:
+                        condition['proficiency_level'] = proficiency_level
+                    if study_level:
+                        condition['study_level'] = study_level
+                    if task_type:
+                        condition['task_type'] = task_type
+
+                    action = {
+                        "add_examples": add_examples,
+                        "simplify_language": simplify_language,
+                        "shorter_answers": shorter_answers,
+                        "more_structure": more_structure,
+                    }
+
+                    admin_teaching.add_improvement_rule(
+                        admin_id=current_user.id,
+                        rule_type=rule_type,
+                        condition=condition,
+                        action=action,
+                        description=description,
+                    )
+                    flash('Improvement rule added successfully ✨', 'success')
+
+            else:
+                flash('Unknown form type.', 'error')
+
+        except Exception as e:
+            logger.error(f"Error in avner_learning POST: {e}", exc_info=True)
+            flash('An error occurred while saving data.', 'error')
+
+        return redirect(url_for('admin.avner_learning'))
+
+    # -----------------------------
+    # GET – load dashboard data
+    # -----------------------------
+    try:
+        stats = admin_teaching.get_admin_dashboard_stats()
+    except Exception as e:
+        logger.error(f"Error loading Avner dashboard stats: {e}", exc_info=True)
+        stats = {}
+
+    try:
+        teaching_examples = admin_teaching.get_teaching_examples(category=None, tags=None)
+    except Exception as e:
+        logger.error(f"Error loading teaching examples: {e}", exc_info=True)
+        teaching_examples = []
+
+    try:
+        improvement_rules = admin_teaching.get_improvement_rules(rule_type=None)
+    except Exception as e:
+        logger.error(f"Error loading improvement rules: {e}", exc_info=True)
+        improvement_rules = []
+
+    # Optional: basic usage patterns (e.g. which task types students use most)
+    try:
+        usage = usage_analytics.get_usage_patterns(filters={})
+    except Exception as e:
+        logger.error(f"Error loading usage patterns: {e}", exc_info=True)
+        usage = []
+
+    return render_template(
+        'admin/avner_learning.html',
+        stats=stats,
+        teaching_examples=teaching_examples,
+        improvement_rules=improvement_rules,
+        usage=usage,
+    )

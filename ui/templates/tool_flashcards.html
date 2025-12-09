@@ -1,3 +1,4 @@
+<!-- templates/flashcards/create_flashcards.html -->
 {% extends "base.html" %}
 
 {% block title %}יצירת כרטיסיות לימוד{% endblock %}
@@ -13,10 +14,10 @@
                 <p class="text-ink-brown/80 mt-1">העלו קובץ או הדביקו טקסט, ואני אהפוך אותו לכרטיסיות שאלות ותשובות כדי שתוכלו לתרגל.</p>
             </div>
         </div>
-        
+
         <div class="mt-6">
             <form id="flashcard-form"
-                  hx-post="{{ url_for('upload_bp.upload_route') }}"
+                  hx-post="{{ url_for('upload_bp.upload_files_route') }}"
                   hx-encoding="multipart/form-data"
                   hx-target="#upload-result"
                   hx-swap="innerHTML">

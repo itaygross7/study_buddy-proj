@@ -1,4 +1,4 @@
-<!-- templates/task_status.html -->
+<!-- templates/tasks/task_status.html -->
 <div id="task-status-{{ task.id or task._id }}"
      hx-get="{{ url_for('task_bp.get_task_status_route', task_id=task.id or task._id) }}"
      hx-trigger="load delay:2s"
@@ -20,12 +20,12 @@
         </div>
 
     {% elif task.status == 'COMPLETED' %}
-        {% if task.task_type == 'file_processing' and task.result_id %}
+        {% if task.task_type == 'file_processing' and task.result_id and task.next_tool_endpoint %}
             <div class="p-4 rounded-2xl bg-yellow-50/50 border border-yellow-200"
-                 hx-post="{{ url_for(task.next_tool_endpoint, document_id=task.result_id) if task.next_tool_endpoint else '' }}"
+                 hx-post="{{ url_for(task.next_tool_endpoint, document_id=task.result_id) }}"
                  hx-target="#task-status-{{ task.id or task._id }}"
                  hx-swap="innerHTML"
-                 {% if task.next_tool_endpoint %}hx-trigger="load"{% endif %}>
+                 hx-trigger="load">
                 <div class="flex flex-col items-center text-center">
                     <img src="{{ url_for('serve_avner', filename='avner_notebook.jpeg') }}"
                          alt="אבנר מתכונן"
@@ -35,9 +35,9 @@
                     </p>
                 </div>
             </div>
-        {% else %}
+        {% elif task.result_id %}
             <div class="p-4 rounded-2xl bg-green-50/50 border border-green-200"
-                 hx-get="{{ url_for('results_bp.get_result', result_id=task.result_id) if task.result_id else '' }}"
+                 hx-get="{{ url_for('results_bp.get_result', result_id=task.result_id) }}"
                  hx-trigger="load"
                  hx-target="#task-status-{{ task.id or task._id }}"
                  hx-swap="innerHTML">
@@ -47,6 +47,14 @@
                          class="h-20 mb-3">
                     <p class="text-sm font-semibold text-green-800">
                         סיימתי! טוען את התוצאות...
+                    </p>
+                </div>
+            </div>
+        {% else %}
+            <div class="p-4 rounded-2xl bg-gray-50 border border-gray-200">
+                <div class="flex flex-col items-center text-center">
+                    <p class="text-sm text-gray-700">
+                        המשימה הושלמה, אך לא נמצאו תוצאות להצגה.
                     </p>
                 </div>
             </div>

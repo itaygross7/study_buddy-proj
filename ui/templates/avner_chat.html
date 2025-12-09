@@ -1,3 +1,4 @@
+<!-- templates/avner/chat.html -->
 {% extends "base.html" %}
 
 {% block title %}💬 צ'אט עם אבנר - StudyBuddyAI{% endblock %}
@@ -6,8 +7,8 @@
 <div class="space-y-6 text-right">
     <!-- Header -->
     <div class="flex items-start gap-4">
-        <img src="{{ url_for('serve_avner', filename='avner_waving.jpeg') }}" 
-             alt="אבנר מנופף" 
+        <img src="{{ url_for('serve_avner', filename='avner_waving.jpeg') }}"
+             alt="אבנר מנופף"
              class="w-20 h-20 rounded-full object-cover border-4 border-golden-yellow shadow-warm flex-shrink-0">
         <div class="flex-grow">
             <h1 class="text-3xl font-bold text-dark-brown">💬 שוחח עם אבנר</h1>
@@ -19,9 +20,9 @@
     <div class="content-card border-2 border-warm-yellow bg-gradient-to-l from-warm-beige to-cream">
         <div class="flex items-center justify-between">
             <div class="flex items-center gap-3">
-                <img src="{{ url_for('serve_avner', filename='baby_avner.png') }}" 
-                     alt="אבנר הקטן" 
-                     class="w-14 h-14 rounded-full object-cover border-3 border-golden-yellow shadow-sm"
+                <img src="{{ url_for('serve_avner', filename='baby_avner.png') }}"
+                     alt="אבנר הקטן"
+                     class="w-14 h-14 rounded-full object-cover border-2 border-golden-yellow shadow-sm"
                      id="baby-mode-image">
                 <div>
                     <h3 class="text-lg font-bold text-dark-brown">🍼 מצב אבנר הקטן</h3>
@@ -30,7 +31,7 @@
             </div>
             <label class="relative inline-flex items-center cursor-pointer">
                 <input type="checkbox" id="baby-mode-toggle" class="sr-only peer">
-                <div class="w-14 h-7 bg-warm-gray rounded-full peer peer-checked:bg-golden-yellow peer-focus:ring-2 peer-focus:ring-warm-yellow transition-colors">
+                <div class="w-14 h-7 bg-warm-gray rounded-full peer peer-checked:bg-golden-yellow peer-focus:ring-2 peer-focus:ring-warm-yellow transition-colors relative">
                     <div class="dot absolute right-1 top-1 bg-white w-5 h-5 rounded-full transition-transform peer-checked:translate-x-[-28px]"></div>
                 </div>
             </label>
@@ -61,8 +62,8 @@
         <div id="chat-messages" class="flex-grow overflow-y-auto p-4 space-y-4 bg-white/50 rounded-lg border-2 border-warm-yellow mb-4 shadow-inner mobile-scroll" style="max-height: 60vh; min-height: 300px;">
             <!-- Welcome Message -->
             <div class="flex gap-3 items-start animate-fade-in">
-                <img src="{{ url_for('serve_avner', filename='avner_signing_ok.jpeg') }}" 
-                     alt="אבנר" 
+                <img src="{{ url_for('serve_avner', filename='avner_signing_ok.jpeg') }}"
+                     alt="אבנר"
                      class="w-10 h-10 rounded-full object-cover border-2 border-golden-yellow flex-shrink-0">
                 <div class="flex-grow">
                     <div class="bg-gradient-to-l from-warm-beige to-cream p-3 rounded-2xl border-2 border-warm-yellow shadow-sm">
@@ -75,15 +76,15 @@
 
         <!-- Input Area -->
         <form id="chat-form" class="flex gap-2 flex-col sm:flex-row">
-            <textarea 
-                id="question-input" 
+            <textarea
+                id="question-input"
                 name="question"
                 class="flex-grow p-3 border-2 border-warm-yellow rounded-lg text-right resize-none focus:ring-2 focus:ring-golden-yellow focus:border-golden-yellow mobile-scroll"
                 style="font-size: 16px; min-height: 64px;"
                 rows="2"
                 placeholder="כתוב את השאלה שלך כאן..."
                 required></textarea>
-            <button type="submit" 
+            <button type="submit"
                     class="btn-primary px-6 self-end hover:scale-105 transition-transform mobile-touch-target w-full sm:w-auto"
                     id="send-button">
                 📤 שלח
@@ -221,29 +222,29 @@
     function pollTaskResult(taskId, babyMode, promptsUsed, promptsLimit) {
         const maxAttempts = 30; // 30 seconds max
         let attempts = 0;
-        
+
         const poll = function() {
             attempts++;
-            
+
             const xhr = new XMLHttpRequest();
             xhr.open('GET', '/api/tasks/' + taskId, true);
-            
+
             xhr.onload = function() {
                 if (xhr.status === 200) {
                     try {
                         const data = JSON.parse(xhr.responseText);
-                        
+
                         if (data.status === 'COMPLETED') {
                             loadingIndicator.classList.add('hidden');
-                            
+
                             let imageVariant = babyMode ? 'baby' : 'explaining';
                             addMessage(data.result || 'אני קיבלתי את התשובה!', false, imageVariant);
-                            
+
                             // Maybe show encouragement after answer
                             maybeShowEncouragement();
-                            
-                            if (promptsUsed && promptsLimit && promptsCounter) {
-                                promptsCounter.textContent = 'שאלות היום: ' + promptsUsed + '/' + promptsLimit;
+
+                            if (data.prompts_used && data.prompts_limit && promptsCounter) {
+                                promptsCounter.textContent = 'שאלות היום: ' + data.prompts_used + '/' + data.prompts_limit;
                             }
                         } else if (data.status === 'FAILED') {
                             loadingIndicator.classList.add('hidden');
@@ -266,7 +267,7 @@
                     addMessage('אופס! לא הצלחתי לקבל תשובה. נסה שוב 🦫', false, 'sarcastic');
                 }
             };
-            
+
             xhr.onerror = function() {
                 if (attempts < maxAttempts) {
                     setTimeout(poll, 1000);
@@ -275,10 +276,10 @@
                     addMessage('אופס! בעיית חיבור. נסה שוב 🦫', false, 'sarcastic');
                 }
             };
-            
+
             xhr.send();
         };
-        
+
         // Start polling after 500ms
         setTimeout(poll, 500);
     }
@@ -286,40 +287,39 @@
     function addMessage(content, isUser = false, imageVariant = 'happy') {
         const messageDiv = document.createElement('div');
         messageDiv.className = 'flex gap-3 items-start animate-fade-in ' + (isUser ? 'flex-row-reverse' : '');
-        
+
         const img = document.createElement('img');
         img.src = isUser ? '' : avnerImages[imageVariant];
         img.alt = isUser ? 'משתמש' : 'אבנר';
         img.className = 'w-10 h-10 rounded-full object-cover border-2 border-golden-yellow flex-shrink-0';
-        
+
         const contentDiv = document.createElement('div');
         contentDiv.className = 'flex-grow';
-        
+
         const bubble = document.createElement('div');
         bubble.className = `p-3 rounded-2xl border-2 shadow-sm ${isUser ? 'bg-gradient-to-r from-golden-yellow/30 to-warm-yellow/30 border-golden-yellow' : 'bg-gradient-to-l from-warm-beige to-cream border-warm-yellow'}`;
-        
+
         const text = document.createElement('p');
         text.className = 'text-dark-brown whitespace-pre-wrap leading-relaxed';
-        
-        // Use textContent for security instead of innerHTML
+
         const label = document.createElement('strong');
         label.textContent = isUser ? 'את/ה: ' : 'אבנר: ';
         text.appendChild(label);
         text.appendChild(document.createTextNode(content));
-        
+
         const time = document.createElement('p');
         time.className = 'text-xs text-warm-gray mt-1';
         time.textContent = 'עכשיו';
-        
+
         bubble.appendChild(text);
         contentDiv.appendChild(bubble);
         contentDiv.appendChild(time);
-        
+
         if (!isUser) {
             messageDiv.appendChild(img);
         }
         messageDiv.appendChild(contentDiv);
-        
+
         chatMessages.appendChild(messageDiv);
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }
@@ -328,44 +328,38 @@
     chatForm.addEventListener('submit', function(e) {
         e.preventDefault();
         e.stopPropagation();
-        
+
         const question = questionInput.value.trim();
         if (!question) return;
-        
-        // Maybe show sarcastic loading message
+
         const sarcasticMsg = maybeShowSarcasm();
-        
-        // Add user message
+
         addMessage(question, true);
         questionInput.value = '';
-        
-        // Show loading with optional sarcasm
+
         if (sarcasticMsg) {
             addMessage(sarcasticMsg, false, 'coffee');
         }
         loadingIndicator.classList.remove('hidden');
-        
-        // Maybe show a random joke while waiting
+
         maybeShowRandomJoke();
-        
-        // Use XMLHttpRequest for better iOS Safari compatibility
+
         const xhr = new XMLHttpRequest();
         xhr.open('POST', '/api/avner/ask', true);
         xhr.setRequestHeader('Content-Type', 'application/json');
-        
+
         const babyMode = babyModeToggle.checked;
         const courseId = courseSelector ? courseSelector.value : '';
-        
+
         xhr.onload = function() {
             if (xhr.status >= 200 && xhr.status < 300) {
                 try {
                     const data = JSON.parse(xhr.responseText);
-                    
+
                     if (data.error) {
                         loadingIndicator.classList.add('hidden');
                         addMessage('שגיאה: ' + data.error, false, 'sarcastic');
                     } else if (data.answer) {
-                        // Synchronous response (local answer)
                         loadingIndicator.classList.add('hidden');
                         let imageVariant = 'happy';
                         if (babyMode) {
@@ -373,15 +367,13 @@
                         } else if (data.used_ai) {
                             imageVariant = 'explaining';
                         }
-                        
+
                         addMessage(data.answer, false, imageVariant);
-                        
-                        // Update prompts counter if available
+
                         if (data.prompts_used && data.prompts_limit && promptsCounter) {
                             promptsCounter.textContent = 'שאלות היום: ' + data.prompts_used + '/' + data.prompts_limit;
                         }
                     } else if (data.task_id) {
-                        // Asynchronous response (AI processing) - poll for result
                         pollTaskResult(data.task_id, babyMode, data.prompts_used, data.prompts_limit);
                     } else {
                         loadingIndicator.classList.add('hidden');
@@ -392,29 +384,18 @@
                     console.error('Parse error:', parseError);
                     addMessage('אופס! שגיאה בעיבוד התגובה מהשרת 🦫', false, 'sarcastic');
                 }
-            } else if (xhr.status === 202) {
-                // Accepted - processing async
-                try {
-                    const data = JSON.parse(xhr.responseText);
-                    if (data.task_id) {
-                        pollTaskResult(data.task_id, babyMode, data.prompts_used, data.prompts_limit);
-                    }
-                } catch (e) {
-                    loadingIndicator.classList.add('hidden');
-                    addMessage('אופס! שגיאת שרת. אנא נסה שוב 🦫', false, 'sarcastic');
-                }
             } else {
                 loadingIndicator.classList.add('hidden');
                 addMessage('אופס! שגיאת שרת. אנא נסה שוב 🦫', false, 'sarcastic');
             }
         };
-        
+
         xhr.onerror = function() {
             loadingIndicator.classList.add('hidden');
             console.error('Network error');
             addMessage('אופס! משהו השתבש בחיבור לשרת. אנא בדוק את החיבור לאינטרנט ונסה שוב 🦫', false, 'sarcastic');
         };
-        
+
         xhr.send(JSON.stringify({
             question: question,
             baby_mode: babyMode,
@@ -422,11 +403,10 @@
         }));
     });
 
-    // Enter to send (Shift+Enter for new line) - iOS 8 compatible
+    // Enter to send (Shift+Enter for new line)
     questionInput.addEventListener('keydown', function(e) {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
-            // iOS 8 compatible event dispatch
             if (typeof Event === 'function') {
                 chatForm.dispatchEvent(new Event('submit'));
             } else {
@@ -437,25 +417,20 @@
         }
     });
 
-    // iOS-specific: Scroll chat into view when keyboard appears
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
     if (isIOS) {
         questionInput.addEventListener('focus', function() {
-            // Small delay to ensure keyboard is shown
             setTimeout(function() {
-                // iOS 8 compatible scrollIntoView
                 if (questionInput.scrollIntoView) {
                     try {
                         questionInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     } catch (e) {
-                        // Fallback for older iOS
                         questionInput.scrollIntoView(true);
                     }
                 }
             }, 300);
         });
-        
-        // Ensure chat messages area is scrollable with momentum on iOS
+
         chatMessages.style.webkitOverflowScrolling = 'touch';
     }
 
@@ -473,7 +448,6 @@
 </script>
 
 <style>
-    /* Smooth animations for flowing chat */
     @keyframes slideIn {
         from {
             opacity: 0;
@@ -484,7 +458,7 @@
             transform: translateY(0);
         }
     }
-    
+
     @keyframes fadeIn {
         from {
             opacity: 0;
@@ -493,17 +467,15 @@
             opacity: 1;
         }
     }
-    
+
     .animate-fade-in {
         animation: slideIn 0.4s ease-out;
     }
-    
-    /* Smooth scroll behavior for chat */
+
     #chat-messages {
         scroll-behavior: smooth;
     }
-    
-    /* Better chat bubble hover effects (respects reduced motion) */
+
     @media (prefers-reduced-motion: no-preference) {
         #chat-messages > div:hover {
             transform: translateX(2px);

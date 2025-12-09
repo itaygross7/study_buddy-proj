@@ -1,0 +1,311 @@
+{% extends "base.html" %}
+
+{% block title %}מעבדת הוראה של אבנר - StudyBuddy{% endblock %}
+
+{% block content %}
+<div class="py-6">
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+        <div>
+            <h1 class="text-3xl font-bold text-dark-brown">מעבדת הוראה של אבנר 🦫</h1>
+            <p class="text-cozy-brown mt-1">
+                כאן אתה מלמד את אבנר איך להסביר יותר טוב – ניסוחים, דוגמאות, רמת פירוט וסגנון.
+            </p>
+        </div>
+        <a href="{{ url_for('admin.dashboard') }}"
+           class="px-4 py-2 border-2 border-cozy-brown text-cozy-brown rounded-xl font-medium hover:bg-cozy-brown hover:text-cream transition-colors">
+            ← חזרה ללוח הבקרה
+        </a>
+    </div>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="mb-4 p-4 rounded-xl border-2
+                    {% if category == 'error' %}bg-red-50 border-error text-error
+                    {% elif category == 'success' %}bg-green-50 border-success text-success
+                    {% else %}bg-yellow-50 border-warning text-cozy-brown{% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- Top Stats -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div class="bg-cream rounded-2xl p-4 shadow-md border border-warm-yellow">
+            <p class="text-sm text-cozy-brown mb-1">דוגמאות הוראה</p>
+            <p class="text-2xl font-bold text-dark-brown">
+                {{ stats.total_teaching_examples if stats.total_teaching_examples is defined else teaching_examples|length }}
+            </p>
+            <p class="text-xs text-cozy-brown mt-1">כמה פעמים לימדת את אבנר איך לענות</p>
+        </div>
+        <div class="bg-cream rounded-2xl p-4 shadow-md border border-warm-yellow">
+            <p class="text-sm text-cozy-brown mb-1">חוקי שיפור</p>
+            <p class="text-2xl font-bold text-dark-brown">
+                {{ stats.total_improvement_rules if stats.total_improvement_rules is defined else improvement_rules|length }}
+            </p>
+            <p class="text-xs text-cozy-brown mt-1">חוקים כלליים לסגנון ההסבר</p>
+        </div>
+        <div class="bg-cream rounded-2xl p-4 shadow-md border border-warm-yellow">
+            <p class="text-sm text-cozy-brown mb-1">שימוש אחרון</p>
+            <p class="text-2xl font-bold text-dark-brown">
+                {{ stats.last_updated_human if stats.last_updated_human is defined else '—' }}
+            </p>
+            <p class="text-xs text-cozy-brown mt-1">פעם אחרונה שהמערכת "למדה" משהו חדש</p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Left Column: New Teaching Example + list -->
+        <div class="space-y-6">
+            <!-- New Teaching Example Form -->
+            <div class="bg-cream rounded-2xl p-6 shadow-md border border-warm-yellow">
+                <h2 class="text-xl font-bold text-dark-brown mb-2">הוספת דוגמת הוראה</h2>
+                <p class="text-sm text-cozy-brown mb-4">
+                    תן מצב אמיתי: שאלה של סטודנט, תשובה אידיאלית של אבנר, והסבר למה זה טוב.
+                </p>
+
+                <form method="POST" class="space-y-4">
+                    <input type="hidden" name="form_type" value="teaching_example">
+
+                    <div>
+                        <label class="block text-sm font-medium text-dark-brown mb-1">
+                            קטגוריה (טון / רמת פירוט / דוגמאות / משחקיות...)
+                        </label>
+                        <input type="text"
+                               name="category"
+                               placeholder="לדוגמה: tone_friendly, explanation_step_by_step"
+                               class="w-full px-4 py-2 rounded-xl border-2 border-warm-gray bg-warm-beige text-dark-brown focus:border-golden-yellow focus:outline-none focus:ring-2 focus:ring-golden-yellow">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-dark-brown mb-1">
+                            שאלה לדוגמה של סטודנט
+                        </label>
+                        <textarea name="example_input" rows="2"
+                                  placeholder="לדוגמה: 'אני לא מבין מה זה נגזרת, אפשר להסביר לי כמו לילד בכיתה ט'?'"
+                                  class="w-full px-4 py-2 rounded-xl border-2 border-warm-gray bg-warm-beige text-dark-brown focus:border-golden-yellow focus:outline-none focus:ring-2 focus:ring-golden-yellow"></textarea>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-dark-brown mb-1">
+                            תשובה אידיאלית של אבנר (איך היית רוצה שהוא ינסח)
+                        </label>
+                        <textarea name="ideal_response" rows="3"
+                                  placeholder="תשובה קצרה, ברורה, עם טון של אבנר, כמו שאתה רוצה שייצא בסוף."
+                                  class="w-full px-4 py-2 rounded-xl border-2 border-warm-gray bg-warm-beige text-dark-brown focus:border-golden-yellow focus:outline-none focus:ring-2 focus:ring-golden-yellow"></textarea>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-dark-brown mb-1">
+                            למה זו תשובה טובה? (הערת מורה למודל)
+                        </label>
+                        <textarea name="explanation" rows="2"
+                                  placeholder="לדוגמה: עונה בשפה פשוטה, צעד-אחר-צעד, מוסיף דוגמה יומיומית, מסיים במשפט עידוד."
+                                  class="w-full px-4 py-2 rounded-xl border-2 border-warm-gray bg-warm-beige text-dark-brown focus:border-golden-yellow focus:outline-none focus:ring-2 focus:ring-golden-yellow"></textarea>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-dark-brown mb-1">
+                            תגיות (אופציונלי, מופרד בפסיקים)
+                        </label>
+                        <input type="text"
+                               name="tags"
+                               placeholder="math, beginner, chill_tone"
+                               class="w-full px-4 py-2 rounded-xl border-2 border-warm-gray bg-warm-beige text-dark-brown focus:border-golden-yellow focus:outline-none focus:ring-2 focus:ring-golden-yellow">
+                    </div>
+
+                    <div class="flex justify-end">
+                        <button type="submit"
+                                class="px-6 py-2 bg-golden-yellow text-dark-brown rounded-xl font-bold hover:bg-warm-yellow transition-colors shadow-md">
+                            שמור דוגמת הוראה
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Recent Teaching Examples -->
+            <div class="bg-cream rounded-2xl p-6 shadow-md border border-warm-yellow">
+                <h3 class="text-lg font-bold text-dark-brown mb-3">דוגמאות הוראה אחרונות</h3>
+                {% if teaching_examples %}
+                    <div class="space-y-3 max-h-96 overflow-y-auto">
+                        {% for ex in teaching_examples[:10] %}
+                        <div class="p-3 rounded-xl bg-warm-beige border border-warm-gray">
+                            <p class="text-xs text-cozy-brown mb-1">
+                                קטגוריה: <span class="font-medium text-dark-brown">{{ ex.category }}</span>
+                            </p>
+                            <p class="text-xs text-cozy-brown mb-1">
+                                תגיות:
+                                {% if ex.tags %}
+                                    {{ ex.tags|join(', ') }}
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </p>
+                            <p class="text-xs text-cozy-brown mt-1 mb-1">שאלה:</p>
+                            <p class="text-sm text-dark-brown mb-1">{{ ex.example_input }}</p>
+                            <p class="text-xs text-cozy-brown mt-1 mb-1">תשובה אידיאלית:</p>
+                            <p class="text-sm text-dark-brown mb-1">{{ ex.ideal_response }}</p>
+                            <p class="text-xs text-cozy-brown mt-1 mb-1">למה זה טוב:</p>
+                            <p class="text-xs text-dark-brown">{{ ex.explanation }}</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-sm text-cozy-brown">עוד לא הוספת דוגמאות הוראה. התחל בדוגמה אחת פשוטה 🚀</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Right Column: Improvement Rules + usage -->
+        <div class="space-y-6">
+            <!-- Improvement Rule Form -->
+            <div class="bg-cream rounded-2xl p-6 shadow-md border border-warm-yellow">
+                <h2 class="text-xl font-bold text-dark-brown mb-2">הוספת חוק שיפור סגנון</h2>
+                <p class="text-sm text-cozy-brown mb-4">
+                    חוקים כלליים לאיך אבנר צריך להסביר לפי רמת סטודנט / סוג כלי.
+                </p>
+
+                <form method="POST" class="space-y-4">
+                    <input type="hidden" name="form_type" value="improvement_rule">
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-dark-brown mb-1">
+                                סוג חוק
+                            </label>
+                            <select name="rule_type"
+                                    class="w-full px-4 py-2 rounded-xl border-2 border-warm-gray bg-warm-beige text-dark-brown focus:border-golden-yellow focus:outline-none focus:ring-2 focus:ring-golden-yellow">
+                                <option value="">בחר...</option>
+                                <option value="teaching_style">סגנון הוראה</option>
+                                <option value="explanation_detail">רמת פירוט</option>
+                                <option value="tone_adjustment">טון</option>
+                                <option value="structure">מבנה תשובה</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-dark-brown mb-1">
+                                רמת סטודנט (אופציונלי)
+                            </label>
+                            <select name="proficiency_level"
+                                    class="w-full px-4 py-2 rounded-xl border-2 border-warm-gray bg-warm-beige text-dark-brown focus:border-golden-yellow focus:outline-none focus:ring-2 focus:ring-golden-yellow">
+                                <option value="">כל הרמות</option>
+                                <option value="beginner">מתחיל</option>
+                                <option value="intermediate">ביניים</option>
+                                <option value="advanced">מתקדם</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-dark-brown mb-1">
+                                רמת לימודים (אופציונלי)
+                            </label>
+                            <select name="study_level"
+                                    class="w-full px-4 py-2 rounded-xl border-2 border-warm-gray bg-warm-beige text-dark-brown focus:border-golden-yellow focus:outline-none focus:ring-2 focus:ring-golden-yellow">
+                                <option value="">לא משנה</option>
+                                <option value="high_school">תיכון</option>
+                                <option value="bachelor">תואר ראשון</option>
+                                <option value="master">תואר שני</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-dark-brown mb-1">
+                                סוג כלי (אופציונלי)
+                            </label>
+                            <select name="task_type"
+                                    class="w-full px-4 py-2 rounded-xl border-2 border-warm-gray bg-warm-beige text-dark-brown focus:border-golden-yellow focus:outline-none focus:ring-2 focus:ring-golden-yellow">
+                                <option value="">כל הכלים</option>
+                                <option value="summary">מסכם</option>
+                                <option value="flashcards">כרטיסיות</option>
+                                <option value="assess">בחן אותי</option>
+                                <option value="homework">עזרה בשיעורים</option>
+                                <option value="avner_chat">צ׳אט עם אבנר</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-dark-brown mb-1">
+                            תיאור החוק (בשפה שלך)
+                        </label>
+                        <textarea name="description" rows="2"
+                                  placeholder="לדוגמה: לסטודנטים מתחילים במתמטיקה – להסביר לאט, עם דוגמה מהחיים, ולא יותר מ-4 משפטים."
+                                  class="w-full px-4 py-2 rounded-xl border-2 border-warm-gray bg-warm-beige text-dark-brown focus:border-golden-yellow focus:outline-none focus:ring-2 focus:ring-golden-yellow"></textarea>
+                    </div>
+
+                    <div>
+                        <p class="text-sm font-medium text-dark-brown mb-1">מה החוק עושה בפועל?</p>
+                        <div class="grid grid-cols-2 gap-2 text-sm">
+                            <label class="flex items-center gap-2">
+                                <input type="checkbox" name="add_examples"
+                                       class="rounded border-cozy-brown text-golden-yellow focus:ring-golden-yellow">
+                                <span>להוסיף דוגמאות</span>
+                            </label>
+                            <label class="flex items-center gap-2">
+                                <input type="checkbox" name="simplify_language"
+                                       class="rounded border-cozy-brown text-golden-yellow focus:ring-golden-yellow">
+                                <span>שפה פשוטה יותר</span>
+                            </label>
+                            <label class="flex items-center gap-2">
+                                <input type="checkbox" name="shorter_answers"
+                                       class="rounded border-cozy-brown text-golden-yellow focus:ring-golden-yellow">
+                                <span>תשובות קצרות יותר</span>
+                            </label>
+                            <label class="flex items-center gap-2">
+                                <input type="checkbox" name="more_structure"
+                                       class="rounded border-cozy-brown text-golden-yellow focus:ring-golden-yellow">
+                                <span>יותר מבנה (שלבים / רשימות)</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end">
+                        <button type="submit"
+                                class="px-6 py-2 bg-golden-yellow text-dark-brown rounded-xl font-bold hover:bg-warm-yellow transition-colors shadow-md">
+                            שמור חוק שיפור
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Existing Rules -->
+            <div class="bg-cream rounded-2xl p-6 shadow-md border border-warm-yellow">
+                <h3 class="text-lg font-bold text-dark-brown mb-3">חוקי שיפור פעילים</h3>
+                {% if improvement_rules %}
+                    <div class="space-y-3 max-h-96 overflow-y-auto">
+                        {% for rule in improvement_rules %}
+                        <div class="p-3 rounded-xl bg-warm-beige border border-warm-gray">
+                            <p class="text-xs text-cozy-brown mb-1">
+                                סוג: <span class="font-medium text-dark-brown">{{ rule.rule_type }}</span>
+                            </p>
+                            <p class="text-xs text-cozy-brown mb-1">
+                                תנאים:
+                                <span class="font-medium text-dark-brown">
+                                    {{ rule.condition }}
+                                </span>
+                            </p>
+                            <p class="text-xs text-cozy-brown mb-1">
+                                פעולה:
+                                <span class="font-medium text-dark-brown">
+                                    {{ rule.action }}
+                                </span>
+                            </p>
+                            <p class="text-xs text-cozy-brown mt-1 mb-1">
+                                תיאור:
+                            </p>
+                            <p class="text-xs text-dark-brown">{{ rule.description }}</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-sm text-cozy-brown">עדיין אין חוקים. תוכל להתחיל מחוק אחד כללי, למשל "למתחילים תמיד להוסיף דוגמה אחת פשוטה".</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

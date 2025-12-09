@@ -15,10 +15,6 @@ def trigger_summary():
     """
     Trigger an AI summary task for an entire course.
 
-    The worker will later:
-    - Aggregate smart context from ALL documents in the course.
-    - Generate a summary based on the user's query / focus.
-
     Expected form fields:
     - course_id: required
     - query: optional (defaults to 'general summary').
@@ -32,7 +28,6 @@ def trigger_summary():
 
     try:
         task_repo = MongoTaskRepository(db)
-        # Make sure your repository supports course_id as a field.
         task = task_repo.create(
             user_id=user_id,
             course_id=course_id,

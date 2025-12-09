@@ -115,13 +115,15 @@ class Document(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     id: str = Field(..., alias="_id")
-    user_id: str  # Owner of this document
-    course_id: str  # Which course this belongs to
+    user_id: str            # Owner of this document
+    course_id: str          # Which course this belongs to
     filename: str
     original_filename: str = ""  # Original uploaded filename
     content_text: str
-    content_type: str = "text"  # "text", "pdf", "docx", "pptx"
-    file_size: int = 0  # Size in bytes
+    content_type: str = "text"   # "text", "pdf", "docx", "pptx"
+    file_size: int = 0           # Size in bytes
+    status: DocumentStatus = DocumentStatus.UPLOADED
+    gridfs_id: str | None = None
     created_at: datetime = Field(default_factory=_utc_now)
 
     def to_dict(self):

@@ -2,11 +2,20 @@
 import uuid
 from datetime import datetime, timezone
 from typing import Optional
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
+
+from flask import (
+    Blueprint,
+    render_template,
+    request,
+    redirect,
+    url_for,
+    flash,
+    jsonify,
+)
 from flask_login import login_required, current_user
 
 from src.infrastructure.database import db
-from src.domain.models.db_models import Course, UserProfile, Language
+from src.domain.models.db_models import Course, UserProfile, Language, UserRole
 from src.api.routes_admin import get_system_config
 from src.services import auth_service
 from src.utils.document_chunking import smart_retrieve_chunks
@@ -14,7 +23,6 @@ from sb_utils.logger_utils import logger
 
 library_bp = Blueprint('library', __name__)
 
-# Available course icons
 COURSE_ICONS = ['📚', '📖', '📝', '🔬', '🧮', '🎨', '🎵', '💻', '🌍', '⚖️', '💼', '🏥', '🔧', '📊', '🧠', '✏️']
 COURSE_COLORS = ['#F2C94C', '#7CB342', '#42A5F5', '#AB47BC', '#EF5350', '#26A69A', '#FF7043', '#8D6E63']
 
@@ -24,7 +32,6 @@ def get_user_profile(user_id: str) -> UserProfile:
     profile_data = db.user_profiles.find_one({"_id": user_id})
     if profile_data:
         return UserProfile(**profile_data)
-    # Create default profile
     profile = UserProfile(_id=user_id)
     db.user_profiles.insert_one(profile.to_dict())
     return profile
@@ -49,20 +56,15 @@ def get_course_documents(course_id: str):
     return list(db.documents.find({"course_id": course_id}).sort("created_at", -1))
 
 
-def get_course_context(course_id: str, user_id: str, query: Optional[str] = None, max_chars: int = 4000) -> str:
+def get_course_context(
+    course_id: str,
+    user_id: str,
+    query: Optional[str] = None,
+    max_chars: int = 4000,
+) -> str:
     """
     Get relevant context from course documents using smart chunk retrieval.
-    
-    Args:
-        course_id: Course ID
-        user_id: User ID
-        query: Optional search query for relevant chunks
-        max_chars: Maximum characters in context
-        
-    Returns:
-        Combined context string with relevant chunks
     """
-    # Try smart retrieval first (using indexed chunks)
     try:
         return smart_retrieve_chunks(
             db=db,
@@ -70,55 +72,56 @@ def get_course_context(course_id: str, user_id: str, query: Optional[str] = None
             user_id=user_id,
             query=query,
             max_chunks=5,
-            max_total_chars=max_chars
+            max_total_chars=max_chars,
         )
     except Exception as e:
         logger.warning(f"Smart retrieval failed, falling back to naive approach: {e}")
-        
-        # Fallback to old naive approach if chunking not available
+
         documents = db.documents.find({"course_id": course_id, "user_id": user_id})
-        context_parts = []
+        context_parts: list[str] = []
         total_chars = 0
 
         for doc in documents:
-            content = doc.get("content_text", "")
+            content = doc.get("content_text", "") or ""
+            if not content:
+                continue
+
             if total_chars + len(content) > max_chars:
-                # Add truncated content
                 remaining = max_chars - total_chars
                 if remaining > 100:
                     context_parts.append(content[:remaining] + "...")
                 break
+
             context_parts.append(content)
             total_chars += len(content)
 
-        return "\\n\\n---\\n\\n".join(context_parts)
+        # FIX: real newlines, not literal "\n"
+        return "\n\n---\n\n".join(context_parts)
 
 
 @library_bp.route('/')
 @login_required
 def index():
-    """User's library - list of all courses."""
     courses = get_user_courses(current_user.id)
     profile = get_user_profile(current_user.id)
     config = get_system_config()
 
-    return render_template('library/index.html',
-                           courses=courses,
-                           profile=profile,
-                           max_courses=config.max_courses_per_user,
-                           icons=COURSE_ICONS,
-                           colors=COURSE_COLORS)
+    return render_template(
+        'library/index.html',
+        courses=courses,
+        profile=profile,
+        max_courses=config.max_courses_per_user,
+        icons=COURSE_ICONS,
+        colors=COURSE_COLORS,
+    )
 
 
 @library_bp.route('/course/new', methods=['GET', 'POST'])
 @login_required
 def new_course():
-    """Create a new course."""
     config = get_system_config()
     current_count = db.courses.count_documents({"user_id": current_user.id})
 
-    # Admin users have no course limit
-    from src.domain.models.db_models import UserRole
     if current_user.role != UserRole.ADMIN and current_count >= config.max_courses_per_user:
         flash(f'הגעת למקסימום {config.max_courses_per_user} קורסים', 'error')
         return redirect(url_for('library.index'))
@@ -145,7 +148,7 @@ def new_course():
             description=description,
             language=Language.HEBREW if language == 'he' else Language.ENGLISH,
             icon=icon,
-            color=color
+            color=color,
         )
 
         db.courses.insert_one(course.to_dict())
@@ -159,7 +162,6 @@ def new_course():
 @library_bp.route('/course/<course_id>')
 @login_required
 def course_page(course_id):
-    """Course page with all tools."""
     course = get_course_by_id(course_id, current_user.id)
     if not course:
         flash('הקורס לא נמצא', 'error')
@@ -167,24 +169,24 @@ def course_page(course_id):
 
     documents = get_course_documents(course_id)
 
-    # Get summaries, flashcards, assessments for this course
     summaries = list(db.summaries.find({"course_id": course_id}).sort("created_at", -1).limit(10))
     flashcard_sets = list(db.flashcard_sets.find({"course_id": course_id}).sort("created_at", -1).limit(10))
     assessments = list(db.assessments.find({"course_id": course_id}).sort("created_at", -1).limit(10))
 
-    return render_template('library/course.html',
-                           course=course,
-                           documents=documents,
-                           summaries=summaries,
-                           flashcard_sets=flashcard_sets,
-                           assessments=assessments,
-                           has_content=len(documents) > 0)
+    return render_template(
+        'library/course.html',
+        course=course,
+        documents=documents,
+        summaries=summaries,
+        flashcard_sets=flashcard_sets,
+        assessments=assessments,
+        has_content=len(documents) > 0,
+    )
 
 
 @library_bp.route('/course/<course_id>/settings', methods=['GET', 'POST'])
 @login_required
 def course_settings(course_id):
-    """Edit course settings."""
     course = get_course_by_id(course_id, current_user.id)
     if not course:
         flash('הקורס לא נמצא', 'error')
@@ -223,15 +225,14 @@ def course_settings(course_id):
 @library_bp.route('/course/<course_id>/delete', methods=['POST'])
 @login_required
 def delete_course(course_id):
-    """Delete a course and all its content."""
     course = get_course_by_id(course_id, current_user.id)
     if not course:
         flash('הקורס לא נמצא', 'error')
         return redirect(url_for('library.index'))
 
-    # Delete all related data
     db.documents.delete_many({"course_id": course_id, "user_id": current_user.id})
-    db.summaries.delete_many({"course_id": course_id, "user_id": current_user.id})
+    # אל תסמוך על user_id במסמכי summary – מחיקה לפי course_id מספיקה
+    db.summaries.delete_many({"course_id": course_id})
     db.flashcard_sets.delete_many({"course_id": course_id, "user_id": current_user.id})
     db.assessments.delete_many({"course_id": course_id, "user_id": current_user.id})
     db.courses.delete_one({"_id": course_id, "user_id": current_user.id})
@@ -249,42 +250,38 @@ def upload_to_course(course_id):
     if not course:
         return jsonify({"error": "Course not found"}), 404
 
-    # This will be handled by the existing upload route with course_id parameter
-    # Redirect to the upload API
-    return redirect(url_for('upload_bp.upload_file_route', course_id=course_id))
+    # FIX: correct endpoint name from upload_bp
+    return redirect(url_for('upload_bp.upload_files_route', course_id=course_id))
 
 
 @library_bp.route('/course/<course_id>/<tool>')
 @login_required
 def course_tool(course_id, tool):
-    """Use a specific tool within a course context."""
     course = get_course_by_id(course_id, current_user.id)
     if not course:
         flash('הקורס לא נמצא', 'error')
         return redirect(url_for('library.index'))
 
-    # Check if course has content
     doc_count = db.documents.count_documents({"course_id": course_id})
     if doc_count == 0:
         flash('יש להעלות חומר לימוד לפני השימוש בכלים', 'warning')
         return redirect(url_for('library.course_page', course_id=course_id))
 
-    # Valid tools
     valid_tools = ['summary', 'flashcards', 'assess', 'homework']
     if tool not in valid_tools:
         flash('כלי לא קיים', 'error')
         return redirect(url_for('library.course_page', course_id=course_id))
 
-    # Get course context for the tool
     context = get_course_context(course_id, current_user.id)
     documents = get_course_documents(course_id)
 
-    return render_template(f'tool_{tool}.html',
-                           course=course,
-                           documents=documents,
-                           context=context,
-                           course_id=course_id)
-
+    return render_template(
+        f'tool_{tool}.html',
+        course=course,
+        documents=documents,
+        context=context,
+        course_id=course_id,
+    )
 
 @library_bp.route('/course/<course_id>/tasks')
 @login_required

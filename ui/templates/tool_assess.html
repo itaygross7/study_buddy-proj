@@ -1,3 +1,4 @@
+<!-- templates/assess/assess_me.html -->
 {% extends "base.html" %}
 
 {% block title %}בחן אותי - StudyBuddyAI{% endblock %}
@@ -13,10 +14,10 @@
                 <p class="text-ink-brown/80 mt-1">העלו קובץ או הדביקו טקסט, ואני אצור לכם בוחן קצר לבדיקת הידע שלכם.</p>
             </div>
         </div>
-        
+
         <div class="mt-6">
             <form id="assess-form"
-                  hx-post="{{ url_for('upload_bp.upload_route') }}"
+                  hx-post="{{ url_for('upload_bp.upload_files_route') }}"
                   hx-encoding="multipart/form-data"
                   hx-target="#upload-result"
                   hx-swap="innerHTML">

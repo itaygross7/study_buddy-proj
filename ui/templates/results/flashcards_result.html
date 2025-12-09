@@ -1,3 +1,4 @@
+<!-- templates/flashcards/_flashcards_result.html -->
 <div>
     <h3 class="text-lg font-bold text-dark-brown mb-4">כרטיסיות שנוצרו ({{ flashcard_set.cards|length }})</h3>
     <div class="mt-4 space-y-4">
@@ -18,7 +19,7 @@
         {% endfor %}
     </div>
     <div class="mt-6 flex flex-wrap gap-4">
-        <a href="{{ url_for('pdf_bp.export_flashcards_pdf', set_id=flashcard_set._id) }}" 
+        <a href="{{ url_for('pdf_bp.export_flashcards_pdf', set_id=flashcard_set._id) }}"
            class="inline-flex items-center gap-2 bg-cozy-brown text-cream font-semibold py-2 px-4 rounded-xl btn-hover-lift transition-all duration-150 shadow-md"
            target="_blank">
            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
@@ -27,8 +28,7 @@
            הורד ל-PDF
         </a>
     </div>
-    
-    <!-- Show shuffle toggle after results -->
+
     <script>
         document.getElementById('empty-state')?.classList.add('hidden');
         document.getElementById('flashcards-container')?.classList.add('hidden');
