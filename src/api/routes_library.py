@@ -139,7 +139,7 @@ def new_course():
 
         if len(name) > 100:
             flash('שם הקורס ארוך מדי (מקסימום 100 תווים)', 'error')
-            return render_template('library/new_course.html', icons=COURSE_ICONS, colors=COURSE_COLORS)
+            return render_template('library.new_course.html', icons=COURSE_ICONS, colors=COURSE_COLORS)
 
         course = Course(
             _id=str(uuid.uuid4()),
@@ -168,10 +168,79 @@ def course_page(course_id):
         return redirect(url_for('library.index'))
 
     documents = get_course_documents(course_id)
+    has_content = len(documents) > 0
 
+    # SIMPLE TOOL STATUS LOGIC FOR DASHBOARD
+    # waiting  -> no documents yet
+    # processing -> there are pending/processing tasks (file indexing)
+    # ready -> all docs indexed, no active processing tasks
+    if not has_content:
+        tool_status = "waiting"
+        processing_tasks_count = 0
+    else:
+        processing_tasks_count = db.tasks.count_documents({
+            "user_id": current_user.id,
+            "course_id": course_id,
+            "status": {"$in": ["PENDING", "PROCESSING"]},
+        })
+        tool_status = "processing" if processing_tasks_count > 0 else "ready"
+
+    # Recent results for badges/counters
     summaries = list(db.summaries.find({"course_id": course_id}).sort("created_at", -1).limit(10))
     flashcard_sets = list(db.flashcard_sets.find({"course_id": course_id}).sort("created_at", -1).limit(10))
     assessments = list(db.assessments.find({"course_id": course_id}).sort("created_at", -1).limit(10))
+
+    # TOOLS METADATA FOR TOP DASHBOARD
+    course_tools = [
+        {
+            "key": "summary",
+            "name": "מסכם",
+            "icon": "📝",
+            "description": "סיכום החומר לנקודות",
+            "status": tool_status,
+            "count": len(summaries),
+        },
+        {
+            "key": "flashcards",
+            "name": "כרטיסיות",
+            "icon": "🃏",
+            "description": "כרטיסיות לתרגול",
+            "status": tool_status,
+            "count": len(flashcard_sets),
+        },
+        {
+            "key": "assess",
+            "name": "בחן אותי",
+            "icon": "✅",
+            "description": "שאלות בחירה על החומר",
+            "status": tool_status,
+            "count": len(assessments),
+        },
+        {
+            "key": "homework",
+            "name": "עזרה בשיעורים",
+            "icon": "📚",
+            "description": "עזרה בפתרון שיעורי בית",
+            "status": tool_status,
+            "count": None,
+        },
+        {
+            "key": "tutor",
+            "name": "מורה פרטי",
+            "icon": "👨‍🏫",
+            "description": "שאלות חופשיות על החומר",
+            "status": tool_status,
+            "count": None,
+        },
+        {
+            "key": "diagram",
+            "name": "תרשימים",
+            "icon": "📊",
+            "description": "המחשה ויזואלית של החומר",
+            "status": tool_status,
+            "count": None,
+        },
+    ]
 
     return render_template(
         'library/course.html',
@@ -180,7 +249,9 @@ def course_page(course_id):
         summaries=summaries,
         flashcard_sets=flashcard_sets,
         assessments=assessments,
-        has_content=len(documents) > 0,
+        has_content=has_content,
+        course_tools=course_tools,
+        processing_tasks_count=processing_tasks_count,
     )
 
 
@@ -245,13 +316,13 @@ def delete_course(course_id):
 @library_bp.route('/course/<course_id>/upload', methods=['POST'])
 @login_required
 def upload_to_course(course_id):
-    """Upload a document to a course."""
+    """Legacy helper – frontends should normally call /api/upload/files directly."""
     course = get_course_by_id(course_id, current_user.id)
     if not course:
         return jsonify({"error": "Course not found"}), 404
 
-    # FIX: correct endpoint name from upload_bp
-    return redirect(url_for('upload_bp.upload_files_route', course_id=course_id))
+    # This route does not handle files directly; JS should POST to /api/upload/files
+    return redirect(url_for('library.course_page', course_id=course_id))
 
 
 @library_bp.route('/course/<course_id>/<tool>')
@@ -267,7 +338,8 @@ def course_tool(course_id, tool):
         flash('יש להעלות חומר לימוד לפני השימוש בכלים', 'warning')
         return redirect(url_for('library.course_page', course_id=course_id))
 
-    valid_tools = ['summary', 'flashcards', 'assess', 'homework']
+    # EXTENDED: support tutor + diagram as course-scoped tools too
+    valid_tools = ['summary', 'flashcards', 'assess', 'homework', 'tutor', 'diagram']
     if tool not in valid_tools:
         flash('כלי לא קיים', 'error')
         return redirect(url_for('library.course_page', course_id=course_id))
@@ -283,6 +355,7 @@ def course_tool(course_id, tool):
         course_id=course_id,
     )
 
+
 @library_bp.route('/course/<course_id>/tasks')
 @login_required
 def course_tasks(course_id):
@@ -291,13 +364,13 @@ def course_tasks(course_id):
     if not course:
         flash('הקורס לא נמצא', 'error')
         return redirect(url_for('library.index'))
-    
+
     # Get all tasks for this course, sorted by most recent first
     tasks = list(db.tasks.find({
         "user_id": current_user.id,
         "course_id": course_id
     }).sort("created_at", -1))
-    
+
     # Count tasks by status
     task_stats = {
         'total': len(tasks),
@@ -306,7 +379,7 @@ def course_tasks(course_id):
         'failed': len([t for t in tasks if t.get('status') == 'FAILED']),
         'pending': len([t for t in tasks if t.get('status') == 'PENDING'])
     }
-    
+
     # Group tasks by type
     tasks_by_type = {}
     for task in tasks:
@@ -314,10 +387,10 @@ def course_tasks(course_id):
         if task_type not in tasks_by_type:
             tasks_by_type[task_type] = []
         tasks_by_type[task_type].append(task)
-    
+
     profile = get_user_profile(current_user.id)
     config = get_system_config()
-    
+
     return render_template('library/course_tasks.html',
                            course=course,
                            tasks=tasks,
@@ -337,17 +410,17 @@ def course_progress(course_id):
     course = get_course_by_id(course_id, current_user.id)
     if not course:
         return jsonify({"error": "Course not found"}), 404
-    
+
     # Get processing tasks
     processing_tasks = list(db.tasks.find({
         "user_id": current_user.id,
         "course_id": course_id,
         "status": {"$in": ["PENDING", "PROCESSING"]}
     }))
-    
+
     # Get document counts
     total_docs = db.documents.count_documents({"course_id": course_id, "user_id": current_user.id})
-    
+
     # Get chunked documents count
     chunked_docs = db.document_chunks.aggregate([
         {"$match": {"course_id": course_id, "user_id": current_user.id}},
@@ -355,10 +428,10 @@ def course_progress(course_id):
         {"$count": "total"}
     ])
     chunked_count = next(chunked_docs, {}).get('total', 0)
-    
+
     # Calculate progress
     indexing_progress = (chunked_count / total_docs * 100) if total_docs > 0 else 0
-    
+
     return jsonify({
         "total_documents": total_docs,
         "indexed_documents": chunked_count,

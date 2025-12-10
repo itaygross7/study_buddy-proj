@@ -19,6 +19,11 @@ upload_bp = Blueprint("upload_bp", __name__)
 def upload_files_route():
     """
     Upload one or more files, save to GridFS, create Document + Task.
+
+    NOTE:
+    - Frontend should POST to /api/upload/files with:
+      * form field: course_id
+      * form field: files (can be multiple)
     """
     user_id = current_user.id
     course_id = request.form.get("course_id")
@@ -27,10 +32,10 @@ def upload_files_route():
         return jsonify({"error": "course_id is required"}), 400
 
     # Multi-file or single-file compatibility
-    files = request.files.getlist("files")
+    files = [f for f in request.files.getlist("files") if f and f.filename]
     if not files:
         single_file = request.files.get("file")
-        if single_file:
+        if single_file and single_file.filename:
             files = [single_file]
 
     if not files:
@@ -43,11 +48,15 @@ def upload_files_route():
     created_docs: list[str] = []
     tasks_created: list[str] = []
 
+    logger.info(
+        "User %s uploading %d file(s) to course %s",
+        user_id,
+        len(files),
+        course_id,
+    )
+
     try:
         for f in files:
-            if not f or not f.filename:
-                continue
-
             filename = secure_filename(f.filename)
 
             # --- FILE SIZE ---
