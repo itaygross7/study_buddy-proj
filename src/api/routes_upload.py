@@ -9,12 +9,12 @@ from src.infrastructure.repositories import MongoDocumentRepository, MongoTaskRe
 from src.infrastructure.rabbitmq import publish_task
 from src.services.file_service import get_file_service
 from sb_utils.logger_utils import logger
-from src.domain.models.db_models import Document, DocumentStatus, TaskStatus, Task
+from src.domain.models.db_models import Document, DocumentStatus  # ⬅️ Task לא צריך כאן
 
 upload_bp = Blueprint("upload_bp", __name__)
 
 
-@upload_bp.route("/files", methods=["POST"])
+@upload_files_bp.route("/files", methods=["POST"])
 @login_required
 def upload_files_route():
     """
@@ -75,7 +75,7 @@ def upload_files_route():
                 gridfs_id,
             )
 
-            # --- CREATE DOCUMENT MODEL ---
+            # --- CREATE DOCUMENT MODEL (כולל gridfs_id!) ---
             document = Document(
                 id=str(uuid.uuid4()),
                 user_id=user_id,
@@ -86,30 +86,26 @@ def upload_files_route():
                 content_type="file",
                 file_size=file_size,
                 status=DocumentStatus.UPLOADED,
+                gridfs_id=gridfs_id,  # 👈 זה היה חסר קודם
             )
 
             # --- SAVE DOCUMENT ---
             doc_repo.create(document)
             created_docs.append(document.id)
 
-            # --- CREATE TASK MODEL ---
-            task_id = str(uuid.uuid4())
-            task = Task(
-                id=task_id,
+            # --- CREATE TASK VIA REPOSITORY ---
+            task = task_repo.create(
                 user_id=user_id,
-                course_id=course_id,
+                document_id=document.id,
                 task_type="file_processing",
-                status=TaskStatus.PENDING,
-                result_id=None,
             )
-            task_repo.create(task)
-            tasks_created.append(task_id)
+            tasks_created.append(task.id)
 
             # --- SEND TO QUEUE ---
             publish_task(
                 queue_name="file_processing",
                 task_body={
-                    "task_id": task_id,
+                    "task_id": task.id,
                     "document_id": document.id,
                 },
             )
