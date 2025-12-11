@@ -16,7 +16,6 @@ schedule
 
 # --- Database + GridFS ---
 pymongo
-gridfs
 
 # --- AI Clients ---
 openai
