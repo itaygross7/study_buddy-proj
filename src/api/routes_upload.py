@@ -9,7 +9,7 @@ from src.infrastructure.repositories import MongoDocumentRepository, MongoTaskRe
 from src.infrastructure.rabbitmq import publish_task
 from src.services.file_service import get_file_service
 from sb_utils.logger_utils import logger
-from src.domain.models.db_models import Document, DocumentStatus, TaskStatus, Task  # 👈 NOTE Task import
+from src.domain.models.db_models import Document, DocumentStatus, TaskStatus, Task
 
 upload_bp = Blueprint("upload_bp", __name__)
 
@@ -20,11 +20,9 @@ def upload_files_route():
     """
     Upload one or more files, save to GridFS, create Document + Task.
 
-    Frontend:
-      POST /api/upload/files
-      form fields:
-        - course_id (required)
-        - files (can be multiple)  OR single "file"
+    Form fields:
+      - course_id (required)
+      - files (can be multiple)  OR single "file"
     """
     user_id = current_user.id
     course_id = request.form.get("course_id")
@@ -94,7 +92,7 @@ def upload_files_route():
             doc_repo.create(document)
             created_docs.append(document.id)
 
-            # --- CREATE TASK MODEL (NOT dict) ---
+            # --- CREATE TASK MODEL ---
             task_id = str(uuid.uuid4())
             task = Task(
                 id=task_id,
