@@ -9,12 +9,12 @@ from src.infrastructure.repositories import MongoDocumentRepository, MongoTaskRe
 from src.infrastructure.rabbitmq import publish_task
 from src.services.file_service import get_file_service
 from sb_utils.logger_utils import logger
-from src.domain.models.db_models import Document, DocumentStatus  # ⬅️ Task לא צריך כאן
+from src.domain.models.db_models import Document, DocumentStatus
 
 upload_bp = Blueprint("upload_bp", __name__)
 
 
-@upload_files_bp.route("/files", methods=["POST"])
+@upload_bp.route("/files", methods=["POST"])
 @login_required
 def upload_files_route():
     """
@@ -86,7 +86,7 @@ def upload_files_route():
                 content_type="file",
                 file_size=file_size,
                 status=DocumentStatus.UPLOADED,
-                gridfs_id=gridfs_id,  # 👈 זה היה חסר קודם
+                gridfs_id=gridfs_id,
             )
 
             # --- SAVE DOCUMENT ---
