@@ -1,6 +1,7 @@
 import uuid
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Optional, Union
+
 from pymongo.database import Database
 
 from src.domain.repositories import IDocumentRepository, ITaskRepository
@@ -33,33 +34,70 @@ class MongoTaskRepository(ITaskRepository):
         task_data = self.db.tasks.find_one({"_id": task_id})
         return Task(**task_data) if task_data else None
 
-    def create(self, user_id: Optional[str] = None, document_id: Optional[str] = None, 
-               task_type: str = "") -> Task:
+    def create(
+        self,
+        data: Union[Task, dict, None] = None,
+        user_id: Optional[str] = None,
+        document_id: Optional[str] = None,
+        task_type: str = "",
+    ) -> Task:
+        """
+        Universal create method:
+
+        Supports three styles:
+
+        1. New style:
+           - create(task: Task)
+
+        2. Dict style:
+           - create({"_id": ..., "user_id": ..., ...})
+
+        3. Old style (backwards compatible):
+           - create(user_id=user_id, document_id=document_id, task_type="file_processing")
+        """
         now = datetime.now(timezone.utc)
-        task = Task(
-            _id=str(uuid.uuid4()),
-            status=TaskStatus.PENDING,
-            user_id=user_id,
-            result_id=document_id,
-            task_type=task_type,
-            created_at=now,
-            updated_at=now
-        )
+
+        # CASE 1: Full Task object provided
+        if isinstance(data, Task):
+            task = data
+
+        # CASE 2: Raw dict provided
+        elif isinstance(data, dict):
+            task = Task(**data)
+
+        # CASE 3: Old-style call using explicit parameters
+        else:
+            task = Task(
+                _id=str(uuid.uuid4()),
+                status=TaskStatus.PENDING,
+                user_id=user_id,
+                # NOTE: in the legacy API, document_id was stored as result_id
+                result_id=document_id,
+                task_type=task_type,
+                created_at=now,
+                updated_at=now,
+            )
+
         self.db.tasks.insert_one(task.to_dict())
         logger.info(f"Created new task with ID: {task.id}")
         return task
 
-    def update_status(self, task_id: str, status: TaskStatus,
-                      result_id: Optional[str] = None, error_message: Optional[str] = None) -> None:
+    def update_status(
+        self,
+        task_id: str,
+        status: TaskStatus,
+        result_id: Optional[str] = None,
+        error_message: Optional[str] = None,
+    ) -> None:
         update_doc = {
             "$set": {
                 "status": status.value,
-                "updated_at": datetime.now(timezone.utc)
+                "updated_at": datetime.now(timezone.utc),
             }
         }
-        if result_id:
+        if result_id is not None:
             update_doc["$set"]["result_id"] = result_id
-        if error_message:
+        if error_message is not None:
             update_doc["$set"]["error_message"] = error_message
 
         self.db.tasks.update_one({"_id": task_id}, update_doc)
