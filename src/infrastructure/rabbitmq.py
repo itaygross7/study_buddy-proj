@@ -1,35 +1,55 @@
-import pika
 import json
-from .config import settings
+import pika
+
+from src.infrastructure.config import settings
 from sb_utils.logger_utils import logger
 
-def publish_task(queue_name: str, task_body: dict):
+
+def publish_task(queue_name: str, task_body: dict) -> None:
     """
-    Publishes a task to the specified RabbitMQ queue, ensuring the connection is closed.
+    Publish a task to RabbitMQ.
+
+    - Declares the queue as durable.
+    - Injects `queue_name` into the payload so the worker can route logic.
     """
-    connection = None  # Initialize connection to None
+    payload = dict(task_body)
+    payload["queue_name"] = queue_name  # 👈 worker relies on this
+
+    params = pika.URLParameters(settings.RABBITMQ_URI)
+    connection = None
     try:
-        connection = pika.BlockingConnection(pika.URLParameters(settings.RABBITMQ_URI))
+        connection = pika.BlockingConnection(params)
         channel = connection.channel()
-        
+
+        # Durable queue
         channel.queue_declare(queue=queue_name, durable=True)
-        
-        task_body['queue_name'] = queue_name
-        
+
         channel.basic_publish(
-            exchange='',
+            exchange="",
             routing_key=queue_name,
-            body=json.dumps(task_body),
-            properties=pika.BasicProperties(delivery_mode=2)
+            body=json.dumps(payload),
+            properties=pika.BasicProperties(
+                delivery_mode=2,  # persistent
+            ),
         )
-        logger.info(f"Published task {task_body.get('task_id')} to queue '{queue_name}'")
+
+        logger.info(
+            "Published task to queue '%s' with payload keys: %s",
+            queue_name,
+            list(payload.keys()),
+        )
+
     except Exception as e:
-        logger.error(f"Failed to publish task to RabbitMQ: {e}", exc_info=True)
+        logger.error(
+            "Failed to publish task to queue '%s': %s",
+            queue_name,
+            e,
+            exc_info=True,
+        )
         raise
     finally:
-        # --- THIS IS THE FIX ---
-        # Ensure the connection is always closed gracefully.
-        if connection and connection.is_open:
-            connection.close()
-            logger.debug("RabbitMQ publisher connection closed.")
-        # --- END OF FIX ---
+        if connection is not None:
+            try:
+                connection.close()
+            except Exception:
+                pass
