@@ -75,7 +75,7 @@ def upload_files_route():
                 gridfs_id,
             )
 
-            # --- CREATE DOCUMENT MODEL (כולל gridfs_id!) ---
+            # --- CREATE DOCUMENT MODEL (gridfs_id as STRING) ---
             document = Document(
                 id=str(uuid.uuid4()),
                 user_id=user_id,
@@ -86,7 +86,7 @@ def upload_files_route():
                 content_type="file",
                 file_size=file_size,
                 status=DocumentStatus.UPLOADED,
-                gridfs_id=gridfs_id,
+                gridfs_id=str(gridfs_id),
             )
 
             # --- SAVE DOCUMENT ---
