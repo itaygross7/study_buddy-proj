@@ -24,7 +24,15 @@ def trigger_summary():
     query = request.form.get('query', 'general summary')
 
     if not course_id:
-        return jsonify({"error": "course_id is required"}), 400
+        
+        # ✅ HTMX expects an HTML partial so it won't render JSON in the page
+        if request.headers.get("HX-Request") == "true":
+            task = task_repo.get_by_id(task.id)
+            if task is None:
+                return jsonify({"error": "Task not found"}), 404
+            return render_template("task_status.html", task=task), 202
+
+return jsonify({"error": "course_id is required"}), 400
 
     try:
         task_repo = MongoTaskRepository(db)

@@ -25,7 +25,15 @@ def trigger_homework_helper():
             course_id = getattr(req_data, "course_id", None)
             context_text = getattr(req_data, "context", None)
         except ValidationError as e:
-            return jsonify({"error": e.errors()}), 400
+            
+        # ✅ HTMX expects an HTML partial so it won't render JSON in the page
+        if request.headers.get("HX-Request") == "true":
+            task = get_task(task_id)
+            if task is None:
+                return jsonify({"error": "Task not found"}), 404
+            return render_template("task_status.html", task=task), 202
+
+return jsonify({"error": e.errors()}), 400
         except Exception as e:
             logger.error(f"Failed to parse homework request (JSON): {e}", exc_info=True)
             return jsonify({"error": "Invalid request format"}), 400

@@ -38,4 +38,25 @@ def get_task_status_route(task_id: str) -> Union[Response, Tuple[Response, int]]
         )
         return jsonify({"error": "Task not found"}), 404
 
-    return render_template("task_status.html", task=task)
+    # ✅ HTMX requests expect an HTML partial (not JSON)
+
+    if request.headers.get("HX-Request") == "true":
+
+        return render_template("task_status.html", task=task)
+
+
+    # ✅ Non-HTMX (JS/API) callers may expect JSON
+
+    return jsonify({
+
+        "task_id": getattr(task, "id", None) or getattr(task, "_id", None),
+
+        "status": str(getattr(task, "status", "")),
+
+        "result_id": getattr(task, "result_id", None),
+
+        "error_message": getattr(task, "error_message", None),
+
+        "task_type": getattr(task, "task_type", None),
+
+    })
