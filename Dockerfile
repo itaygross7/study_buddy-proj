@@ -61,11 +61,10 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 # Copy built static assets
 COPY --from=builder /app/ui/static/css/styles.css ./ui/static/css/styles.css
 
-# Copy application code (existing backend)
+# Copy application code (unified backend architecture)
 COPY src ./src
 COPY ui ./ui
 COPY sb_utils ./sb_utils
-COPY services ./services
 COPY infra ./infra
 COPY app.py .
 COPY worker.py .
