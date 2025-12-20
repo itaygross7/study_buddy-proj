@@ -1,7 +1,6 @@
 # src/api/routes_upload.py
 import os
 import uuid
-import tempfile
 
 from flask import Blueprint, request, jsonify
 from flask_login import login_required, current_user
@@ -47,21 +46,13 @@ def upload_files_route():
     user_id = current_user.id
     course_id = (request.form.get("course_id") or "default").strip() or "default"
 
-<<<<<<< HEAD
-    if not course_id:
-        return jsonify({"error": "course_id is required"}), 400
-
-    # Collect files (multi or single) and filter out empties
-    files = [f for f in request.files.getlist("files") if f and f.filename]
-=======
     files = _collect_files()
->>>>>>> 77e9dff1cb0f98453d85d9209d4c51ad152fd220
     if not files:
         return jsonify({"error": "No files provided"}), 400
 
     document_repo = MongoDocumentRepository(db)
     task_repo = MongoTaskRepository(db)
-    file_service = get_file_service(db)
+    file_service = get_file_service()
 
     created_docs: list[dict] = []
     created_tasks: list[dict] = []
@@ -76,25 +67,17 @@ def upload_files_route():
         # if ext and ext not in allowed:
         #     return jsonify({"error": f"File type not allowed: {ext}"}), 400
 
-        tmp_path = None
         try:
-            # Save to temp (FileStorage.stream -> disk) for consistent FS/GridFS handling
-            with tempfile.NamedTemporaryFile(delete=False, suffix=ext) as tmp:
-                tmp_path = tmp.name
-                file_storage.save(tmp_path)
+            # Get file size
+            file_storage.stream.seek(0, os.SEEK_END)
+            file_size = file_storage.stream.tell()
+            file_storage.stream.seek(0)  # Reset stream position
 
-            file_size = os.path.getsize(tmp_path)
-
-            # Save binary into GridFS (your file service should return gridfs_id)
+            # Save binary into GridFS (file_service.save_file expects FileStorage object)
             gridfs_id = file_service.save_file(
-                file_path=tmp_path,
-                filename=safe_name,
-                content_type=file_storage.mimetype,
-                metadata={
-                    "user_id": user_id,
-                    "course_id": course_id,
-                    "original_name": original_name,
-                },
+                file_stream=file_storage,
+                user_id=user_id,
+                course_id=course_id,
             )
 
             # IMPORTANT:
@@ -150,12 +133,5 @@ def upload_files_route():
         except Exception as e:
             logger.error(f"Upload failed for file {original_name}: {e}", exc_info=True)
             return jsonify({"error": f"Upload failed for {original_name}"}), 500
-
-        finally:
-            if tmp_path and os.path.exists(tmp_path):
-                try:
-                    os.remove(tmp_path)
-                except Exception:
-                    logger.warning(f"Failed to remove temp file: {tmp_path}")
 
     return jsonify({"documents": created_docs, "tasks": created_tasks}), 201
