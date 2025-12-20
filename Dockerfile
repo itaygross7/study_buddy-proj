@@ -71,8 +71,6 @@ COPY app.py .
 COPY worker.py .
 COPY health_monitor.py .
 
-# 🔹 NEW: copy new_backend helpers
-COPY new_backend ./new_backend
 
 # Ensure /app is on Python path (so 'import new_backend', 'import src' etc. work)
 ENV PYTHONPATH=/app

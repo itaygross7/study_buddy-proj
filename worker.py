@@ -11,8 +11,8 @@ from src.domain.models.db_models import TaskStatus
 from src.domain.errors import DocumentNotFoundError
 from sb_utils.logger_utils import logger
 
-# NEW: use adapter into the new backend layer
-from new_backend.entrypoints.worker_tasks import (
+# Worker task handlers - unified backend architecture
+from src.workers.task_handlers import (
     handle_file_processing_task,
     handle_summarize_task,
     handle_flashcards_task,

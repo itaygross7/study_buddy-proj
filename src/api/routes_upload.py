@@ -28,17 +28,7 @@ def upload_files_route():
     course_id = request.form.get("course_id")
 
     if not course_id:
-        
-        # ✅ HTMX expects an HTML partial so it won't render JSON in the page
-        if request.headers.get("HX-Request") == "true":
-            # Show the first task (simple UX); batch UI can be added later
-            poll_task_id = tasks_created[0] if tasks_created else None
-            if not poll_task_id:
-                return jsonify({"error": "No task created"}), 500
-            task = task_repo.get_by_id(poll_task_id)
-            return render_template("task_status.html", task=task), 202
-
-return jsonify({"error": "course_id is required"}), 400
+        return jsonify({"error": "course_id is required"}), 400
 
     # Collect files (multi or single) and filter out empties
     files = [f for f in request.files.getlist("files") if f and f.filename]
