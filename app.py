@@ -1,5 +1,4 @@
 import os
-import sys
 from flask import Flask, jsonify, render_template, request, send_from_directory, session, flash, redirect, url_for
 from flask_cors import CORS
 from flask_login import current_user, login_required

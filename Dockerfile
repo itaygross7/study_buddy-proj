@@ -72,7 +72,7 @@ COPY worker.py .
 COPY health_monitor.py .
 
 
-# Ensure /app is on Python path (so 'import new_backend', 'import src' etc. work)
+# Ensure /app is on Python path (so 'import src' etc. work)
 ENV PYTHONPATH=/app
 
 # Set environment variables

@@ -17,7 +17,6 @@ services:
       - ./sb_utils:/app/sb_utils
       - ./ui:/app/ui
       - ./app.py:/app/app.py
-      - ./new_backend:/app/new_backend        # 👈 add this
     env_file: .env
     environment:
       - FLASK_ENV=${FLASK_ENV:-production}
@@ -56,7 +55,6 @@ services:
       - ./src:/app/src
       - ./sb_utils:/app/sb_utils
       - ./worker.py:/app/worker.py
-      - ./new_backend:/app/new_backend        # 👈 add this
     env_file: .env
     depends_on:
       mongo:
@@ -84,7 +82,6 @@ services:
       - ./sb_utils:/app/sb_utils
       - ./health_monitor.py:/app/health_monitor.py
       - /var/run/docker.sock:/var/run/docker.sock
-      - ./new_backend:/app/new_backend        # 👈 add this
     env_file: .env
     depends_on:
       - app

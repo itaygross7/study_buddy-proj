@@ -34,14 +34,17 @@ StudyBuddyAI is a Hebrew-focused educational web application that helps students
         └────────────┴────────────┴────────────┘
                                 │
 ┌───────────────────────────────┼──────────────────────────────────┐
-│                         Worker Process                           │
+│                         Worker Process (worker.py)                │
 │  ┌─────────────────────────────────────────────────────────────┐ │
-│  │                    AI Service Layer                          │ │
-│  │  ┌──────────────┐  ┌──────────────┐                         │ │
-│  │  │   OpenAI     │  │    Gemini    │                         │ │
-│  │  │ (SB_OPENAI_  │  │ (SB_GEMINI_  │                         │ │
-│  │  │    MODEL)    │  │    MODEL)    │                         │ │
-│  │  └──────────────┘  └──────────────┘                         │ │
+│  │              src/workers/task_handlers.py                    │ │
+│  │  ┌───────────────────────────────────────────────────────┐  │ │
+│  │  │              Service Layer (src/services/)             │  │ │
+│  │  │  ┌──────────────┐  ┌──────────────┐                   │  │ │
+│  │  │  │   OpenAI     │  │    Gemini    │                   │  │ │
+│  │  │  │ (SB_OPENAI_  │  │ (SB_GEMINI_  │                   │  │ │
+│  │  │  │    MODEL)    │  │    MODEL)    │                   │  │ │
+│  │  │  └──────────────┘  └──────────────┘                   │  │ │
+│  │  └───────────────────────────────────────────────────────┘  │ │
 │  └─────────────────────────────────────────────────────────────┘ │
 └───────────────────────────────┼──────────────────────────────────┘
                                 │
@@ -71,24 +74,38 @@ study_buddy-proj/
 │   │   ├── routes_assess.py
 │   │   ├── routes_homework.py
 │   │   ├── routes_task.py    # Task polling endpoint
-│   │   └── routes_upload.py
+│   │   ├── routes_upload.py
+│   │   ├── routes_auth.py
+│   │   ├── routes_library.py
+│   │   └── ...
 │   │
 │   ├── services/             # Business logic
 │   │   ├── ai_client.py      # Unified AI client (OpenAI/Gemini)
 │   │   ├── summary_service.py
 │   │   ├── flashcards_service.py
 │   │   ├── assess_service.py
-│   │   └── homework_service.py
+│   │   ├── homework_service.py
+│   │   ├── file_service.py
+│   │   └── ...
 │   │
 │   ├── domain/               # Domain models
-│   │   ├── models/           # Pydantic models
-│   │   └── errors.py         # Custom exceptions
+│   │   ├── models/           # Pydantic models (db_models.py, api_models.py)
+│   │   ├── errors.py         # Custom exceptions
+│   │   └── repositories/     # Repository interfaces
 │   │
-│   └── infrastructure/       # Infrastructure layer
-│       ├── config.py         # Settings (includes SB_* env vars)
-│       ├── database.py       # MongoDB connection
-│       ├── rabbitmq.py       # RabbitMQ publisher
-│       └── repositories/     # Data access layer
+│   ├── infrastructure/       # Infrastructure layer
+│   │   ├── config.py         # Settings (includes SB_* env vars)
+│   │   ├── database.py       # MongoDB connection
+│   │   ├── rabbitmq.py       # RabbitMQ publisher
+│   │   └── repositories/     # Data access layer implementations
+│   │
+│   ├── utils/                # Utility functions
+│   │   ├── file_processing.py
+│   │   ├── smart_parser.py
+│   │   └── ...
+│   │
+│   └── workers/              # Worker task handlers
+│       └── task_handlers.py  # Task processing logic
 │
 ├── ui/                       # Frontend assets
 │   ├── Avner/               # Avner mascot images (57 images)
@@ -113,11 +130,10 @@ study_buddy-proj/
 │
 └── docs/                     # Documentation
     ├── app_map.md           # This file
-    ├── tool_checklist.md    # Feature checklist
-    ├── security_review.md   # Security audit
-    ├── readiness_report.md  # Deployment readiness
-    ├── refactor_notes.md    # Technical debt notes
-    └── friends_family_checklist.md  # Beta testing checklist
+    ├── DEPLOYMENT.md        # Deployment guide
+    ├── HEALTH_AND_MONITORING.md  # Health checks
+    ├── ARCHIVE/             # Archived/outdated docs
+    └── ...
 ```
 
 ## Key Features

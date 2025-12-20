@@ -136,6 +136,21 @@ For other issues, see the [Troubleshooting Guide](TROUBLESHOOTING.md).
 
 ---
 
+## 🏗️ Architecture
+
+StudyBuddy uses a clean, unified architecture:
+
+- **Frontend**: Flask with Jinja2 templates, HTMX for interactions, Tailwind CSS
+- **API Layer**: Flask blueprints in `src/api/` handling routes
+- **Services**: Business logic in `src/services/` (AI, file processing, etc.)
+- **Domain**: Models and repositories in `src/domain/`
+- **Infrastructure**: Database, RabbitMQ, config in `src/infrastructure/`
+- **Workers**: Background task handlers in `src/workers/`
+- **Queue**: RabbitMQ for async task processing
+- **Worker Process**: `worker.py` consumes from RabbitMQ and processes tasks
+
+For detailed architecture documentation, see [docs/app_map.md](docs/app_map.md).
+
 ## 🔍 How It Works - Technical Deep Dive
 
 ### Document-Only AI Processing

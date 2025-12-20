@@ -1,5 +1,8 @@
-import uuid
+# src/api/routes_upload.py
 import os
+import uuid
+import tempfile
+
 from flask import Blueprint, request, jsonify
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
@@ -7,123 +10,152 @@ from werkzeug.utils import secure_filename
 from src.infrastructure.database import db
 from src.infrastructure.repositories import MongoDocumentRepository, MongoTaskRepository
 from src.infrastructure.rabbitmq import publish_task
+from src.domain.models.db_models import Document, Task, DocumentStatus
 from src.services.file_service import get_file_service
 from sb_utils.logger_utils import logger
-from src.domain.models.db_models import Document, DocumentStatus
 
 upload_bp = Blueprint("upload_bp", __name__)
+
+
+def _collect_files():
+    """
+    Supports:
+    - multiple files from <input name="files" multiple>
+    - single file from <input name="file">
+    Returns list[FileStorage]
+    """
+    files = [f for f in request.files.getlist("files") if f and f.filename]
+    if not files:
+        f = request.files.get("file")
+        if f and f.filename:
+            files = [f]
+    return files
 
 
 @upload_bp.route("/files", methods=["POST"])
 @login_required
 def upload_files_route():
     """
-    Upload one or more files, save to GridFS, create Document + Task.
+    Handles file uploads for a course.
 
-    Form fields:
-      - course_id (required)
-      - files (can be multiple)  OR single "file"
+    For each file:
+      - save to GridFS
+      - create Document in Mongo (status=PENDING)
+      - create 'file_processing' Task
+      - publish task to RabbitMQ
     """
     user_id = current_user.id
-    course_id = request.form.get("course_id")
+    course_id = (request.form.get("course_id") or "default").strip() or "default"
 
+<<<<<<< HEAD
     if not course_id:
         return jsonify({"error": "course_id is required"}), 400
 
     # Collect files (multi or single) and filter out empties
     files = [f for f in request.files.getlist("files") if f and f.filename]
+=======
+    files = _collect_files()
+>>>>>>> 77e9dff1cb0f98453d85d9209d4c51ad152fd220
     if not files:
-        single_file = request.files.get("file")
-        if single_file and single_file.filename:
-            files = [single_file]
+        return jsonify({"error": "No files provided"}), 400
 
-    if not files:
-        return jsonify({"error": "לא התקבלו קבצים"}), 400
-
-    file_service = get_file_service()
-    doc_repo = MongoDocumentRepository(db)
+    document_repo = MongoDocumentRepository(db)
     task_repo = MongoTaskRepository(db)
+    file_service = get_file_service(db)
 
-    created_docs: list[str] = []
-    tasks_created: list[str] = []
+    created_docs: list[dict] = []
+    created_tasks: list[dict] = []
 
-    logger.info(
-        "User %s uploading %d file(s) to course %s",
-        user_id,
-        len(files),
-        course_id,
-    )
+    for file_storage in files:
+        original_name = file_storage.filename or "upload"
+        safe_name = secure_filename(original_name) or "upload"
+        ext = os.path.splitext(safe_name)[1].lower()
 
-    try:
-        for f in files:
-            filename = secure_filename(f.filename)
+        # Optional: basic allowlist (adjust as needed)
+        # allowed = {".pdf", ".png", ".jpg", ".jpeg", ".txt", ".docx"}
+        # if ext and ext not in allowed:
+        #     return jsonify({"error": f"File type not allowed: {ext}"}), 400
 
-            # --- FILE SIZE (best-effort) ---
-            try:
-                pos = f.stream.tell()
-                f.stream.seek(0, os.SEEK_END)
-                file_size = f.stream.tell()
-                f.stream.seek(pos, os.SEEK_SET)
-            except Exception:
-                file_size = 0
+        tmp_path = None
+        try:
+            # Save to temp (FileStorage.stream -> disk) for consistent FS/GridFS handling
+            with tempfile.NamedTemporaryFile(delete=False, suffix=ext) as tmp:
+                tmp_path = tmp.name
+                file_storage.save(tmp_path)
 
-            # --- SAVE TO GRIDFS ---
-            gridfs_id = file_service.save_file(f, user_id, course_id)
-            logger.info(
-                "Saved file '%s' to GridFS with ID: %s",
-                filename,
-                gridfs_id,
+            file_size = os.path.getsize(tmp_path)
+
+            # Save binary into GridFS (your file service should return gridfs_id)
+            gridfs_id = file_service.save_file(
+                file_path=tmp_path,
+                filename=safe_name,
+                content_type=file_storage.mimetype,
+                metadata={
+                    "user_id": user_id,
+                    "course_id": course_id,
+                    "original_name": original_name,
+                },
             )
 
-            # --- CREATE DOCUMENT MODEL (gridfs_id as STRING) ---
-            document = Document(
+            # IMPORTANT:
+            # Some setups return ObjectId. Your Pydantic model expects str.
+            # Always stringify here to avoid the exact error you had earlier.
+            gridfs_id_str = str(gridfs_id)
+
+            # Create Document
+            doc = Document(
                 id=str(uuid.uuid4()),
                 user_id=user_id,
                 course_id=course_id,
-                filename=filename,
-                original_filename=filename,
-                content_text="[Processing file…]",
-                content_type="file",
+                filename=safe_name,
+                original_filename=original_name,
+                content_type=file_storage.mimetype or "application/octet-stream",
                 file_size=file_size,
-                status=DocumentStatus.UPLOADED,
-                gridfs_id=str(gridfs_id),
+                gridfs_id=gridfs_id_str,
+                status=DocumentStatus.PENDING,
             )
+            document_repo.create(doc)
 
-            # --- SAVE DOCUMENT ---
-            doc_repo.create(document)
-            created_docs.append(document.id)
-
-            # --- CREATE TASK VIA REPOSITORY ---
-            task = task_repo.create(
+            # Create Task
+            task = Task(
+                id=str(uuid.uuid4()),
                 user_id=user_id,
-                document_id=document.id,
+                course_id=course_id,
                 task_type="file_processing",
+                status="PENDING",
+                document_id=doc.id,
             )
-            tasks_created.append(task.id)
+            task_repo.create(task)
 
-            # --- SEND TO QUEUE ---
+            # Publish
             publish_task(
                 queue_name="file_processing",
                 task_body={
                     "task_id": task.id,
-                    "document_id": document.id,
+                    "user_id": user_id,
+                    "course_id": course_id,
+                    "document_id": doc.id,
+                    "gridfs_id": gridfs_id_str,
+                    "filename": safe_name,
+                    "content_type": doc.content_type,
+                    "file_size": file_size,
                 },
             )
 
-        return jsonify(
-            {
-                "status": "processing",
-                "files_uploaded": len(created_docs),
-                "documents": created_docs,
-                "task_ids": tasks_created,
-            }
-        ), 202
+            created_docs.append({"document_id": doc.id, "filename": safe_name})
+            created_tasks.append({"task_id": task.id, "document_id": doc.id})
 
-    except Exception as e:
-        logger.error(
-            "Upload failed for user %s: %s",
-            user_id,
-            e,
-            exc_info=True,
-        )
-        return jsonify({"error": "שגיאה פנימית בשרת"}), 500
+            logger.info(f"Uploaded file: {safe_name} doc={doc.id} task={task.id}")
+
+        except Exception as e:
+            logger.error(f"Upload failed for file {original_name}: {e}", exc_info=True)
+            return jsonify({"error": f"Upload failed for {original_name}"}), 500
+
+        finally:
+            if tmp_path and os.path.exists(tmp_path):
+                try:
+                    os.remove(tmp_path)
+                except Exception:
+                    logger.warning(f"Failed to remove temp file: {tmp_path}")
+
+    return jsonify({"documents": created_docs, "tasks": created_tasks}), 201

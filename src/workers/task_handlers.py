@@ -1,12 +1,10 @@
 """
-Adapter between worker.py and backend logic.
+Worker task handlers - adapter between worker.py and backend services.
 
 This file is the thin layer between the queue messages (worker.py)
-and your domain/services in src.*.
+and the domain/services in src.*.
 
-All heavy logic lives in services. If you later move logic into
-/new_backend/, you only need to adjust the calls here – worker.py
-doesn't change.
+All heavy logic lives in services. This module provides the worker interface.
 """
 
 from typing import Any, Dict
@@ -302,3 +300,4 @@ def handle_avner_chat_task(data: Dict[str, Any], db_conn: Database) -> str:
     )
 
     return result_id
+
