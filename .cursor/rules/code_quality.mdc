@@ -1,0 +1,323 @@
+---
+description: >
+  Apply when the user wants readable, clean, simple, or minimal code — refactoring for clarity,
+  improving structure, reviewing quality, or asking for "better code". WRONG/CORRECT examples.
+  Also apply when @write_new_code or @code_review is active.
+alwaysApply: false
+---
+
+# Code Quality Standards
+
+What "clean", "simple", "readable", and "minimal" mean — with concrete examples.
+These are not preferences. Every rule below has a specific failure mode it prevents.
+
+---
+
+## 1. One Level of Abstraction Per Function
+*(Kent Beck, Composed Method pattern — Smalltalk Best Practice Patterns)*
+
+Every line inside a function must operate at the same level of detail.
+Mixing high-level orchestration with low-level implementation in the same function is the single most common source of unreadable code.
+
+```python
+# WRONG — mixes orchestration (charge, notify) with raw implementation detail (header building, status parsing)
+def process_payment(order: Order) -> None:
+    headers = {"Authorization": f"Bearer {os.environ.get('PAY_TOKEN')}"}
+    response = requests.post("/charge", json={"amount": order.total}, headers=headers)
+    if response.status_code == 200:
+        data = response.json()
+        if data.get("status") == "ok":
+            db.execute("UPDATE orders SET paid=1 WHERE id=?", [order.id])
+            requests.post("/notify", json={"user": order.user_id, "msg": "paid"})
+
+# CORRECT — orchestration reads like a sentence; each detail lives in its own function
+def process_payment(order: Order) -> None:
+    charge_result = self._payment_client.charge(order)
+    self._order_repository.mark_paid(order.id)
+    self._notifier.send_payment_confirmation(order.user_id)
+```
+
+**Test:** read the function aloud. If you have to explain a loop or a raw HTTP call while also explaining the business flow — split it.
+
+---
+
+## 2. Names Are the Primary Documentation
+*(Robert C. Martin, Clean Code)*
+
+A name that requires a comment to explain is a failed name.
+Variables, functions, and classes must reveal intent without context.
+
+```python
+# WRONG
+d = 86400
+def calc(u, t):
+    return u * t
+
+# CORRECT
+seconds_per_day = 86400
+def calculate_daily_usage_cost(unit_price: float, units_consumed: float) -> float:
+    return unit_price * units_consumed
+```
+
+**Booleans must start with** `is_`, `has_`, `can_`, `should_`:
+```python
+# WRONG
+active = user.status == "active"
+if check(user):
+
+# CORRECT
+is_active = user.status == "active"
+if can_receive_notifications(user):
+```
+
+**Functions: verb_noun.** Classes: noun that names the thing, not what it does to things:
+```python
+# WRONG — class named after an action
+class PaymentProcessor:       # what IS it? a service? a gateway? a validator?
+    def process(self): ...    # process what? how?
+
+# CORRECT
+class PaymentGatewayClient:   # it is a client for a payment gateway
+    def charge(self, order: Order) -> ChargeResult: ...
+```
+
+---
+
+## 3. Functions Do One Thing
+*(Martin Fowler, Refactoring — Extract Function)*
+
+If you can extract a block from a function and give that block a meaningful name, the function is doing more than one thing.
+The block belongs in its own function.
+
+```python
+# WRONG — validates, transforms, AND persists
+def save_user(data: dict) -> None:
+    if not data.get("email"):
+        raise ValueError("email required")
+    data["email"] = data["email"].lower().strip()
+    db.insert("users", data)
+
+# CORRECT — each concern is named and isolated
+def save_user(request: UserCreateRequest) -> None:
+    validated = self._validate_user_request(request)
+    normalized = self._normalize_user_data(validated)
+    self._user_repository.insert(normalized)
+```
+
+**Fowler's rule of three for duplication:** if a block appears three times, extract it. If it appears twice and is non-trivial, extract it. Once, leave it unless naming it would clarify intent significantly.
+
+---
+
+## 4. OOP: Classes Represent Things, Not Procedures
+*(SOLID — Single Responsibility Principle)*
+
+### 4a. God Class — the most common AI/junior failure
+A class that does everything is a namespace, not an object. Split on reason to change.
+
+```python
+# WRONG — UserManager does DB, auth, email, and formatting
+class UserManager:
+    def get_user(self, user_id: int): ...
+    def hash_password(self, password: str): ...
+    def send_welcome_email(self, user: User): ...
+    def format_display_name(self, user: User): ...
+
+# CORRECT — each class has one reason to change
+class UserRepository:
+    def get(self, user_id: int) -> User: ...
+
+class PasswordHasher:
+    def hash(self, plain: str) -> str: ...
+
+class UserNotifier:
+    def send_welcome(self, user: User) -> None: ...
+```
+
+### 4b. Anemic Model — data bags with no behavior
+Objects should own their logic. If all your methods are in services that pull data from objects and operate on it externally, you have procedural code disguised as OOP.
+
+> **Pydantic models are excluded from this rule.** They are intentional data-transport objects (`team-rules/rules.mdc`). The anemic model antipattern applies to domain/business logic classes — not to Pydantic request/response models or shared data-model packages.
+
+```python
+# WRONG — Order has no behavior; OrderService does everything to it
+class Order:
+    total: float
+    status: str
+
+class OrderService:
+    def is_eligible_for_refund(self, order: Order) -> bool:
+        return order.status == "completed" and order.total > 0
+
+# CORRECT — behavior belongs to the object that owns the data
+class Order:
+    total: float
+    status: str
+
+    def is_eligible_for_refund(self) -> bool:
+        return self.status == "completed" and self.total > 0
+```
+
+### 4c. Composition over Inheritance
+Inherit only when the subclass IS-A parent (Liskov). For reuse of behavior, compose.
+
+```python
+# WRONG — inheritance for code reuse, not for IS-A
+class EmailSender:
+    def send(self, to: str, body: str): ...
+
+class UserNotifier(EmailSender):   # UserNotifier IS NOT an EmailSender
+    def notify(self, user: User): ...
+
+# CORRECT — compose the dependency
+class UserNotifier:
+    def __init__(self, email_sender: EmailSender) -> None:
+        self._email_sender = email_sender
+
+    def notify(self, user: User) -> None:
+        self._email_sender.send(user.email, self._build_message(user))
+```
+
+### 4d. Tell, Don't Ask
+*(Martin Fowler)*
+Don't ask an object for its data and then make a decision externally. Tell the object to make the decision itself.
+
+```python
+# WRONG — asks for data, decides externally
+if user.subscription.plan == "premium" and user.subscription.is_active:
+    grant_access(user)
+
+# CORRECT — tells the object to evaluate its own state
+if user.has_active_premium_subscription():
+    grant_access(user)
+```
+
+---
+
+## 5. Minimal — Write Only What Is Required
+*(YAGNI — You Aren't Gonna Need It)*
+
+Speculative code is technical debt with no corresponding asset.
+Every abstraction, base class, factory, or configuration option must be justified by a current requirement.
+
+```python
+# WRONG — abstract base class for one concrete implementation that will "probably" have siblings
+class BasePaymentProcessor(ABC):
+    @abstractmethod
+    def process(self): ...
+
+class StripeProcessor(BasePaymentProcessor):
+    def process(self): ...
+
+# CORRECT — one implementation, no hierarchy until a second implementation actually exists
+class StripeClient:
+    def charge(self, order: Order) -> ChargeResult: ...
+```
+
+Add the abstraction when you have two concrete implementations. Not before.
+
+---
+
+## 6. Guard Clauses Over Nested Conditions
+*(Fowler, Replace Nested Conditional with Guard Clauses)*
+
+Nesting hides the happy path. Guard clauses make the exceptional cases exit early, leaving the main logic flat and readable.
+
+```python
+# WRONG — reader must track nested state to understand the main path
+def process_refund(order: Order) -> None:
+    if order is not None:
+        if order.status == "completed":
+            if order.total > 0:
+                # actual logic here, 3 levels deep
+                ...
+
+# CORRECT — each precondition exits immediately; main logic is at the top level
+def process_refund(order: Order) -> None:
+    if order.status != "completed":
+        raise InvalidRefundError(f"order {order.id} is not completed")
+    if order.total <= 0:
+        raise InvalidRefundError(f"order {order.id} has no refundable amount")
+    # main logic is flat and immediately visible
+    ...
+```
+
+---
+
+## 7. No Surprises — Command/Query Separation
+*(Bertrand Meyer, cited by Fowler)*
+
+A function either returns a value OR changes state. Never both.
+Functions that do both are the primary cause of "I called this and something broke somewhere else."
+
+```python
+# WRONG — returns a value AND changes state
+def get_next_job(self) -> Job:
+    job = self._queue.peek()
+    self._queue.mark_in_progress(job.id)   # side effect hidden inside a getter
+    return job
+
+# CORRECT — separate the query from the command
+def peek_next_job(self) -> Job:
+    return self._queue.peek()
+
+def start_job(self, job_id: int) -> None:
+    self._queue.mark_in_progress(job_id)
+```
+
+---
+
+## 8. Common AI-Specific Failures to Reject
+
+These patterns appear frequently in AI-generated code. Flag and fix them:
+
+**Fake encapsulation** — a private method that is called once and does exactly what the surrounding code already implies:
+```python
+# WRONG — _build_headers adds nothing; just inline it or it belongs in the client class
+def _build_headers(self) -> dict:
+    return {"Authorization": f"Bearer {self._token}"}
+```
+
+**Exception swallowing** — catching to log and then doing nothing, silently continuing:
+```python
+# WRONG
+try:
+    result = charge(order)
+except PaymentError as e:
+    logger.error("Payment failed: %s", e)
+# execution continues as if payment succeeded
+```
+
+**Comment that restates the code** — adds noise, not signal:
+```python
+# WRONG
+# increment the counter
+counter += 1
+
+# CORRECT — comment only when the WHY is not obvious
+# retry limit is 3 per SLA agreement with payment processor
+max_retries = 3
+```
+
+**Over-parameterized function** — too many parameters mean too many responsibilities:
+```python
+# WRONG
+def create_user(name, email, role, is_active, send_email, notify_admin, plan, trial_days):
+    ...
+
+# CORRECT — group related data into a model
+def create_user(request: UserCreateRequest) -> User:
+    ...
+```
+
+**Returning None to signal failure** — forces every caller to add a None check:
+```python
+# WRONG
+def get_user(user_id: int) -> User | None:
+    ...
+    return None  # caller must remember to check
+
+# CORRECT
+def get_user(user_id: int) -> User:
+    ...
+    raise UserNotFoundError(f"user {user_id} not found")
+```

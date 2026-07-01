@@ -1,0 +1,61 @@
+---
+description: StudyBuddyAI UI theme — cozy warm palette, Tailwind tokens, RTL/Hebrew layout. Use for all HTML/CSS/template work.
+alwaysApply: false
+---
+
+# StudyBuddyAI — UI Theme
+
+## When to use
+Invoke `@theme` (or follow these rules automatically) for any change to:
+- `ui/templates/**/*.html`
+- `ui/static/css/**`
+- `tailwind.config.js`
+- Inline styles, new components, or layout changes
+
+## Design intent
+Cozy study-room aesthetic: warm yellows, browns, and cream. Friendly, readable, mobile-first. Mascot: Avner the capybara.
+
+## Color palette (Tailwind tokens — do not hardcode hex in templates)
+
+| Token | Hex | Use |
+|-------|-----|-----|
+| `warm-beige` | `#FFF8E6` | Page background, PWA theme-color |
+| `cream` / `soft-cream` | `#FAF3D7` / `#FFFAF0` | Cards, secondary surfaces |
+| `warm-yellow` / `golden-yellow` / `butter-yellow` | `#F7D774` / `#F2C94C` / `#FFEAA7` | Accents, CTAs, focus rings |
+| `cozy-brown` / `caramel` / `coffee` | `#8B5E34` / `#A47148` / `#6F4E37` | Navbar, primary buttons |
+| `dark-brown` | `#4B2E16` | Body text, headings |
+| `warm-gray` / `light-brown` | `#BFA585` / `#D4A574` | Borders, muted text |
+| `success` / `warning` / `error` / `info` | warm greens/ambers | Status only |
+
+Legacy aliases (`hoodie-orange`, `navbar-dark`, `teal`) exist for compatibility — prefer the cozy-brown / golden-yellow names in new code.
+
+In `input.css`, reference colors via `theme('colors.<token>')` inside `@layer` blocks.
+
+## Typography
+- Font stack: `Inter`, `Assistant`, system sans-serif (`font-sans` in Tailwind).
+- Hebrew RTL is default; English LTR when `current_locale == 'en'` (see `base.html`).
+
+## Layout patterns
+- Mobile-first; breakpoint `769px` for desktop background swap.
+- Sticky navbar: `bg-cozy-brown shadow-warm-lg`.
+- Cards: rounded (`rounded-xl` / `rounded-2xl`), `shadow-soft` or `shadow-warm`, hover lift where siblings use it.
+- Min touch target: 48px on interactive elements.
+
+## CSS structure
+1. **Source**: edit `ui/static/css/input.css` (Tailwind layers + custom components).
+2. **Build**: compile to `ui/static/css/styles.css` via Tailwind (`package.json` / project build script).
+3. **Do not** add one-off hex colors in templates — use Tailwind utility classes from the palette above.
+
+## Reuse before inventing
+Before adding new UI classes, check `input.css` `@layer components` for existing patterns: `.btn-primary`, `.btn-secondary`, `.card`, `.form-input`, alert variants, HTMX indicators.
+
+## Accessibility
+- `focus-visible` outline: `golden-yellow` (already in `input.css`).
+- ARIA labels on icon-only buttons.
+- Sufficient contrast: dark-brown text on cream/warm-beige backgrounds.
+
+## Do not
+- Introduce cool blues, grays, or generic Bootstrap-style palettes.
+- Use raw `#hex` in HTML `class` attributes when a Tailwind token exists.
+- Break RTL layout (test with Hebrew `dir="rtl"`).
+- Add new CSS frameworks — Tailwind + existing `input.css` only.

@@ -1,0 +1,177 @@
+---
+description: Activate when asked to review, audit, or give feedback on code. Find real problems — correctness first, conventions second.
+alwaysApply: false
+---
+
+# Code Review Mode
+
+## Role
+You are performing a code review as a senior backend developer.
+Find real problems. Do not enforce personal style preferences.
+
+## Context Required
+Before doing anything else, check what is present in context.
+
+You need:
+- The file(s) being reviewed (e.g. `@payments/service.py`) — the actual code, not a description of it
+- For any function that calls other functions: those callers or callees if the review covers correctness or safety
+- For API or cross-component changes: the interface or contract the code is implementing
+
+If any of these is missing, stop immediately and output:
+
+```
+MISSING CONTEXT — cannot review reliably.
+Please provide:
+- [ ] <list exactly what is missing from the items above>
+```
+
+Do not review based on assumed or reconstructed code. Do not say "if this function does X then..." — read the actual code or stop.
+
+## Review Priority Order
+Work through this order. Stop escalating a finding if a higher-priority issue already covers it.
+
+1. **Correctness** — Does the code do what it is supposed to do?
+2. **Safety** — Does it break existing behavior or cross-component contracts?
+3. **Reliability** — Will it handle failures and edge cases without crashing silently?
+4. **Security** — Does it expose secrets, allow injection, skip path traversal checks, or cross trust zones?
+5. **Performance** — Any complexity-class bottlenecks on hot paths?
+6. **Conventions** — Does it violate the team rules below?
+7. **Readability** — Is anything genuinely confusing (not just stylistically different)?
+
+## What to Look For
+
+### Correctness
+- Logic errors, wrong conditions, off-by-one
+- Wrong assumptions about input type or shape — code must not assume `None` is acceptable unless the type hint says so
+- Missing edge case: empty collection, zero, negative, boundary value
+- Async bugs: unawaited coroutines, race conditions, shared mutable state
+
+### Safety
+- Breaking change to a public or cross-component API without the task requiring it (`team-rules/rules.mdc`)
+- Changed function signature or return type without updating all callers
+- Side effect added to a previously pure function
+
+### Reliability
+- `except:` or `except Exception:` with no comment explaining why — must catch specific types
+- `try` block wrapping more than the one line that can raise — masks which call failed
+- Exception caught and swallowed with `pass` and no comment
+- No `logger.error(...)` or `logger.exception(...)` on an error path that terminates an operation
+- `print()` used instead of `logging` (`team-rules/conventions.mdc`)
+- Resource opened without `with` (file, DB connection, HTTP session, lock)
+- Missing timeout on network or IO call
+
+### Security
+- Hardcoded secret, API key, password, or token (`team-rules/security.mdc`)
+- Bool env var not using `os.environ.get("X", "Default") == "Value"` pattern (`team-rules/conventions.mdc`)
+- User input passed directly to SQL query, shell command, or file path without sanitization (`team-rules/security.mdc`)
+- Missing path traversal check on any file read, write, or execute (`team-rules/security.mdc`) — this is a MUST flag
+- Stack trace, internal file path, or raw exception text returned to an external caller (`team-rules/security.mdc`)
+- Untrusted file persisted in original format before transformation or isolation (`team-rules/security.mdc`)
+- Input from an external boundary (API handler, queue consumer, CLI) reaching business logic without validation at the boundary
+- Sensitive data (PII, credentials, tokens) present in a log statement
+
+### Performance
+- Flag only if the change is a measurable complexity-class improvement — not micro-optimizations (`team-rules/conventions.mdc`)
+- N+1 query inside a loop that could be batched
+- Entire dataset loaded into memory when pagination or filtering is available
+- Repeated expensive computation with identical inputs that could be cached
+
+### Conventions (team rules — always flag as Must Fix or Should Fix)
+- Missing type hint on any function or method parameter or return value (`team-rules/conventions.mdc`)
+- Docstring present but not Sphinx-style (`:param:`, `:return:`, `:raises:`) (`team-rules/conventions.mdc`)
+- Public function or class missing a docstring (`team-rules/conventions.mdc`)
+- Module-level constant using `UPPER_SNAKE_CASE` instead of `lower_case` (team override, `team-rules/conventions.mdc`)
+- Hardcoded business value (magic number or string) not extracted to `Enum` or config
+- Bare integer used as HTTP status code instead of `HTTPStatus` (`team-rules/conventions.mdc`)
+- Import inside a function body with no comment explaining why (`team-rules/conventions.mdc`)
+- Wildcard import `from x import *`
+- `getattr` used to access an attribute that is known to exist (`team-rules/rules.mdc`)
+- Module-level mutable global used for shared state instead of a class or dependency injection (`team-rules/rules.mdc`)
+- Raw `dict` used for structured data that crosses a function boundary instead of a Pydantic model (`team-rules/rules.mdc`)
+- JSON payload handled without Pydantic or the shared data-model package (`team-rules/rules.mdc`)
+- Dead code path that exists only for test patching (`team-rules/rules.mdc`)
+- Logic duplicated across components that should live in a shared package (`team-rules/conventions.mdc`)
+- File exceeds 1000 lines — flag and ask whether it has more than one responsibility (`team-rules/conventions.mdc`)
+
+### Readability
+- Misleading function or variable name
+- Method with more than one logical block and no comment above each block, and no extraction into sub-methods (`team-rules/rules.mdc`)
+- Missing docstring on a non-obvious public function
+- `getattr` used where direct attribute access is possible
+
+## Review Rules
+- Label every finding as **Must Fix**, **Should Fix**, or **Nice to Have**.
+- Do not flag personal style preferences as Must Fix or Should Fix.
+- Do not suggest refactors unless they fix a real problem or violate a team convention.
+- Acknowledge what is done well.
+
+## Output Format
+
+Every **Must Fix** and **Should Fix** finding MUST include:
+1. The bad code exactly as it exists — file path, function name, in a fenced code block, with the problem annotated inline using `# <-- PROBLEM: reason`
+2. The complete corrected function or block — ready to copy-paste into the file without needing additional context
+
+Do not write "change X to Y" in prose. Show both. Every time.
+Nice to Have findings may be prose-only if no code change is needed to illustrate them.
+
+```
+### Summary
+[1–2 sentence overall assessment]
+
+### Must Fix
+
+**1. payments/service.py — process_payment() — bare except swallows processor errors (team-rules/conventions.mdc)**
+
+Current:
+```python
+# payments/service.py — process_payment()
+def process_payment(amount: float, currency: str) -> bool:
+    try:
+        result = self._processor.charge(amount, currency)
+        profile = build_profile(result)   # <-- PROBLEM: unrelated call inside try block
+        send_receipt(profile)             # <-- PROBLEM: masks which call actually failed
+    except Exception as e:               # <-- PROBLEM: too broad, no specific type
+        logger.error(e)                  # <-- PROBLEM: logs str(e), not the stack trace
+```
+
+Fix:
+```python
+def process_payment(amount: float, currency: str) -> bool:
+    try:
+        result = self._processor.charge(amount, currency)
+    except ProcessorError as e:
+        logger.exception("Processor charge failed amount=%s currency=%s", amount, currency)
+        raise PaymentDeclinedError("Payment declined") from e
+
+    profile = build_profile(result)
+    send_receipt(profile)
+```
+
+**2. [Next finding — same structure: current with annotations, fix as complete function]**
+
+### Should Fix
+
+**1. [file/function, line N] — [issue]**
+
+Current:
+```python
+[exact lines with inline PROBLEM annotations]
+```
+
+Fix:
+```python
+[complete corrected function]
+```
+
+### Nice to Have
+- [Observation. No code required unless it helps clarity.]
+
+### Looks Good
+- [Specific function or pattern — name it explicitly]
+```
+
+## Tone
+- Name the file, function, and line for every finding.
+- State the why behind every comment.
+- Never say "this could be better" without showing exactly what better looks like.
+- No moralizing. Direct, specific, useful.

@@ -1,0 +1,61 @@
+---
+description: Activate when designing modules, deciding where code belongs, adding a service/endpoint/pipeline stage, or wiring an external dependency. Defines layer boundaries and how they connect.
+alwaysApply: false
+---
+
+# Architecture Mode — Layering & Boundaries
+
+Where code belongs, and how layers connect. This complements `code_quality.mdc`
+(which covers SRP, composition, anemic models) by defining the **layer boundaries**
+those classes live in. Concrete rules, not preferences.
+
+## Layers (dependencies point inward only)
+- **Boundary** — API handler, queue consumer, CLI parser, pipeline entry. Validates and
+  parses input, calls one service, maps the result/exception outward. No business logic.
+- **Service / orchestration** — business logic. Framework-agnostic, depends only on injected
+  adapters. Knows nothing about HTTP request/response objects or queue framing.
+- **IO / adapter** — DB, external APIs, filesystem. The only layer that performs IO.
+
+A boundary must not run queries; a service must not build an HTTP response. If a piece of
+code forces logic into the wrong layer, that is a design smell — stop and use planning mode.
+
+## Boundary Rules
+- Validate/sanitize all external input here, before it reaches a service (OWASP — see `team-rules/security.mdc`).
+- Use `HTTPStatus`, never bare ints, when mapping outward.
+- **MUST NOT** leak stack traces, internal exception text, or paths to the caller — translate to a
+  generic outward message; log the detail internally (see `team-rules/conventions.mdc` Logging).
+
+## Errors as a Contract
+- Services raise **named domain exceptions** from a dedicated `exceptions.py`
+  (subclass `Exception`) — never return a value that silently signals failure.
+- Translate domain exceptions to transport errors (HTTP status / queue nack) **only at the boundary**.
+- Callers depend on the exception **type**, never on its message string.
+- When re-raising across a layer, chain: `raise BoundaryError("...") from domain_error`.
+
+## External Systems
+- Wrap every third-party API / provider behind a typed adapter interface.
+- Orchestration depends on that interface — **never** imports the SDK directly. Swapping a
+  provider then changes one adapter, not the business logic.
+- Inject adapters (constructor / DI). **MUST NOT** use module-level globals for mutable shared
+  state (see `team-rules/rules.mdc`).
+
+## Pipeline Boundaries (sanitization / transformation flows)
+- Each stage has **one responsibility**; stages communicate via typed payloads
+  (Pydantic / shared data-model package — see `team-rules/rules.mdc`), not raw dicts.
+- Respect **clean vs dirty** zone assumptions when a stage crosses a trust level, and the
+  **non-executing storage** flow: do not persist untrusted input in its original form when the
+  design requires transformation or isolation first (see `team-rules/security.mdc`).
+- Protect path traversal on every read/write/execute at a stage boundary.
+
+## State & Idempotency
+- Make retryable operations idempotent (idempotency key or natural upsert) so a re-run is safe.
+- A function either returns a value or changes state, not both (Command/Query — see `code_quality.mdc`).
+
+## When Adding a Feature
+1. Decide which layer each piece belongs in **before** writing code.
+2. Reuse existing services/adapters — do not duplicate IO in a boundary.
+3. Keep cross-component/package APIs backward-compatible unless the task requires otherwise (`team-rules/rules.mdc`).
+
+## Tests
+- Services are unit-testable in isolation: mock the injected adapters with `unittest.mock`
+  (see `test_writing.mdc`). If a service is hard to test without real IO, the boundary is wrong.

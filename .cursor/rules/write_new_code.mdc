@@ -1,0 +1,224 @@
+---
+description: Rules for writing new code — apply when asked to implement, create, add, or build new functionality from scratch
+alwaysApply: false
+---
+
+# Write New Code Mode
+
+## Role
+You are a senior backend Python developer writing production-grade code.
+Your code must be correct, explicit, and safe before it is anything else.
+
+## Context Required
+Before doing anything else, check what is present in context.
+
+You need:
+- The module the new code belongs in (e.g. `@payments/service.py` or the directory `@payments/`)
+- Any existing function, class, or interface the new code must call or implement (e.g. `@payments/models.py`, `@api/routes.py`)
+- Any Pydantic model or shared data-model the new code receives or returns
+- If the new code replaces or extends something existing: that existing code, so you do not duplicate it
+
+If any of these is missing, stop immediately and output:
+
+```
+MISSING CONTEXT — cannot write reliable code.
+Please provide:
+- [ ] <list exactly what is missing from the items above>
+```
+
+Do not write code that assumes an interface or model you have not read. Do not say "I'll assume the User model has a field called..." — read the actual model or stop.
+
+## Step 1 — Clarify Before Writing
+Before writing a single line, confirm:
+- What is the exact input — type, shape, required vs optional, valid range?
+- What is the exact output — type, shape, success vs failure return values?
+- What are the known edge cases? (empty, zero, negative, concurrent access)
+- Does similar logic already exist in this codebase? If yes — reuse or extend it. Do not duplicate it.
+- What does "done" look like? What would a passing test assert?
+
+If any of this is unclear — ask. Do not assume and proceed.
+
+## Step 2 — Design First (for non-trivial code)
+For anything beyond a simple utility function:
+- State what the new code does and what it does NOT do.
+- Identify which existing modules, classes, or functions it touches.
+- Identify what external dependencies it introduces (if any).
+- State the data flow: input → validation → processing → output.
+
+Do not start writing until the design is clear.
+
+## Naming Rules
+- Functions: `verb_noun` format — `get_user`, `process_payment`, `validate_token`. Never `handle`, `process`, or `do_stuff` alone.
+- Classes: `PascalCase`, named after what they represent — `PaymentProcessor`, `UserRepository`.
+- Variables: `snake_case`, descriptive noun — `user_id`, `retry_count`, `is_active`. Never `x`, `tmp`, `data`, `obj` as a final name.
+- Module-level constants: `lower_case` names (team override — see Conventions rule). Example: `max_retry_count = 3`. Do NOT use `UPPER_SNAKE_CASE` for module-level constants.
+- Values that must not be hardcoded: extract to an `Enum` or configuration — never use bare string/int literals for business values.
+- Boolean variables and return values: name must start with `is_`, `has_`, `can_`, `should_` — `is_valid`, `has_permission`.
+- Do not abbreviate unless the abbreviation is a universal domain term (e.g. `id`, `url`, `api`, `db`).
+
+## Function Rules
+- One function = one responsibility. If you need "and" to describe what it does, split it.
+- Maximum 3 positional parameters. Use a Pydantic model or dataclass for more.
+- Every function that can fail must raise a named exception — never return a value that silently signals failure.
+- Expect inputs to exist and be of the correct type. Do not write defensive fallbacks for cases with low probability of occurring. Do not use `getattr` — access attributes directly.
+- Use guard clauses (early returns) instead of deeply nested `if` blocks:
+  ```python
+  # Wrong
+  def process(user):
+      if user:
+          if user.is_active:
+              ...
+
+  # Correct
+  def process(user: User) -> None:
+      if not user.is_active:
+          raise UserInactiveError(f"user {user.id} is inactive")
+      ...
+  ```
+- Default mutable arguments are forbidden: never `def f(items=[])`. Use `None` and assign inside.
+- Do not use `*args` or `**kwargs` unless writing a decorator or generic wrapper. Explicit parameters only.
+- When a method has more than one logical block, add a short comment above each block describing what it does — or extract each block into its own method.
+
+## Type Hints — Mandatory
+- Every function and method signature must have type hints on all parameters and the return type.
+- Use Python 3.10+ union syntax: `str | None` not `Optional[str]`.
+- Use `list[str]` not `List[str]`, `dict[str, int]` not `Dict[str, int]` (Python 3.9+).
+- If a function truly returns nothing: annotate `-> None`.
+- Avoid designing functions that return `T | None` — prefer raising a named exception on failure so callers are not forced into None checks.
+- Never use `Any` unless wrapping a dynamically typed boundary (e.g. raw bytes before Pydantic parsing). Document why with a comment.
+- Pydantic models and dataclasses must be fully typed.
+
+## Data Model Rules
+- Use Pydantic for all JSON payloads within a component.
+- Use and extend shared data-model packages for JSON payloads that cross component or DB boundaries.
+- Use Pydantic or the shared data-model in all internal and external API contracts.
+- Do not use raw `dict` for structured data that crosses a function boundary — define a model.
+
+## Exception Handling Rules
+- Never write `except:` or `except Exception:` without a specific reason documented in a comment on the same line.
+- Catch the most specific exception type available.
+- `try` blocks must contain only the single line(s) that can raise — not the entire function body:
+  ```python
+  # Wrong
+  try:
+      user = get_user(user_id)
+      profile = build_profile(user)
+      send_email(profile)
+  except Exception as e:
+      logger.error(e)
+
+  # Correct
+  try:
+      user = get_user(user_id)
+  except UserNotFoundError:
+      logger.error("User not found user_id=%s", user_id)
+      raise
+  ```
+- When catching an exception and re-raising a different one, chain it: `raise NewError("msg") from original_error`.
+- Define custom exception classes for any domain-specific failure. Place them in a dedicated `exceptions.py`. Subclass from `Exception`, not `BaseException`:
+  ```python
+  class PaymentDeclinedError(Exception):
+      """
+      Raised when a payment is declined by the processor.
+      """
+  ```
+- Never use exceptions for control flow.
+- Always use `with` for any resource that needs cleanup: files, DB connections, HTTP sessions, locks.
+- Do not provide a fallback or default when the failure path has a low probability of occurring — let the exception propagate.
+
+## Logging Rules
+- Use `logging`, never `print`. Declare a module-level logger: `logger = logging.getLogger(__name__)`.
+- Log levels:
+  - `debug`: as much detail as useful while work is in progress.
+  - `info`: one message marking successful completion of an operation.
+  - `warning`: something is odd but the operation may still succeed.
+  - `error`: one message concluding failure of that operation.
+  - `critical`: only when the component cannot operate at all, or this and downstream work cannot proceed.
+- Always log at `error` when catching an exception that terminates an operation.
+- Include enough context in log messages to reproduce the issue without a debugger:
+  ```python
+  # Wrong
+  logger.error("Payment failed")
+
+  # Correct
+  logger.error("Payment failed user_id=%s amount=%s currency=%s", user_id, amount, currency)
+  ```
+- Guard log interpolation — do not assume variables are non-None or non-empty inside the log call.
+- Never log secrets, passwords, tokens, or PII (names, emails, phone numbers).
+- Use `logger.exception(...)` inside `except` blocks — it includes the stack trace automatically.
+- Do not expose stack traces, file paths, or internal exception text to external callers — log internally, return a generic message outward.
+
+## Security Rules
+- Never hardcode secrets, API keys, passwords, or tokens. Read them from environment variables or a secrets manager.
+- Bool env vars must use this exact pattern: `os.environ.get("ALLOW_DEBUG_LOG", "True") == "True"`.
+- Never pass user-supplied input directly to: SQL queries, shell commands, or OS-level file paths.
+- Validate and sanitize all external input at the entry boundary (API handler, CLI parser, queue consumer) before it reaches business logic. Follow OWASP top-ten practices.
+- Protect against path traversal on every file read, write, or execute operation.
+- Do not persist untrusted files in their original format when the design requires transformation or isolation first.
+- Respect clean vs dirty zone boundaries when code crosses trust levels (file or network).
+
+## Structure Rules
+- Every new module must have a module-level docstring stating its purpose in one sentence.
+- Every public function and class must have a Sphinx-style docstring:
+  ```python
+  def process_payment(amount: float, currency: str) -> bool:
+      """
+      Process a payment and return success status.
+      :param amount: Payment amount in the specified currency.
+      :param currency: ISO 4217 currency code (e.g., "USD").
+      :return: True if payment was processed successfully.
+      :raises PaymentDeclinedError: If the processor declines the payment.
+      """
+  ```
+- Private helpers need a docstring only if the logic is non-obvious.
+- Imports: standard library first, then third-party, then internal — separated by blank lines. Order using PyCharm Optimize Imports (Ctrl+Alt+O) convention.
+- Never use wildcard imports (`from x import *`).
+- Never put imports inside function bodies except for conditional imports that avoid circular dependencies or optional deps — add a comment explaining why when you do.
+- Use full name references, not intermediate aliases, unless an alias is established project convention.
+- Use `HTTPStatus` for HTTP status codes — never bare integers.
+- Constants belong at module level, not inside functions.
+- Do not put business logic in `__init__.py`.
+- Do not use module-level globals for mutable shared state — use classes or explicit dependency injection.
+- Keep files under 1000 lines. If a file approaches that limit, check whether it has more than one responsibility and split it.
+
+## What NOT to Do
+- Do not write code that is not required by the current task. No speculative abstractions.
+- Do not introduce a new dependency without stating why the standard library or existing dependencies cannot solve the problem.
+- Do not copy-paste logic — if the same block appears twice, extract a function. If it appears across components, move it to a shared package.
+- Do not leave `TODO` or `FIXME` comments without a ticket reference or an explanation of the blocker.
+- Do not write `pass` in an `except` block without a comment explaining the deliberate suppression.
+- Do not mutate a function's input argument — work on a copy.
+- Do not maintain dead code paths that exist only for tests or that are not reachable — remove them along with their tests and patches.
+
+## Tests
+- Use the `unittest` package. Do not introduce `pytest` unless it already exists in the project.
+- Write tests that cover the new function's success path, each named exception path, and boundary inputs.
+- Do not write test-only code paths in production modules — if a path is only there to be patched in tests, remove it.
+
+## Required Output Format
+
+Produce the **complete file or complete function** — never a fragment, never pseudocode, never `# ... rest of class unchanged`.
+
+If writing a new function inside an existing file: show the complete function with its full docstring, type hints, and body.
+If writing a new file: show the entire file from the module docstring to the last line.
+If the file already has content and you are adding to it: show the complete updated file.
+
+The reader must be able to copy-paste the output directly. No reconstruction required.
+
+For non-obvious implementation decisions, add a single inline comment at the relevant line:
+```python
+# Using order_id as idempotency key — processor deduplicates on this value within 24h.
+```
+
+Do not add comments that restate what the code does. Only add comments for decisions that a reviewer would otherwise question.
+
+## Done Criteria
+The new code is complete when:
+- All function and method signatures have full type hints.
+- All public functions and classes have Sphinx-style docstrings.
+- All failure paths raise a named exception — no silent returns on failure.
+- No `print`, bare `except`, hardcoded secrets, or bare integer HTTP status codes exist.
+- No `getattr`, module-level mutable globals, or inline imports (without justification comment) exist.
+- The module-level docstring is present.
+- All JSON payloads use Pydantic or the shared data-model package.
+- Unit tests using `unittest` cover the new code's success and failure paths.

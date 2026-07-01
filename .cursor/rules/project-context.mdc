@@ -1,0 +1,110 @@
+---
+description: Invoke for cross-repo work, unfamiliar projects, schema tracing, or finding related services in the 77-repo Oxygen monorepo.
+alwaysApply: false
+---
+
+# Oxygen Dev — Cross-Project Context
+
+Workspace: `oxy_dev.code-workspace` → `/home/itayg/Desktop/oxygen_dev_projects/` (~77 independent GitLab repos, shared private PyPI).
+
+Comply with team rules in `team-rules/conventions.mdc`, `team-rules/rules.mdc`, and `team-rules/security.mdc`.
+
+## Platform in one sentence
+
+Event-driven **file sanitization**: **watchers** ingest files → **Kafka** events → **playbook-orchestrator** drives steps → **adaptors/gateways** scan/transform → **distributors** deliver output. **MongoDB** stores state; **MinIO/S3** stores files.
+
+## Before changing code — find related projects
+
+| If you are in… | Also check… |
+|----------------|-------------|
+| Any service | `data-model` (schemas), `logger-utils`, `build_assets/requirements.txt` |
+| `*-adaptor` | `local-adaptor-utils`, similar adaptor (e.g. `bitdefender-adaptor`), `engines-manager` |
+| `adaptor-gateway-*` | `adaptor-gateway-utils`, the local adaptor it proxies |
+| `*-watcher` | Matching `*-distributor`, `queue-utils`, `storage-utils`, `database_utils` |
+| `*-distributor` | Matching `*-watcher`, `distributor-utils` |
+| `playbook-orchestrator` | All adaptors/gateways in the playbook path, `database_utils`, `queue_utils` |
+| `storage-manager` / `storage-engine-agent` | `storage_utils`, watchers that trigger uploads |
+| `sanitization-*` | `web-server-utils`, `encryption-utils`, `storage_utils`, `manipulator` |
+| `kiosk-*` | `kiosk-data-model`, `kiosk-utils`, `media-utils`, `kiosk-media-watcher/distributor` |
+| `engines-manager`, `incu-updater`, `private-zone-updater` | `motorwerk` (cloud VM provisioning) |
+| Shared lib change | Every consumer via grep on package name in `requirements.txt` / `setup.py` |
+
+Non-PyPI imports (e.g. `import logger_utils`) → sibling repo under `oxygen_dev_projects/` (`team-rules/rules.mdc`).
+
+## Dependency tiers (foundation first)
+
+```
+Tier 0: data-model, logger-utils
+Tier 1: database_utils, queue_utils, storage_utils, encryption-utils, web-server-utils
+Tier 2: local-adaptor-utils, adaptor-gateway-utils, distributor-utils, manipulator, kiosk-data-model
+Tier 3: services (adaptors, gateways, watchers, distributors, APIs, orchestrators)
+```
+
+**Rule**: schema/API changes start in `data-model` (or `kiosk-data-model` for kiosk). Shared logic belongs in `*-utils`, not copy-pasted across services (`team-rules/conventions.mdc` DRY).
+
+## Domains & projects
+
+### Foundation libs
+`data-model`, `logger-utils`, `database_utils`, `queue_utils`, `storage_utils`, `local-adaptor-utils`, `adaptor-gateway-utils`, `distributor-utils`, `manipulator`, `demanipulator`, `encryption-utils`, `web-server-utils`, `media-utils`, `file-type-detector`, `hash-calculator`, `yara-utils`, `kiosk-data-model`, `kiosk-utils`, `motorwerk`, `mongo-ci`, `kiosk-mongo-ci`
+
+### Adaptors (on-host workers via `local-adaptor-utils`)
+AV: `bitdefender-adaptor`, `eset-adaptor`, `msdefender-adaptor` (+ `*-dynamite-adaptor`, `*-privileged-adaptor` variants)  
+Other: `cdr-adaptor`, `yara-adaptor`, `dataml-adaptor`, `archive-extraction-adaptor`, `internal-extractor-adaptor`, `file-metadata-adaptor`, `pe-static-adaptor`, `pedynamic-adaptor`, `file-2-mail-service`, `mailfile2service`
+
+### Adaptor gateways (remote proxy)
+`adaptor-gateway-cdr`, `adaptor-gateway-extractor`, `adaptor-gateway-file-metadata`, `adaptor-gateway-scan-file`
+
+### Ingress / egress pairs
+| Channel | Watcher | Distributor |
+|---------|---------|-------------|
+| S3 | `s3-watcher` | `s3-distributor` |
+| NFS | `nfs-watcher` | `nfs-distributor` |
+| SMTP | `smtp-watcher` | `smtp-distributor` |
+| Kiosk media | `kiosk-media-watcher` | `kiosk-media-distributor` |
+
+### Orchestration & storage
+`playbook-orchestrator`, `engines-manager`, `storage-manager`, `storage-engine-agent`, `file-classification`
+
+### Sanitization surface
+`sanitization-icap-server`, `sanitization-rest-api-upload`, `sanitization-rest-api-download`, `sanitization-rest-api-ui`, `sanitization-ui`
+
+### Kiosk platform
+`kiosk-backend`, `kiosk-ui`, `kiosk-updater`, `lightrail-network-ui`, `kiosk-media-watcher`, `kiosk-media-distributor`
+
+### Updates & maintenance
+`update_packages`, `update-fetcher`, `anti-virus-update`, `incu-updater`, `private-zone-updater`, `housekeeping`, `update_av_script`
+
+### Peripheral
+`mail2file`, `periodic-mail-sender`, `oxygen-telemetry`, `research-vt`
+
+## Naming patterns
+
+| Suffix / prefix | Meaning |
+|-----------------|---------|
+| `*-adaptor` | On-host processing worker |
+| `*-dynamite-adaptor` | Alternate AV deployment variant |
+| `*-privileged-adaptor` | Elevated-privilege AV helper (no `local-adaptor-utils`) |
+| `adaptor-gateway-*` | Remote gateway wrapping a local adaptor |
+| `*-watcher` | Ingress — detect files, emit Kafka events |
+| `*-distributor` | Egress — deliver sanitized output |
+| `*-utils` / `*_utils` | Shared PyPI library |
+| `kiosk-*` | Physical kiosk station |
+| `sanitization-*` | UI / REST / ICAP API layer |
+| `*-updater` | Maintenance / update service |
+
+## Standard service skeleton
+
+Most Python services: `src/main.py` → init Logic → Flask `web_server` (+ optional Kafka `QueueConsumer`).  
+Deps: `build_assets/requirements.txt` (pinned) and/or `setup.py` for libs. Versions differ per repo — check the target service's pins before assuming compatibility.
+
+Layer boundaries: see `architecture.mdc` (boundary / service / IO).
+
+## Agent workflow in this workspace
+
+1. **Identify domain** from project name (table above).
+2. **Trace imports** in `requirements.txt` / `setup.py` to foundation libs.
+3. **Search siblings** with the same suffix (`*-watcher`, `*-adaptor`, etc.) for patterns.
+4. **Schema changes** → `data-model` first; grep consumers before merging (`team-rules/rules.mdc`).
+5. **Keep index small** — toggle inactive projects in `.cursorignore`, then re-index.
+
+See `instructions.mdc` for rule activation (`@planning`, `@project-context`, `@perspectives`, etc.).
