@@ -1,0 +1,137 @@
+---
+description: Activate when asked to fix, resolve, patch, or correct a known bug. Apply the smallest possible change to the exact failure point only.
+alwaysApply: false
+---
+
+# Bug Fix Mode
+
+## Objective
+Fix the reported issue with the smallest possible change.
+Do not improve, refactor, rename, or reformat anything beyond the exact failure point.
+
+## Context Required
+Before doing anything else, check what is present in context.
+
+You need:
+- The exact file and function that contains the bug (e.g. `@payments/service.py`)
+- The exact lines that are wrong — not a description, the actual code
+- The traceback, log output, or failing assertion that proves the bug exists
+- Any callers of the broken function if the fix might affect their behavior
+
+If any of these is missing, stop immediately and output:
+
+```
+MISSING CONTEXT — cannot fix reliably.
+Please provide:
+- [ ] <list exactly what is missing from the items above>
+```
+
+Do not write a fix based on assumed or reconstructed code. Do not say "assuming the function looks like..." — read the actual code or stop.
+
+## Step 1 — Understand Before Acting
+Confirm all of the following. If any is missing — ask before writing anything:
+- What exactly is broken? State the symptom vs the root cause separately.
+- Under what conditions does it occur? Deterministic (always reproducible) or intermittent?
+- What is the expected behavior vs the actual behavior?
+- Which functions, classes, or data flows are involved?
+
+## Step 2 — Root Cause Analysis
+Trace the issue to its exact failure point. Do not fix symptoms. Common causes:
+- Logic flaw or wrong condition
+- A value arrived as the wrong type or unexpectedly `None` (strict types expected — `team-rules/rules.mdc`)
+- State mutation side effect from a shared variable or module-level mutable global
+- Misused library or framework API
+- Timing, async, or race condition
+- Missing boundary validation — input from API, queue, or CLI not validated before use
+- Bool env var not following `os.environ.get("X", "Y") == "Y"` pattern (`team-rules/conventions.mdc`)
+- Path traversal — user input reaching a file read/write/execute call unchecked (`team-rules/security.mdc`)
+
+## Step 3 — Edge Cases Before Writing the Fix
+Think through each before writing:
+- What happens with empty / zero / boundary values on this path?
+- What happens under concurrent execution?
+- What existing behavior depends on the broken behavior — would fixing it break a caller?
+- State explicitly: *"This fix could break if ..."*
+
+## Step 4 — Propose Fix Options (always two)
+
+**Option A — Minimal Fix**
+Change only the exact lines that are wrong. No other lines touched.
+
+**Option B — Defensive Fix**
+Add the minimal guard, validation, or exception handling needed to prevent this class of failure from recurring. Only propose this if Option A leaves an obvious gap that would cause the same failure under a slightly different input.
+
+Do NOT propose Option B "just in case" — `team-rules/rules.mdc` forbids fallbacks when their probability of firing is low.
+
+Default to Option A.
+
+## Fix Rules
+- Change only the lines that are wrong. Do not touch unrelated code.
+- Do not rename, reformat, or restructure anything.
+- Do not change function signatures unless the bug is in the signature itself.
+- Preserve all existing comments exactly.
+- If the why of the fix is not obvious from the code, add one short inline comment.
+- Do not replace `print()` with `logging` as part of this fix — that is an improvement task, not a bug fix. However, if the bug IS a missing log on an error path, adding `logger.error(...)` or `logger.exception(...)` is part of the fix.
+- Do not add a docstring as part of this fix unless the missing docstring is the reported issue.
+
+## Output Format
+
+Show the **complete function or method** in both EXISTING and REPLACE WITH — not just the changed lines.
+The reader must be able to copy-paste REPLACE WITH directly into the file without hunting for surrounding context.
+Mark every changed line with `# CHANGED` and every added line with `# ADDED` as an inline comment so the diff is visible at a glance.
+
+```
+ROOT CAUSE:
+[One sentence — the exact line and why it is wrong]
+
+THIS FIX COULD BREAK IF:
+[One sentence — the specific scenario that would regress]
+
+--- OPTION A — MINIMAL ---
+
+EXISTING (payments/service.py — process_payment):
+```python
+def process_payment(amount: float, currency: str) -> bool:
+    """
+    Process a payment and return success status.
+    :param amount: Payment amount in the specified currency.
+    :param currency: ISO 4217 currency code (e.g., "USD").
+    :return: True if payment was processed successfully.
+    :raises PaymentDeclinedError: If the processor declines the payment.
+    """
+    try:
+        result = self._processor.charge(amount, currency)
+    except:
+        return False
+    return result.success
+```
+
+REPLACE WITH:
+```python
+def process_payment(amount: float, currency: str) -> bool:
+    """
+    Process a payment and return success status.
+    :param amount: Payment amount in the specified currency.
+    :param currency: ISO 4217 currency code (e.g., "USD").
+    :return: True if payment was processed successfully.
+    :raises PaymentDeclinedError: If the processor declines the payment.
+    """
+    try:
+        result = self._processor.charge(amount, currency)
+    except ProcessorError as e:                                                          # CHANGED
+        logger.exception("Processor charge failed amount=%s currency=%s", amount, currency)  # ADDED
+        raise PaymentDeclinedError("Payment declined by processor") from e               # CHANGED
+    return result.success
+```
+
+--- OPTION B — DEFENSIVE (only if justified) ---
+[Same structure: complete EXISTING function, complete REPLACE WITH function, CHANGED/ADDED markers]
+WHY OPTION B: [one sentence — the specific gap Option A leaves open]
+```
+
+## Done Criteria
+- The reported behavior is corrected.
+- No existing behavior is broken.
+- No unrelated code was changed, renamed, or reformatted.
+- No hardcoded secret, bare integer HTTP status code, or `print()` was introduced.
+- Both EXISTING and REPLACE WITH show the complete function, not fragments.

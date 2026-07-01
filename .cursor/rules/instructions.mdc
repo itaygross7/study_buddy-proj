@@ -1,0 +1,57 @@
+---
+description: Router for Oxygen Cursor rules — what to load and when. Always read first.
+alwaysApply: true
+---
+
+# Cursor Rules — How to Use
+
+## Two tiers
+- **Team rules** (`team-rules/`) — org standards. MUST comply **when present**; not every repo has them.
+- **Workspace rules** (this folder, except `team-rules/`) — modes, monorepo map, quality bar.
+
+Load `team-rules/` and `@project-context` only if they exist in this workspace. If absent, follow the **Non-negotiables** below and match the edited file's existing style.
+
+## Before any code change
+1. Match existing style in the file you edit; apply team rules (if present) to new/changed code only.
+2. Cross-repo or unfamiliar project → `@project-context` first (if present).
+3. Design → `@planning`. Bug → `@bug_investigation` then `@bug_fix`.
+4. User asks / wants copy-paste fix → `@ask_mode`. Agent will build a prompt → `@build_agent_prompt`; agent will implement → `@agent_mode`. Unclear → ask one question first. After 2–3 unresolved exchanges → offer Re-Ask Prompt from `ask_mode.mdc`.
+5. UI / templates / CSS → `@theme` (cozy palette, Tailwind tokens — no ad-hoc colors).
+
+## Team rules (if present — full detail; invoke or let modes pull them in)
+| File | Covers |
+|------|--------|
+| `team-rules/conventions.mdc` | formatting, logging, docstrings, HTTPStatus |
+| `team-rules/rules.mdc` | Pydantic, data-model, globals, unittest |
+| `team-rules/security.mdc` | input validation, path traversal, clean/dirty zones |
+
+## Workspace modes
+| @name | When |
+|-------|------|
+| `@planning` | design before code |
+| `@write_new_code` | new feature/module |
+| `@bug_investigation` / `@bug_fix` | bugs |
+| `@code_review` | PR review |
+| `@architecture` | layer boundaries, new service/stage |
+| `@code_quality` | readable/clean code, refactor, quality review — or `@write_new_code` / `@code_review` |
+| `@project-context` | 77-repo navigation (if present) |
+| `@build_agent_prompt` | build copy-paste agent prompt — agent will implement |
+| `@agent_mode` | agent implements an approved task/prompt — verify, conform, stage, report |
+| `@ask_mode` | direct answer / copy-paste fix — user implements themselves |
+| `@perspectives` | open Q&A, discussions, trade-offs |
+| `@test_writing` | writing or adding tests |
+| `@theme` | UI/HTML/CSS — cozy palette, Tailwind tokens, RTL layout |
+
+## Open questions & discussions
+When exploring, comparing options, or asking for opinion (not implementing yet):
+1. Pick 1–3 roles from `perspectives.mdc` — state them at the top.
+2. Answer substantively; surface role tensions if they disagree.
+3. End with the **Opinion** block from `perspectives.mdc`.
+
+For implementation tasks, use the relevant `@` mode instead of the Opinion block unless the user also asks for a review lens.
+
+## Non-negotiables (always — compressed; see team-rules/ if present for full detail)
+- Type hints, Sphinx docstrings, `logging` not `print`, `HTTPStatus` not bare ints
+- Pydantic / data-model for JSON; no mutable module globals
+- Path traversal protection; no stack traces to external callers
+- Reuse existing code; smallest change that solves the task

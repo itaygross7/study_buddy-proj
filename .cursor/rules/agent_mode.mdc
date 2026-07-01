@@ -1,0 +1,145 @@
+---
+description: >
+  Activate when implementing an approved task in Cursor Agent Mode — executing a @build_agent_prompt
+  output, or a direct "go implement / apply this" where the agent edits files. Governs how the agent
+  works: verify exactly what THIS task needs, classify surgical vs structural change, conform to the
+  existing code and sibling/reference-repo style, execute in verifiable stages, then report.
+alwaysApply: false
+---
+
+# Agent Mode — Execution Discipline
+
+## Purpose
+
+Govern the agent while it actually changes code. Every action is scoped to the current task and to
+the surrounding code's existing style. This mode does not decide *what* to build in a vacuum — it
+executes an approved task (usually a `@build_agent_prompt` artifact) correctly, minimally, and in
+conformity with the repo.
+
+If the task is not approved or not precise, this mode stops and asks. It never improvises structural
+change.
+
+---
+
+## Step 0 — Confirm the Task Is Executable
+
+Before editing anything, confirm the task is locked and precise. You need:
+- The exact task (from a `@build_agent_prompt` block, or an explicit user instruction).
+- The target file(s) / module(s), and the entry point if triggered by API, queue, or CLI.
+- Any interface, Pydantic model, or shared data-model the change must respect.
+
+If any is missing, stop immediately and output:
+
+```
+MISSING CONTEXT — cannot execute reliably.
+Please provide:
+- [ ] <list exactly what is missing from the items above>
+```
+
+Do not edit files against assumed code. Read the actual code or stop.
+
+---
+
+## Step 1 — Classify the Change (drives everything after)
+
+Read the task and decide two things: whether code should change at all, and how large the change is.
+
+| Task signal | Class | Behavior |
+|-------------|-------|----------|
+| "why", "investigate", "explain", "is this correct" | **No code change** | Do not edit. Route to `@bug_investigation` / `@ask_mode`. |
+| "fix", "correct", single failure point, bug reference | **Surgical** | `@bug_fix` discipline: change only the exact lines. No rename, reformat, or drive-by edits. Preserve comments. |
+| "improve", "clean up" existing, no behavior change | **Surgical+** | `@improvement` discipline: one concern, full unit, no interface change, no new behavior. |
+| "add", "implement", "build" a unit into existing patterns | **Targeted** | `@write_new_code` discipline: full unit, reuse existing code, match siblings. |
+| "refactor across", "restructure", "new service/stage", layer change | **Structural** | Requires an approved plan (`@planning` / `@architecture`). If none is present → STOP and ask. Do not invent structure. |
+
+Rules:
+- Default to the **smallest class** the task allows. When unsure between two classes, pick the smaller and ask.
+- The magnitude in a `@build_agent_prompt` block (`## Change Magnitude`) is authoritative — follow it.
+- A Surgical task never becomes a refactor. If the task genuinely cannot be done surgically, stop and report; do not silently widen scope.
+
+---
+
+## Step 2 — Conform Before You Write
+
+Match the code that is already there. Conformity outranks personal preference (`team-rules/rules.mdc`:
+follow existing repo style).
+
+Before writing, read:
+- The **target file** — its naming, import ordering, error/log patterns, structure.
+- **1–2 siblings** with the same role (`@project-context` table: `*-adaptor`, `*-watcher`, `*-utils`, etc.).
+- Any **reference repos** the user named — extract their conventions and mirror them.
+
+Then apply, in priority order:
+1. The explicit rules — `code_quality.mdc`, `team-rules/conventions.mdc`, `team-rules/rules.mdc`, `team-rules/security.mdc`.
+2. The **local style** of the target file and its siblings — imports, exceptions, logging, typing, test layout, docstrings.
+3. `code_quality.mdc` principles — one level of abstraction per function, names as documentation, one responsibility, guard clauses, command/query separation, YAGNI.
+
+Conformity specifics:
+- **Reuse before adding.** If a helper, client, or util already does this, call it — do not reimplement (`*-utils`, `local-adaptor-utils`, `data-model`).
+- **No new dependency** when an existing one already in the repo solves it. If a new dep is unavoidable, state why in the report.
+- **Match the existing pattern** even if you would personally write it differently. If the repo uses a factory, a specific base class, or a particular error taxonomy — follow it.
+- **Schema/API changes start in `data-model`** (or `kiosk-data-model`), not inline in a service; grep consumers before changing a shared contract.
+- Keep to the project's non-negotiables: type hints, Sphinx docstrings, `logging` not `print`, `HTTPStatus`, Pydantic for JSON, named exceptions, no `getattr`, no mutable module globals, path-traversal protection, no internals leaked to external callers.
+
+---
+
+## Step 3 — Execute in Verifiable Stages
+
+- Implement one stage at a time, in the order given by the plan.
+- After each stage, run its verify step / tests before moving on. **Never leave the tree in a broken
+  intermediate state** between stages.
+- Keep every change inside the task's scope. Touch only the files the task names or that are strictly
+  required. No opportunistic refactors.
+- If a stage reveals the plan is wrong or the scope must grow, **STOP**, report what you found, and ask.
+  Do not improvise a structural change mid-execution.
+- Add or update `unittest` tests alongside the code (`@test_writing`): success path, each named
+  exception, boundary inputs. Never introduce `pytest` if the repo uses `unittest`.
+
+---
+
+## Step 4 — Verify the Whole Task
+
+Before declaring done, run the task's verification (or, if none was specified, the standard set):
+
+- **Plan completion** — every planned stage landed; nothing skipped or half-applied.
+- **Edge cases** — every edge case named in the task behaves as agreed; empty / zero / negative /
+  boundary / `None`-where-allowed / retry paths checked.
+- **Suite green** — `python -m unittest discover -s tests/ -p "test_*.py" -v` → zero failures.
+- **Integrity** — import check, lint, and the security/logging spot-checks from `@build_agent_prompt`
+  (no secret/PII in logs, no path traversal, no raw exception text to external callers, every `except`
+  logs).
+
+If any check fails, fix within scope and re-run. If the fix would exceed scope, stop and report.
+
+---
+
+## Step 5 — Report
+
+Produce **both** deliverables using the canonical templates in `@build_agent_prompt`:
+1. **Change Doc** — short, presentable next to the task/ticket.
+2. **Final Report** — detailed: completed items, files changed, tests, rule compliance, follow-ups.
+
+Do not restate the templates here — use the ones in `@build_agent_prompt` so there is one source of truth.
+
+---
+
+## Scope Guardrails
+
+- Only files the task names or strictly requires. Nothing else is touched.
+- No cross-component or package API break unless the task explicitly requires it — and if it does,
+  update consumers and say so in the report.
+- No rename, reformat, or comment removal outside the changed unit.
+- No speculative abstraction, no dead code, no test-only paths in production modules.
+- When in doubt about scope, magnitude, or an interface — ask one question before proceeding.
+
+---
+
+## Rules for This MDC File Itself
+
+- Execute only approved, precise tasks — otherwise emit the MISSING CONTEXT block and stop.
+- Respect the task's change magnitude; never turn a surgical fix into a refactor.
+- Conform to existing and reference-repo style; the repo wins over preference.
+- Stage the work; keep the tree working between stages; stop and report before widening scope.
+- Report via `@build_agent_prompt` templates — do not duplicate them.
+- All rule references point to canonical `.mdc` files (`instructions.mdc`, `build_agent_prompt.mdc`,
+  `code_quality.mdc`, `project-context.mdc`, `architecture.mdc`, `team-rules/*`). Do not contradict them.

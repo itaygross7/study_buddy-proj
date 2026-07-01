@@ -1,0 +1,138 @@
+---
+description: >
+  Apply when the user asks to write, add, create, or improve tests — unittest, coverage,
+  test cases, "add tests for", "test this function". Full test classes only, no sketches.
+alwaysApply: false
+---
+
+# Test Writing Mode
+
+## Objective
+Write complete, independent, meaningful tests for existing production code.
+Tests must lock in correct behavior, catch regressions, and run in isolation.
+
+## Context Required
+Before doing anything else, check what is present in context.
+
+You need:
+- The production file being tested (e.g. `@payments/service.py`) — the actual source
+- Any Pydantic models, dataclasses, or shared data-model types it uses (e.g. `@payments/models.py`)
+- Any custom exceptions it raises (e.g. `@payments/exceptions.py`)
+- The existing test file for this module if one exists (e.g. `@tests/test_payment_service.py`) — to avoid duplicating tests
+
+If any of these is missing, stop immediately and output:
+
+```
+MISSING CONTEXT — cannot write reliable tests.
+Please provide:
+- [ ] <list exactly what is missing from the items above>
+```
+
+Do not write tests that assume method signatures, return types, or exception names you have not read from the actual source.
+
+## What to Test
+
+For each public function or method, write tests that cover:
+
+1. **Success path** — the expected output for valid, normal input
+2. **Each named exception path** — one test per `raise` statement in the production code
+3. **Boundary inputs** — empty string, zero, negative number, empty list, `None` where the type hint allows it
+4. **State after the call** — if the function has side effects (DB write, external call), verify the side effect happened or was called with the right arguments
+
+Do NOT test:
+- Private methods directly — test them through the public interface
+- Implementation details that are not part of the public contract
+- Code paths that do not exist in the production source
+
+## Test Rules
+
+- Use `unittest` — never introduce `pytest` unless it already exists in the project
+- Every test class inherits from `unittest.TestCase`
+- Every test method name starts with `test_` and describes exactly what it verifies:
+  - `test_charge_returns_true_on_success` not `test_charge` not `test_1`
+- One assertion concept per test. A test may have multiple `assert` calls if they all verify the same outcome
+- Use `unittest.mock.patch` or `unittest.mock.MagicMock` for all external dependencies — never hit a real DB, network, or filesystem in a unit test
+- Use `setUp` to create shared fixtures. Keep `setUp` minimal — only what every test in the class needs
+- Never share mutable state between tests — each test must be independently runnable in any order
+- Do not write `pass` as a test body — a test that does not assert anything is silent noise
+- Do not write test-only code paths in production — if you need to patch something, patch the real implementation, not a bypass you added for tests
+
+## Naming
+- Test file: `test_<module_name>.py` (e.g. `test_payment_service.py`)
+- Test class: `Test<ClassName>` (e.g. `TestPaymentService`)
+- Test method: `test_<method>_<condition>_<expected_result>`:
+  - `test_process_payment_when_processor_raises_returns_declined_error`
+  - `test_process_payment_with_valid_order_returns_true`
+
+## Output Format
+
+Produce the **complete test file** — from the imports to the last line.
+Never show a partial class or a single test method without its class.
+The output must be copy-pasteable directly into the test file without any additional scaffolding.
+
+```python
+# tests/test_payment_service.py
+"""Unit tests for payments/service.py — PaymentService."""
+
+import unittest
+from unittest.mock import MagicMock, patch
+
+from payments.exceptions import PaymentDeclinedError
+from payments.models import Order
+from payments.service import PaymentService
+
+
+class TestPaymentService(unittest.TestCase):
+    """Tests for PaymentService.process_payment."""
+
+    def setUp(self) -> None:
+        self._mock_gateway = MagicMock()
+        self._mock_order_repo = MagicMock()
+        self._service = PaymentService(
+            gateway=self._mock_gateway,
+            order_repository=self._mock_order_repo,
+        )
+        self._order = Order(id=1, user_id=42, total=99.99, currency="USD", status="pending")
+
+    def test_process_payment_with_valid_order_returns_true(self) -> None:
+        self._mock_gateway.charge.return_value.success = True
+
+        result = self._service.process_payment(self._order)
+
+        self.assertTrue(result)
+        self._mock_gateway.charge.assert_called_once_with(self._order)
+
+    def test_process_payment_marks_order_paid_on_success(self) -> None:
+        self._mock_gateway.charge.return_value.success = True
+
+        self._service.process_payment(self._order)
+
+        self._mock_order_repo.mark_paid.assert_called_once_with(self._order.id)
+
+    def test_process_payment_raises_payment_declined_error_when_gateway_fails(self) -> None:
+        self._mock_gateway.charge.side_effect = ProcessorError("card declined")
+
+        with self.assertRaises(PaymentDeclinedError):
+            self._service.process_payment(self._order)
+
+    def test_process_payment_does_not_mark_paid_when_gateway_fails(self) -> None:
+        self._mock_gateway.charge.side_effect = ProcessorError("card declined")
+
+        with self.assertRaises(PaymentDeclinedError):
+            self._service.process_payment(self._order)
+
+        self._mock_order_repo.mark_paid.assert_not_called()
+
+
+if __name__ == "__main__":
+    unittest.main()
+```
+
+## Done Criteria
+- Complete test file is produced — from imports to `if __name__ == "__main__":`
+- Every public method in the production source has at least one test
+- Every named exception in the production source has at least one test
+- Every test asserts something concrete — no empty test bodies
+- No real DB, network, or filesystem calls — all external deps are mocked
+- All test method names describe the condition and expected outcome
+- No test-only code paths were added to the production source

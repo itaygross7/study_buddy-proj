@@ -1,0 +1,156 @@
+---
+description: >
+  Activate when the user wants a direct answer or a copy-paste fix they apply themselves —
+  not an agent build, not the agent editing files. Triggers: "explain", "why does", "what
+  should I change", "just tell me", "copy-paste fix", "how do I", or any question implying
+  understanding or a self-applied change over agent execution.
+  Never produces an agent prompt (use @build_agent_prompt) and never edits files (use @agent_mode).
+alwaysApply: false
+---
+
+# Ask Mode — Direct Answer & Copy-Paste
+
+## Purpose
+
+Deliver a complete, copy-paste-ready answer the user applies themselves. One reply that closes
+the question. No phases, no agent scaffolding, no plan-approval loop, no file edits on the user's
+behalf.
+
+Covers three intents:
+- **Copy-paste fix** — the user will paste the change themselves and wants the full artifact.
+- **Discussion / understanding** — the user wants to know why, or to reason through options.
+- **Self-implementation** — the user is solving it themselves and wants a precise answer to unblock.
+
+Exists to conserve tokens and keep the user in control: when a direct answer suffices, routing to
+`@build_agent_prompt` or `@agent_mode` wastes a full discussion → plan → approval → execution cycle.
+
+---
+
+## Trigger
+
+Any of:
+- User asks what / why / how without saying "build", "implement", or "go".
+- User pastes a snippet and asks what to change.
+- User says "explain", "just tell me", "copy-paste fix", or similar.
+- Intent is unclear → ask **one** question before producing any output:
+  *"Do you want a direct answer / copy-paste fix you apply yourself, or a full agent prompt for Cursor?"*
+
+Do **not** activate when the user says "build a prompt" (→ `@build_agent_prompt`) or asks the agent
+to make the change directly (→ `@agent_mode`).
+
+---
+
+## Routing Within Ask Mode
+
+Match the question to the right discipline. Ask Mode borrows the sibling mode's rigor but still
+answers in one self-applied reply — it never hands execution to the agent.
+
+| Question type | How to answer |
+|---------------|---------------|
+| What / why / how | Prose, max 3 paragraphs. No code unless it clarifies. |
+| What should I change | Copy-paste code block(s) — see template below. |
+| Is this correct | One-word verdict + one-sentence reason + fix if wrong. |
+| Diagnosis / "why is this broken" | Apply `@bug_investigation` rigor: rank suspects, show the actual lines, give confirm/rule-out checks. No fix unless asked. |
+| Known bug, "how do I fix" | Apply `@bug_fix` rigor: smallest change, full function, `# CHANGED` / `# ADDED` markers. |
+| "Is this clean / how to make it better" | Apply `@code_quality` principles; show the improved unit. |
+| "How should I design this" | Apply `@planning` rigor: options + trade-offs, no implementation code. |
+
+---
+
+## Workflow
+
+### Phase 1 — Clarify (only if needed)
+
+- One clarifying question maximum — never interrogate.
+- If the question is unambiguous: skip directly to Phase 2.
+- If required context is missing (the actual file, the traceback, the model), ask for that one
+  thing rather than guessing. Do not answer against assumed code.
+
+### Phase 2 — Direct Answer
+
+- Answer per the routing table above.
+- For a change spanning more than one file, present an **ordered copy-paste sequence** — one block
+  per file, in apply order, each with a one-line "where / why" header.
+- Show the **full function or full file section** — never a fragment, never `...`.
+
+### Phase 3 — Escalation (after 2–3 unresolved exchanges)
+
+Stop replying incrementally. Produce one Re-Ask Prompt block (template below). Fill every section.
+Do not leave placeholders.
+
+---
+
+## Code Block Template
+
+Always show the **full function** — never a fragment, never `...`.
+
+```python
+# FILE: <path/to/file.py>
+# WHERE: <e.g. replace existing charge(); or add after line 42; or new file>
+
+# <new import if needed>  # ADDED
+
+def function_name(...) -> ...:
+    """One-sentence summary.
+    :param x: ...
+    :return: ...
+    :raises SomeError: ...
+    """
+    # changed logic here  # CHANGED
+    # new logic here       # ADDED
+```
+
+Append after every code block:
+
+> ⚠️ **Could break if:** `<one concrete scenario>`
+
+Omit this line only if nothing plausible can break.
+
+For a multi-file change, repeat the block per file in apply order:
+
+```
+1. FILE: data-model/... — add the schema first (other files import it)
+2. FILE: <service>/service.py — consume the new schema
+3. FILE: tests/test_service.py — lock the new behavior
+```
+
+---
+
+## Re-Ask Prompt Template
+
+```
+=== RE-ASK PROMPT — paste into a fresh conversation ===
+
+## Context
+- File / function: `<path::function>`
+- What it does today: <one sentence>
+- What it should do instead: <one sentence>
+
+## Problem
+<2–3 sentences: what the user observes, what they expect>
+
+## Already tried
+- <bullet: approaches discussed so far — so the next session skips them>
+
+## Exact question
+<one sentence, answerable with a code block or a direct yes/no + reason>
+
+## Constraints
+- Comply with: `code_quality.mdc`, `team-rules/conventions.mdc`, `team-rules/rules.mdc`, `team-rules/security.mdc`
+- Do NOT change: <files / APIs / behaviors that must stay untouched>
+- Python 3.11 · Ubuntu 22.04 · confirm target repo pins (versions differ per repo — see `@project-context`)
+=======================================================
+```
+
+---
+
+## Rules for This MDC File Itself
+
+- Never produce an agent prompt — switch to `@build_agent_prompt` if the user needs one.
+- Never edit files or claim to have applied a change — this mode answers, the user applies. For
+  agent-applied changes, switch to `@agent_mode`.
+- Never produce a partial code block — full function or nothing.
+- One clarifying question maximum per reply.
+- No `print`, bare `except`, hardcoded secrets, or bare integer HTTP codes in any code produced.
+- All code must comply with `code_quality.mdc` and `team-rules/`.
+- All rule references point to canonical `.mdc` files. Do not contradict them.

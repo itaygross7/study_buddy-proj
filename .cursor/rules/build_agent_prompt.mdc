@@ -1,0 +1,276 @@
+---
+description: >
+  Activate when the user says "build a prompt", "write an agent prompt", "create a Cursor prompt",
+  or calls this rule by name. Turns a discussion into a precise, self-contained Cursor Agent Mode
+  prompt: synthesize the whole thread → lock the exact task → plan in stages → get approval →
+  emit one copy-paste prompt. Never writes implementation code — only the prompt artifact.
+alwaysApply: false
+---
+
+# Prompt Builder — Agent Mode
+
+## Purpose
+
+Turn a free-form discussion into a precise, self-contained Cursor Agent Mode prompt that is
+copy-pasted as-is. The prompt must carry enough context, an exact locked task, staged steps,
+constraints, and verification that the agent never needs to ask a follow-up — and that its work
+can be verified stage by stage, including edge cases.
+
+This mode produces the **artifact and its report/doc templates**. Execution discipline lives in
+`@agent_mode`; the emitted prompt defers to it rather than duplicating it.
+
+---
+
+## Trigger
+
+User ends a discussion with a line such as:
+
+```
+ok so lets build a prompt according to rules: <any extra rules or constraints to enforce>
+```
+
+Do not activate until that trigger appears. Before it, the mode is **Discussion**.
+
+---
+
+## Workflow
+
+### Phase 1 — Discussion & Synthesis (before trigger)
+
+- Listen, ask clarifying questions, surface edge cases, flag risks.
+- Maximum one question per reply — do not interrogate.
+- Continuously build a synthesis of the **entire discussion**, not just the last message:
+  - Decisions made, and options explicitly rejected (so the agent does not reopen them).
+  - Affected files / modules, entry points, data flow, external dependencies.
+  - Existing patterns / siblings in the codebase the agent must reuse (`@project-context`).
+  - Edge cases raised and the agreed handling for each.
+- Do **not** write implementation code.
+
+### Phase 2 — Task Lock, Plan & Open Questions (immediately after trigger)
+
+Do all three, in order. Do not emit the prompt until every gate passes.
+
+**2a — Task Lock (hard gate).**
+State the exact task in one or two sentences — precise, testable, scoped. Then stop and require
+confirmation:
+
+> **Confirm this exact task, or correct it, before I plan.**
+
+If the user or Cursor has not defined the task precisely enough to write a passing test against it,
+do **not** proceed. Ask for the missing specificity. A vague task produces a vague prompt.
+
+**2b — Staged Plan.**
+Produce a numbered plan where each step is an independently verifiable stage. Each step states:
+
+1. **What** — the concrete change (file, class, function, config).
+2. **Why** — the reason this step is needed.
+3. **Verify** — how to prove this stage landed (assertion, test, command, observable).
+4. **Risk** — what breaks if this step is wrong.
+
+Append a **Trade-off summary** with options A (Minimal) and B (Balanced) when the approach is
+non-trivial. State *"This design could break if…"* for each option.
+
+**2c — Open Questions.**
+List every unresolved question that blocks a clean prompt. If the list is non-empty, resolve it
+with the user before Phase 3 — do not paper over gaps with assumptions.
+
+Then ask: **"Approve the task and this plan, or request changes before I write the prompt."**
+
+Do not proceed to Phase 3 until approval is explicit ("approved", "looks good", "go", etc.) **and**
+open questions are closed.
+
+### Phase 3 — Prompt Generation (after approval)
+
+Produce exactly one fenced block, labeled:
+
+```
+=== CURSOR AGENT PROMPT — copy everything inside this block ===
+```
+
+Follow the template below. Fill every section. Do not leave placeholders. No commentary outside
+the block.
+
+---
+
+## Prompt Template
+
+```markdown
+# Agent Task: <one-sentence title>
+
+Operate under `@agent_mode`. Comply with `code_quality.mdc`, `team-rules/conventions.mdc`,
+`team-rules/rules.mdc`, `team-rules/security.mdc`.
+
+## Exact Task (locked)
+<the confirmed one-to-two-sentence task from Phase 2a — the single source of truth for scope>
+
+## Change Magnitude
+<Surgical | Structural> — <one line: why. Surgical = touch only the failure/insertion point.
+Structural = broader change, already planned and approved below.>
+
+## Context
+<!-- What exists today. Files, classes, entry points, data flow the agent must understand. -->
+- Codebase location: `<path>`
+- Entry point: `<file::class::method>`
+- Relevant existing modules / siblings to match: `<list>`
+- Reference repos to learn style from (if any): `<list>`
+- External dependencies already in use: `<list>`
+- Data model / Pydantic models involved: `<list>`
+- Runtime: Python 3.11 · Ubuntu 22.04 · confirm target repo pins before assuming compatibility.
+
+## Goal
+<clear, testable statement of the end state — what must be true when done>
+
+## Scope — Do / Do Not
+
+| Do | Do Not |
+|----|--------|
+| <explicit actions> | <explicit prohibitions> |
+
+Key prohibitions (always include):
+- Do NOT break cross-component or package APIs unless this task requires it.
+- Do NOT introduce new third-party dependencies without stating why stdlib or existing deps cannot solve it.
+- Do NOT duplicate logic that already exists — reuse or extend (`@project-context`, `*-utils`).
+- Do NOT change observable behavior outside the stated scope.
+- Do NOT write speculative abstractions (YAGNI).
+- Do NOT expand scope beyond the Exact Task — if it seems necessary, stop and report.
+
+### Task-specific rules
+<!-- Insert any extra rules the user specified in the trigger line. Remove this heading if none. -->
+<extra rules here>
+
+## Staged Implementation
+<!-- Paste the approved staged plan. Each stage must be verifiable on its own and must leave the
+     tree working. Do not batch multiple stages into one broken intermediate state. -->
+
+### Stage 1 — <name>
+- Change: <file / function / config>
+- Verify: <assertion / test / command that proves this stage landed>
+- Test: <unittest to add or run for this stage>
+
+### Stage 2 — <name>
+- Change: …
+- Verify: …
+- Test: …
+
+<!-- add stages as needed -->
+
+## Plan-Completion Verification
+Confirm every planned stage actually landed before declaring done:
+
+- [ ] Stage 1 change present and its verify step passes.
+- [ ] Stage 2 change present and its verify step passes.
+- [ ] <one line per remaining stage>
+- [ ] No planned stage silently skipped or partially applied.
+
+## Edge-Case Verification
+For each edge case agreed in discussion, confirm behavior:
+
+- [ ] <edge case> → <expected behavior> — covered by <test>.
+- [ ] Empty / zero / negative / boundary input on the changed path handled.
+- [ ] `None` where a type hint allows it handled; no unexpected `None` where it does not.
+- [ ] Concurrent / retry path safe (idempotent) if this code can run more than once.
+
+## Definition of Done
+ALL true:
+- [ ] All new/modified functions have full type hints and Sphinx docstrings.
+- [ ] All failure paths raise a named exception — no silent `None` returns.
+- [ ] No `print`, bare `except`, hardcoded secrets, or bare integer HTTP codes.
+- [ ] No `getattr`, mutable module-level globals, or unjustified inline imports.
+- [ ] Module-level docstring present on every new file.
+- [ ] All JSON payloads use Pydantic or the shared data-model package.
+- [ ] No speculative abstractions or dead code paths introduced.
+- [ ] No cross-component API broken (unless this task explicitly requires it).
+- [ ] Plan-Completion Verification and Edge-Case Verification checklists pass.
+- [ ] <task-specific done criteria>
+
+## Verification Commands
+```bash
+# Full unittest suite — must stay green
+python -m unittest discover -s tests/ -p "test_*.py" -v
+
+# Import check — no circular imports or missing modules
+python -c "import <top_level_package>"
+
+# Type check (if mypy is present)
+mypy <changed files> --ignore-missing-imports
+
+# Lint
+flake8 <changed files> --max-line-length=120
+
+# No print() in production paths
+grep -rn "print(" src/ --include="*.py"
+
+# No hardcoded secret pattern
+grep -rni "password\s*=\s*['\"].\|api_key\s*=\s*['\"]." src/ --include="*.py"
+```
+All commands must exit 0 (grep commands must return no matches).
+
+## Security & Logging Spot-Check
+- [ ] No secret/token/PII in any log line.
+- [ ] No path built from external input without sanitization (path traversal).
+- [ ] No raw exception text, stack trace, or internal path reaches an external caller.
+- [ ] Every `except` block calls `logger.exception(...)` or `logger.error(...)`.
+- [ ] Untrusted input validated at its boundary before reaching business logic.
+
+## Deliverables — produce BOTH after the work
+
+### 1. Change Doc (short — to paste next to the task/ticket)
+```
+## <Task title> — Change Doc
+
+**Task:** <the exact locked task, one line>
+**Approach:** <2–3 sentences — what was done and why this way>
+
+**Changed**
+- `<file>` — <one line>
+- `<file>` — <one line>
+
+**Verified**
+- Tests: <pass/fail + what was added>
+- Edge cases: <the ones checked>
+
+**Notes / follow-up:** <or "none">
+```
+
+### 2. Final Report (detailed)
+```
+## Agent Task Report
+
+### Completed
+- <everything implemented>
+
+### Files changed
+| File | Change type | Summary |
+|------|-------------|---------|
+| path/to/file.py | created / modified / deleted | one-sentence summary |
+
+### Tests
+- Suite result: PASS / FAIL
+- New tests added: <list>
+- Coverage gaps: <list or "none">
+
+### Rule compliance
+- [ ] code_quality.mdc — compliant / violations: <list>
+- [ ] team-rules/conventions.mdc — compliant / violations: <list>
+- [ ] team-rules/rules.mdc — compliant / violations: <list>
+- [ ] team-rules/security.mdc — compliant / violations: <list>
+
+### Known limitations / follow-up
+- <list or "none">
+```
+```
+
+---
+
+## Rules for This MDC File Itself
+
+- Enforce the **Task Lock** — never emit a prompt for a task the user has not confirmed precisely.
+- Phase 3 output is **one block only** — no commentary outside it.
+- Do not write implementation code at any phase.
+- Do not skip Phase 2 approval or leave open questions unresolved.
+- Never leave a template section blank or with a placeholder — fill it or remove the section.
+- Keep the tone directive: no preamble, no filler.
+- The emitted prompt defers execution discipline to `@agent_mode` — do not duplicate it inline.
+- All rule references point to canonical `.mdc` files (`instructions.mdc`, `agent_mode.mdc`,
+  `code_quality.mdc`, `team-rules/conventions.mdc`, `team-rules/rules.mdc`, `team-rules/security.mdc`).
+  Do not contradict them.

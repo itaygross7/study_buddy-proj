@@ -1,0 +1,140 @@
+---
+description: Activate when asked to document, add docstrings, write comments, or create README content. No code logic changes — documentation only.
+alwaysApply: false
+---
+
+# Documentation Mode
+
+## Objective
+Add accurate, minimal documentation without changing any code logic.
+
+## Core Rule
+Document what exists. Do not change code to make it easier to document.
+If the code is confusing enough to require a long explanation, flag it separately as a candidate for improvement — do not fix it here.
+
+## Context Required
+Before doing anything else, check what is present in context.
+
+You need:
+- The file(s) to document (e.g. `@payments/service.py`) — the actual source, not a description
+- For README or module-level docstrings: enough of the module to accurately describe what it does
+
+If any of these is missing, stop immediately and output:
+
+```
+MISSING CONTEXT — cannot document reliably.
+Please provide:
+- [ ] <list exactly what is missing from the items above>
+```
+
+Do not write docstrings based on assumed behavior. Do not say "this function probably does X" — read the actual code or stop. Inaccurate documentation is worse than no documentation.
+
+## What to Document
+
+### Docstrings — Sphinx Style (required)
+All docstrings in this project use Sphinx style. Do not use Google style, NumPy style, or any other format.
+
+```python
+def process_payment(amount: float, currency: str) -> bool:
+    """
+    Process a payment and return success status.
+    :param amount: Payment amount in the specified currency.
+    :param currency: ISO 4217 currency code (e.g., "USD").
+    :return: True if payment was processed successfully.
+    :raises PaymentDeclinedError: If the processor declines the payment.
+    """
+```
+
+Add docstrings to:
+- Every public function and method
+- Every class (describe what it represents, not how it is implemented)
+- Private helpers where the logic is non-obvious
+
+Do NOT add docstrings to:
+- One-liner functions where the name fully explains the behavior
+- Private helpers that are called once and are obvious in context
+- `__init__` unless it has complex initialization logic
+
+Do NOT add `:type param:` or `:rtype:` annotations if type hints already exist in the signature — they are redundant.
+
+### Inline Comments
+Add an inline comment only when:
+- The **why** is not obvious from the code (not the what)
+- A non-trivial decision was made (algorithm choice, known edge case, external limitation workaround)
+
+When a method has more than one logical block, add a short comment above each block describing what it does (`team-rules/rules.mdc`). If a block is complex enough to need more than one sentence, flag it as a candidate for extraction instead.
+
+Do NOT add comments that:
+- Restate what the code clearly does: `# increment counter` above `count += 1`
+- Are vague: `# handle the data`, `# process results`
+- Already exist and are still accurate — never remove or modify existing comments
+
+Do NOT add comments explaining why an inline import exists — that comment is the developer's responsibility when they write the import (`team-rules/conventions.mdc`).
+
+### Module-Level Docstrings
+Add a one-sentence module docstring if the module lacks one and its purpose is not obvious from the filename:
+```python
+"""Handles payment processing and refund logic for the billing service."""
+```
+
+### README / Markdown
+When writing or updating a README:
+1. What this module or service does (1–2 sentences)
+2. How to set it up (env vars, dependencies)
+3. How to run or use it
+4. Key design decisions (only if non-obvious)
+
+Keep it scannable — use headers and short paragraphs.
+Include the correct bool env var pattern in setup instructions: `os.environ.get("FLAG", "True") == "True"` (`team-rules/conventions.mdc`).
+
+## Documentation Rules
+- Write in present tense: "Returns the user object" not "This function will return..."
+- One sentence is better than three. No filler.
+- Verify behavior before documenting it — do not document what you assume the code does.
+- Do not modify any code logic. Documentation changes only.
+
+## Output Format
+
+Show the **complete function, method, or class** in both EXISTING and REPLACE WITH.
+Never show just the docstring alone — show the full signature, docstring, and body so the reader can drop it in without hunting for the surrounding code.
+
+For inline or block comments, show the full method with the comment added in place.
+
+```
+EXISTING (payments/service.py — process_payment):
+```python
+def process_payment(amount: float, currency: str) -> bool:
+    try:
+        result = self._processor.charge(amount, currency)
+    except ProcessorError as e:
+        logger.exception("Processor charge failed amount=%s currency=%s", amount, currency)
+        raise PaymentDeclinedError("Payment declined") from e
+    return result.success
+```
+
+REPLACE WITH:
+```python
+def process_payment(amount: float, currency: str) -> bool:
+    """
+    Charge the payment processor for the given amount and currency.
+    :param amount: Charge amount in the specified currency. Must be greater than zero.
+    :param currency: ISO 4217 currency code (e.g., "USD").
+    :return: True if the processor confirmed the charge successfully.
+    :raises PaymentDeclinedError: If the processor rejects the charge.
+    """
+    try:
+        result = self._processor.charge(amount, currency)
+    except ProcessorError as e:
+        logger.exception("Processor charge failed amount=%s currency=%s", amount, currency)
+        raise PaymentDeclinedError("Payment declined") from e
+    return result.success
+```
+```
+
+If a file has multiple functions needing docstrings, show each one as a separate EXISTING / REPLACE WITH block. Do not batch them into one block.
+
+## Done Criteria
+- Every public function and class has a Sphinx-style docstring.
+- Every multi-block method has a comment above each block (or a note flagging it for extraction).
+- No code logic was changed.
+- No existing comments were removed or modified.

@@ -1,0 +1,138 @@
+---
+description: Activate when asked to improve, optimize, clean up, or enhance code quality in existing code. Do not change observable behavior or break interfaces.
+alwaysApply: false
+---
+
+# Code Improvement Mode
+
+## Objective
+Improve existing code in a targeted, justified, and conservative way.
+Do not change behavior. Do not break interfaces. Do not over-engineer.
+
+## Context Required
+Before doing anything else, check what is present in context.
+
+You need:
+- The file(s) to improve (e.g. `@payments/service.py`) — the actual source, not a description
+- For any improvement that touches a public function or cross-component interface: the callers of that function, so you can confirm the change does not break them
+
+If any of these is missing, stop immediately and output:
+
+```
+MISSING CONTEXT — cannot improve reliably.
+Please provide:
+- [ ] <list exactly what is missing from the items above>
+```
+
+Do not suggest improvements based on assumed code. Do not say "if this function does X, you could..." — read the actual code or stop.
+
+## What Qualifies as an Improvement
+Only improve when there is a clear, concrete benefit in one of these categories:
+- **Reliability**: a real risk of failure exists (bare `except:`, missing `with`, swallowed exception)
+- **Conventions compliance**: the code violates a team rule from `team-rules/conventions.mdc`, `team-rules/rules.mdc`, or `team-rules/security.mdc`
+- **Readability**: the code is genuinely hard to follow — not just written differently than you would write it
+- **Performance**: a measurable complexity-class improvement is possible on a path that is known to be hot
+- **Maintainability**: the current code will cause concrete problems as the project grows
+
+Do NOT improve code just because you would write it differently.
+Do NOT apply preferences that conflict with the existing codebase style.
+
+## Before Improving Anything
+- Understand what the code currently does and why.
+- Confirm the improvement does not change observable behavior.
+- Confirm the improvement fits the existing architecture and style.
+- Check whether similar logic exists elsewhere — if the same pattern appears across components, the fix belongs in a shared package (`team-rules/conventions.mdc`), not repeated in each file.
+- If uncertain — ask before changing.
+
+## Allowed Improvements
+
+**Reliability / Exception Handling**
+- Replace bare `except:` or `except Exception:` (no comment) with specific exception types plus `logger.error(...)` or `logger.exception(...)` on the error path
+- Add `with` to any resource that is opened without it (file, DB connection, HTTP session)
+- Remove a fallback that will never be reached — `team-rules/rules.mdc` forbids low-probability fallbacks
+
+**Conventions compliance**
+- Replace `print()` with `logger = logging.getLogger(__name__)` and the appropriate log level call
+- Add missing type hints to functions being modified for another reason
+- Convert a docstring from Google or NumPy style to Sphinx style (`:param:`, `:return:`, `:raises:`)
+- Add a missing Sphinx-style docstring to a public function
+- Replace a bare integer HTTP status code with `HTTPStatus` (`team-rules/conventions.mdc`)
+- Replace a module-level `UPPER_SNAKE_CASE` constant with `lower_case` (team override, `team-rules/conventions.mdc`)
+- Replace a repeated magic number or string with a named constant at module level (using `lower_case`)
+- Replace `getattr(obj, "attr")` with `obj.attr` where the attribute is known to exist (`team-rules/rules.mdc`)
+- Replace a raw `dict` used as a structured payload with a Pydantic model (`team-rules/rules.mdc`)
+- Remove a dead code path that exists only for test patching (`team-rules/rules.mdc`)
+
+**Readability / Structure**
+- Simplify deeply nested conditionals with guard clauses (early returns) — only when the nesting makes the flow genuinely hard to follow
+- Extract a block repeated 3 or more times into a shared helper
+- Fix a variable or function name that is genuinely misleading
+- Add a comment above each logical block in a method that has more than one block (`team-rules/rules.mdc`)
+
+## Improvement Rules
+- One concern per change. Do not bundle multiple improvements in one output.
+- Show exactly what changes and state the concrete benefit before showing the code.
+- Do NOT change logic while improving style.
+- Do NOT rename things for preference — only when the name is genuinely misleading.
+- Do NOT introduce new abstractions unless they clearly reduce complexity.
+- Do NOT change public or cross-component interfaces, function signatures, or return types.
+- Do NOT introduce new dependencies.
+- Do NOT suggest structural refactors — that belongs in planning mode.
+- Preserve all existing comments exactly.
+
+## Output Format
+
+For each improvement, show:
+1. `WHY` — one sentence: the concrete benefit and which rule it satisfies
+2. `EXISTING` — the complete current function or class, with the problem annotated inline using `# <-- PROBLEM: reason`
+3. `REPLACE WITH` — the complete improved function or class, with changed lines marked `# CHANGED` and added lines marked `# ADDED`
+
+Never show just the changed lines in isolation. Show the whole function. The reader must be able to copy-paste REPLACE WITH directly into the file.
+
+One improvement per output block. Do not bundle multiple changes into one REPLACE WITH.
+
+```
+WHY: replaces bare `except:` with a specific exception type and adds stack trace logging — satisfies conventions.mdc logging rule and rules.mdc strict types.
+
+EXISTING (payments/service.py — process_payment):
+```python
+def process_payment(amount: float, currency: str) -> bool:
+    """
+    Charge the payment processor for the given amount and currency.
+    :param amount: Charge amount in the specified currency.
+    :param currency: ISO 4217 currency code (e.g., "USD").
+    :return: True if the processor confirmed the charge.
+    :raises PaymentDeclinedError: If the processor rejects the charge.
+    """
+    try:
+        result = self._processor.charge(amount, currency)
+    except:                   # <-- PROBLEM: catches everything, hides root cause
+        return False          # <-- PROBLEM: silent failure, caller has no error context
+    return result.success
+```
+
+REPLACE WITH:
+```python
+def process_payment(amount: float, currency: str) -> bool:
+    """
+    Charge the payment processor for the given amount and currency.
+    :param amount: Charge amount in the specified currency.
+    :param currency: ISO 4217 currency code (e.g., "USD").
+    :return: True if the processor confirmed the charge.
+    :raises PaymentDeclinedError: If the processor rejects the charge.
+    """
+    try:
+        result = self._processor.charge(amount, currency)
+    except ProcessorError as e:                                                          # CHANGED
+        logger.exception("Processor charge failed amount=%s currency=%s", amount, currency)  # ADDED
+        raise PaymentDeclinedError("Payment declined by processor") from e               # CHANGED
+    return result.success
+```
+```
+
+## Done Criteria
+- Each change has a stated concrete benefit.
+- No observable behavior was changed.
+- No interface was broken.
+- No new dependency was introduced.
+- No unrelated code was touched.
