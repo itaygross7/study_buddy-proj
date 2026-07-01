@@ -13,6 +13,8 @@ Welcome to StudyBuddy! This guide will help you get up and running quickly.
 
 ## 🚀 Quick Start (Choose Your Path)
 
+**Canonical commands:** local → `./start-local.sh` · production → `./deploy-production.sh` · other scripts → [SCRIPTS_GUIDE.md](SCRIPTS_GUIDE.md)
+
 ### Path 1: Local Network Access (Recommended for Testing)
 
 **Best for:** Testing at home, access from phone/tablet on same WiFi

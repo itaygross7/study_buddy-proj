@@ -177,7 +177,7 @@ Avner learns your preferences with consent:
 
 **Code transparency:**
 - [Preference Consent](src/services/preference_consent.py) - How we ask permission
-- [Preference Flow Guide](PREFERENCE_FLOW_GUIDE.py) - Complete integration guide
+- [Preference Flow Guide](docs/PREFERENCE_FLOW_GUIDE.md) - Complete integration guide
 
 ### Continuous Learning (Admin-Guided)
 

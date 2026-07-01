@@ -357,7 +357,7 @@ If the script doesn't solve your issues:
 
 - [SCRIPTS_GUIDE.md](../SCRIPTS_GUIDE.md) - Overview of all scripts
 - [TROUBLESHOOTING.md](../TROUBLESHOOTING.md) - General troubleshooting
-- [DEPLOYMENT_INSTRUCTIONS.md](../DEPLOYMENT_INSTRUCTIONS.md) - Deployment guide
+- [DEPLOYMENT.md](DEPLOYMENT.md) - Deployment guide
 - [AUTO_DEPLOYMENT.md](AUTO_DEPLOYMENT.md) - Auto-update setup
 
 ## Script Source

@@ -1,5 +1,6 @@
 import json
 from flask import Blueprint, request, jsonify, url_for
+from flask_login import login_required
 from pydantic import ValidationError
 
 from src.domain.models.api_models import AssessRequest, TaskResponse
@@ -11,6 +12,7 @@ assess_bp = Blueprint('assess_bp', __name__)
 
 
 @assess_bp.route('/', methods=['POST'])
+@login_required
 def trigger_assessment():
     """Triggers the assessment generation task."""
     try:
