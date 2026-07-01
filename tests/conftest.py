@@ -41,3 +41,22 @@ def client(app):
 def mock_db():
     """Provides a mocked MongoDB database."""
     return MagicMock()
+
+
+@pytest.fixture
+def authenticated_client(client):
+    """Test client with a logged-in user session."""
+    from src.domain.models.db_models import User, UserRole
+
+    user = User(
+        _id="test-user-id",
+        email="test@example.com",
+        password_hash="hash",
+        role=UserRole.USER,
+        is_active=True,
+    )
+    with patch('src.api.routes_auth.auth_service.get_user_by_id', return_value=user):
+        with client.session_transaction() as sess:
+            sess['_user_id'] = 'test-user-id'
+            sess['_fresh'] = True
+        yield client

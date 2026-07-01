@@ -1,69 +1,46 @@
 # Quick Reference: Deployment Scripts
 
-## 🚀 One-Line Deploy
+## One-line deploy
+
 ```bash
-./deploy.sh
+./deploy-production.sh    # production with HTTPS
+./deploy-simple.sh          # quick local test
+./start-local.sh            # home network access
 ```
 
-## Common Commands
+## Common commands
 
 | Command | Purpose |
 |---------|---------|
-| `./deploy.sh` | Deploy with all checks |
-| `./deploy.sh --check-only` | Only run system checks |
-| `./deploy.sh --rebuild` | Force rebuild images |
-| `./deploy.sh --clean` | Fresh start (deletes data!) |
+| `./deploy-production.sh` | Production deploy with checks |
+| `./deploy-simple.sh` | Simple Docker Compose up |
+| `./start-local.sh` | Local network testing |
+| `./deploy-hard-restart.sh` | Emergency restart + permission fixes |
 | `./scripts/pre-deploy-check.sh` | Run checks manually |
 
-## What Gets Checked
+## What gets checked
 
-✅ Docker & Docker Compose  
-✅ Ports (5000, 27017, 5672, 15672)  
-✅ Network & DNS  
-✅ .env configuration  
-✅ Disk space & memory  
-✅ Docker network health  
+- Docker and Docker Compose
+- Ports (5000, 27017, 5672, 15672)
+- Network and DNS
+- `.env` configuration
+- Disk space and memory
+- Docker network health
 
-## Required .env Variables
+## Deprecated
 
-```bash
-SECRET_KEY="..."           # Generate: python3 -c "import secrets; print(secrets.token_hex(32))"
-ADMIN_EMAIL="..."         # Your email
-GEMINI_API_KEY="..."      # Or OPENAI_API_KEY
-```
+Old scripts are in `scripts/deprecated/`. See [SCRIPTS_GUIDE.md](../SCRIPTS_GUIDE.md).
 
-## Troubleshooting
-
-| Issue | Solution |
-|-------|----------|
-| Port in use | `sudo lsof -i :5000` then stop service |
-| Docker not running | `sudo systemctl start docker` |
-| Out of disk | `docker system prune -a` |
-| .env missing | `cp .env.example .env` |
-
-## After Deployment
+## Health and logs
 
 ```bash
-# Check status
-docker compose ps
-
-# View logs
-docker compose logs -f app
-
-# Test health
 curl http://localhost:5000/health
-
-# Stop services
-docker compose down
+docker compose logs -f web
+docker compose logs -f worker
 ```
 
-## Access Points
+## Full guides
 
-- **App**: http://localhost:5000
-- **RabbitMQ UI**: http://localhost:15672
-
-## Documentation
-
-- Full guide: `docs/DEPLOYMENT_SCRIPTS.md`
-- Deployment: `docs/DEPLOYMENT.md`
-- Main README: `README.md`
+- [DEPLOYMENT.md](DEPLOYMENT.md)
+- [SCRIPTS_GUIDE.md](../SCRIPTS_GUIDE.md)
+- [TROUBLESHOOTING.md](../TROUBLESHOOTING.md)

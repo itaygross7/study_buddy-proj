@@ -31,6 +31,17 @@ These files were created during various development phases and implementation cy
 - `DEPLOYMENT_IMPLEMENTATION.md` - Internal deployment notes
 - `DEPLOYMENT_SCRIPTS.md` - Old scripts documentation (use SCRIPTS_GUIDE.md instead)
 
+### Repo cleanup (2025)
+- `CLEANUP_PLAN.md` - One-time organization plan (executed)
+- `CLEANUP_SUMMARY.md` - Cleanup status summary
+- `MOBILE_DESIGN_SUMMARY.txt` - Mobile design notes
+- `MOBILE_IMPROVEMENTS_SUMMARY.md` - Mobile implementation notes
+- `PWA_IMPLEMENTATION.md` - PWA implementation notes
+- `DEPLOYMENT_GUIDE.md` - Old deploy-script feature list (see docs/DEPLOYMENT.md)
+- `DEPLOYMENT_INSTRUCTIONS.md` - Superseded by docs/DEPLOYMENT.md
+- `HEALTH_MONITORING.md` - Superseded by docs/HEALTH_AND_MONITORING.md
+- `OAUTH_SETUP.md` - Superseded by docs/OAUTH_EMAIL_SETUP.md
+
 ### Other
 - `START_HERE.md` - Replaced by README.md and GETTING_STARTED.md
 - `REQUEST_COMPLETION.md` - Old request completion summary

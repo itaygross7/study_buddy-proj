@@ -1,5 +1,6 @@
 import json
 from flask import Blueprint, request, jsonify, url_for
+from flask_login import login_required
 from pydantic import ValidationError
 
 from src.domain.models.api_models import FlashcardsRequest, TaskResponse
@@ -11,6 +12,7 @@ flashcards_bp = Blueprint('flashcards_bp', __name__)
 
 
 @flashcards_bp.route('/', methods=['POST'])
+@login_required
 def trigger_flashcards():
     """Triggers the flashcard generation task."""
     try:

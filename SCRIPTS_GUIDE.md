@@ -29,11 +29,13 @@ This guide documents all scripts in the project and their current status.
 
 ### Deprecated/Redundant Scripts
 
+Moved to `scripts/deprecated/` — do not use for new deployments.
+
 | Script | Status | Replacement |
 |--------|--------|-------------|
-| deploy.sh | ⚠️ Complex/outdated | Use **deploy-simple.sh** or **deploy-production.sh** |
-| deploy-auto-fix.sh | ⚠️ Redundant | Use **deploy-simple.sh** instead |
-| deploy-check-only.sh | ⚠️ Rarely used | Use **deploy-simple.sh** or check manually |
+| `scripts/deprecated/deploy.sh` | Archived | **deploy-simple.sh** or **deploy-production.sh** |
+| `scripts/deprecated/deploy-auto-fix.sh` | Archived | **deploy-simple.sh** |
+| `scripts/deprecated/deploy-check-only.sh` | Archived | **deploy-simple.sh** or `python check_config.py` |
 
 ---
 
