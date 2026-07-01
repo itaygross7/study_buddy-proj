@@ -1,0 +1,31 @@
+---
+description: General project context and AI assistant guidelines
+alwaysApply: true
+---
+
+# StudyBuddy — General Rules
+
+## Project overview
+
+StudyBuddy is a Flask-based educational app with AI-powered study tools (summaries, flashcards, tutoring, homework help, assessments). It uses MongoDB, Celery/RabbitMQ workers, and supports OpenAI and Gemini.
+
+## Stack
+
+- Python 3.11, Flask, Gunicorn
+- MongoDB, Celery, RabbitMQ
+- Jinja2 templates under `ui/templates/`
+- Services in `src/services/`, tests in `tests/`
+
+## Coding guidelines
+
+- Match existing patterns in the file you are editing.
+- Keep changes minimal and focused on the requested task.
+- Prefer extending existing services over adding parallel implementations.
+- Run relevant tests after substantive changes (`pytest tests/`).
+- Do not commit secrets; use `.env` for configuration.
+
+## Documentation
+
+- Getting started: `GETTING_STARTED.md`
+- Deployment: `docs/DEPLOYMENT.md`
+- Troubleshooting: `TROUBLESHOOTING.md`

@@ -1,0 +1,12 @@
+---
+description: Templates, static assets, and UI conventions
+globs: "ui/**/*"
+alwaysApply: false
+---
+
+# Frontend Rules
+
+- Templates live in `ui/templates/`; extend `base.html` when adding pages.
+- Static assets are in `ui/static/` (CSS, JS).
+- Prefer HTMX patterns already used in the project for dynamic updates.
+- Keep UI changes consistent with existing Tailwind/CSS conventions in `ui/static/css/`.
